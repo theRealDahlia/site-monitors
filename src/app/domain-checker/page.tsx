@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import DomainChecker from "@/components/DomainChecker";
-import WaitlistForm from "@/components/WaitlistForm";
+import AlertsCta from "@/components/AlertsCta";
 import { Footer, Header } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
@@ -28,14 +28,10 @@ export default function DomainCheckerPage() {
         </div>
 
         <section className="mt-16 rounded-xl border border-border bg-surface p-6">
-          <h2 className="text-xl font-semibold tracking-tight">Get alerted before it expires</h2>
-          <p className="mt-2 text-sm text-muted">
-            A lapsed domain takes the website and email down with it. Join the early-access list and
-            we&apos;ll watch every client domain and certificate for you.
-          </p>
-          <div className="mt-5">
-            <WaitlistForm />
-          </div>
+          <AlertsCta
+            heading="Get alerted before it expires"
+            body="A lapsed domain takes the website and email down with it. Create a free account and we'll watch your domains and certificates for you, and email you before anything expires."
+          />
         </section>
 
         <section className="mt-16 space-y-6 text-sm text-muted">

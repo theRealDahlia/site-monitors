@@ -4,7 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 
 // SQLite file on disk. Works on any host with a persistent volume (a VPS, Fly.io, Railway).
 // Serverless hosts like Vercel have no persistent disk, so move these queries to Postgres first;
-// everything that touches the database lives in this file and auth.ts to keep that swap small.
+// everything that touches the database lives in this file, monitors-db.ts and auth.ts to keep that swap small.
 const DB_PATH = process.env.DATABASE_PATH ?? path.join(process.cwd(), "data", "app.db");
 
 const SCHEMA = `
@@ -35,15 +35,77 @@ const SCHEMA = `
     expires_at INTEGER NOT NULL
   );
 
-  CREATE TABLE IF NOT EXISTS signups (
+  -- One row per site a user watches. It holds the latest result of each check plus the
+  -- bookkeeping that stops the same alert being emailed twice. Times are epoch milliseconds.
+  CREATE TABLE IF NOT EXISTS monitors (
     id         INTEGER PRIMARY KEY,
-    email      TEXT NOT NULL,
-    kind       TEXT,
-    watch      TEXT,
-    clients    TEXT,
-    created_at TEXT NOT NULL
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    host       TEXT    NOT NULL,
+    created_at INTEGER NOT NULL,
+
+    up_status        TEXT    NOT NULL DEFAULT 'pending',
+    up_code          INTEGER,
+    up_ms            INTEGER,
+    up_error         TEXT,
+    up_checked_at    INTEGER,
+    up_due_at        INTEGER NOT NULL,
+    up_failures      INTEGER NOT NULL DEFAULT 0,
+    down_since       INTEGER,
+    down_alerted     INTEGER NOT NULL DEFAULT 0,
+
+    ssl_status         TEXT    NOT NULL DEFAULT 'pending',
+    ssl_expires_at     INTEGER,
+    ssl_days           INTEGER,
+    ssl_issuer         TEXT,
+    ssl_problems       TEXT,
+    ssl_error          TEXT,
+    ssl_checked_at     INTEGER,
+    ssl_due_at         INTEGER NOT NULL,
+    ssl_alert_bucket   INTEGER,
+    ssl_problem_alerted TEXT,
+
+    dom_status       TEXT    NOT NULL DEFAULT 'pending',
+    dom_name         TEXT,
+    dom_expires_at   INTEGER,
+    dom_days         INTEGER,
+    dom_registrar    TEXT,
+    dom_note         TEXT,
+    dom_checked_at   INTEGER,
+    dom_due_at       INTEGER NOT NULL,
+    dom_alert_bucket INTEGER,
+
+    last_manual_check_at INTEGER,
+    UNIQUE (user_id, host)
   );
+  CREATE INDEX IF NOT EXISTS monitors_user ON monitors(user_id);
+
+  -- What the system did and told the user: alerts raised, and whether the email went out.
+  CREATE TABLE IF NOT EXISTS monitor_events (
+    id         INTEGER PRIMARY KEY,
+    monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL,
+    kind       TEXT    NOT NULL,
+    message    TEXT    NOT NULL,
+    details    TEXT,
+    emailed    INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS monitor_events_user ON monitor_events(user_id, created_at);
+
+  CREATE TABLE IF NOT EXISTS uptime_checks (
+    monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
+    at         INTEGER NOT NULL,
+    ok         INTEGER NOT NULL,
+    ms         INTEGER
+  );
+  CREATE INDEX IF NOT EXISTS uptime_checks_monitor ON uptime_checks(monitor_id, at);
 `;
+
+/** CREATE TABLE IF NOT EXISTS won't add columns to a table that already exists, so older databases get them here. */
+function migrate(conn: DatabaseSync) {
+  const columns = (conn.prepare("PRAGMA table_info(monitor_events)").all() as { name: string }[]).map((c) => c.name);
+  if (!columns.includes("details")) conn.exec("ALTER TABLE monitor_events ADD COLUMN details TEXT");
+}
 
 // Dev mode reloads modules often; keep one connection on globalThis instead of one per reload.
 const globalForDb = globalThis as unknown as { __siteMonitorDb?: DatabaseSync };
@@ -54,6 +116,7 @@ export function db(): DatabaseSync {
     const conn = new DatabaseSync(DB_PATH);
     conn.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
     conn.exec(SCHEMA);
+    migrate(conn);
     globalForDb.__siteMonitorDb = conn;
   }
   return globalForDb.__siteMonitorDb;
@@ -103,17 +166,6 @@ export function findSessionUser(tokenHash: string): { id: number; email: string 
 
 export function deleteSession(tokenHash: string): void {
   db().prepare("DELETE FROM sessions WHERE token_hash = ?").run(tokenHash);
-}
-
-export function insertSignup(row: {
-  email: string;
-  kind?: string;
-  watch?: string;
-  clients?: string;
-}): void {
-  db()
-    .prepare("INSERT INTO signups (email, kind, watch, clients, created_at) VALUES (?, ?, ?, ?, ?)")
-    .run(row.email, row.kind ?? null, row.watch ?? null, row.clients || null, new Date().toISOString());
 }
 
 export interface SignupCodeRow {

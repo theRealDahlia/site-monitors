@@ -5,6 +5,7 @@ export class CheckError extends Error {
   constructor(
     message: string,
     public readonly httpStatus: number = 400,
+    public readonly code?: string,
   ) {
     super(message);
   }

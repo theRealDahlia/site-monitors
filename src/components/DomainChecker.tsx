@@ -112,8 +112,8 @@ export default function DomainChecker() {
             <WatchDomain
               key={result.domain}
               domain={result.domain}
-              kind="domain"
               subject="registration"
+              signedIn={usage?.signedIn ?? false}
               daysRemaining={result.daysRemaining}
             />
 

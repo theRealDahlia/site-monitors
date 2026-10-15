@@ -37,3 +37,11 @@ export async function sendMail(mail: Mail): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true });
   await appendFile(file, block);
 }
+
+/** Public address of the site, for links in emails. Never taken from a request, since a forged Host header could poison it. */
+export function appUrl(): string {
+  const fromEnv = process.env.APP_URL?.replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") throw new Error("APP_URL must be set in production.");
+  return "http://localhost:3000";
+}

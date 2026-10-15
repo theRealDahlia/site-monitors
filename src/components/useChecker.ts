@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 export interface Usage {
   used: number;
   limit: number;
+  /** When the free checks come back (epoch ms), or null if none have been used. */
+  resetsAt: number | null;
   /** Signed-in accounts have no free-check limit. */
   signedIn: boolean;
 }

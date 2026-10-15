@@ -64,7 +64,8 @@ export function isPublicAddress(address: string, family: number): boolean {
   return !blocked.check(address, "ipv4");
 }
 
-async function resolvePublicAddress(host: string) {
+/** Every address the hostname resolves to, after refusing the lot if any is private or reserved. */
+export async function resolvePublicAddresses(host: string) {
   let addresses: { address: string; family: number }[];
   try {
     addresses = await dns.lookup(host, { all: true });
@@ -75,8 +76,14 @@ async function resolvePublicAddress(host: string) {
   if (publicOnes.length === 0 || publicOnes.length !== addresses.length) {
     throw new CheckError("That domain points to a private or reserved address.");
   }
-  return publicOnes[0];
+  return publicOnes;
 }
+
+export async function resolvePublicAddress(host: string) {
+  return (await resolvePublicAddresses(host))[0];
+}
+
+const MAX_ADDRESSES_TRIED = 3;
 
 function connect(host: string, address: string): Promise<tls.TLSSocket> {
   return new Promise((resolve, reject) => {
@@ -119,8 +126,22 @@ const AUTH_ERRORS: Record<string, string> = {
 
 export async function checkSsl(input: string): Promise<SslResult> {
   const host = parseHostname(input);
-  const { address } = await resolvePublicAddress(host);
-  const socket = await connect(host, address);
+  // Big sites resolve to several addresses and one of them can be slow or down, so try a few
+  // before giving up. Every address was already checked to be public.
+  const addresses = (await resolvePublicAddresses(host)).slice(0, MAX_ADDRESSES_TRIED);
+  let socket: tls.TLSSocket | undefined;
+  let address = addresses[0].address;
+  let lastError: unknown;
+  for (const candidate of addresses) {
+    try {
+      socket = await connect(host, candidate.address);
+      address = candidate.address;
+      break;
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  if (!socket) throw lastError;
 
   try {
     const leaf = socket.getPeerCertificate(true);

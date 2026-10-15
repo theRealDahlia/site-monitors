@@ -126,6 +126,8 @@ export async function checkDomain(input: string): Promise<DomainResult> {
   if (!base) {
     throw new CheckError(
       `.${tld} domains don't publish public expiry data through RDAP, so we can't check them here.`,
+      400,
+      "unsupported_tld",
     );
   }
 

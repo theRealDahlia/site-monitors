@@ -1,7 +1,7 @@
 import { currentUser } from "./auth";
 import { CheckError } from "./hostname";
-import { clientIp, countInWindow, rateLimit, record } from "./rate-limit";
-import { FREE_LIMIT, cookieHeader, readVisitor, release, reserve } from "./usage";
+import { clientIp, countInWindow, nextSlotAt, rateLimit, record } from "./rate-limit";
+import { FREE_LIMIT, cookieHeader, readVisitor, release, reserve, resetsAt } from "./usage";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Backstop for people who clear cookies: successful free checks per IP per day. */
@@ -12,29 +12,33 @@ const IP_BURST_LIMIT = 10;
 const ACCOUNT_DAILY_LIMIT = 300;
 
 export interface UsageInfo {
+  /** Free checks used in the current 24-hour window. */
   used: number;
   limit: number;
+  /** When the free checks come back (epoch ms), or null if none have been used. */
+  resetsAt: number | null;
   /** Accounts are only created after their email is confirmed, so signed in means unlimited. */
   signedIn: boolean;
 }
 
-const LIMIT_REACHED = {
-  error: "You've used your free checks. Create a free account to keep checking.",
-  code: "free_limit_reached",
-  usage: { used: FREE_LIMIT, limit: FREE_LIMIT, signedIn: false } satisfies UsageInfo,
-};
+function exhausted(resetsAtMs: number | null) {
+  return {
+    error: "You've used your 4 free checks for today. Create a free account to keep checking.",
+    code: "free_limit_reached",
+    usage: { used: FREE_LIMIT, limit: FREE_LIMIT, resetsAt: resetsAtMs, signedIn: false } satisfies UsageInfo,
+  };
+}
 
 export function currentUsage(request: Request): UsageInfo & { email?: string } {
   const user = currentUser(request);
-  if (user) return { used: 0, limit: FREE_LIMIT, signedIn: true, email: user.email };
+  if (user) return { used: 0, limit: FREE_LIMIT, resetsAt: null, signedIn: true, email: user.email };
 
   const visitor = readVisitor(request);
-  const ipExhausted = countInWindow(`ip-day:${clientIp(request)}`, DAY_MS) >= IP_DAILY_LIMIT;
-  return {
-    used: ipExhausted ? FREE_LIMIT : Math.min(visitor.used, FREE_LIMIT),
-    limit: FREE_LIMIT,
-    signedIn: false,
-  };
+  const ipKey = `ip-day:${clientIp(request)}`;
+  if (countInWindow(ipKey, DAY_MS) >= IP_DAILY_LIMIT) {
+    return { used: FREE_LIMIT, limit: FREE_LIMIT, resetsAt: nextSlotAt(ipKey, DAY_MS), signedIn: false };
+  }
+  return { used: Math.min(visitor.used, FREE_LIMIT), limit: FREE_LIMIT, resetsAt: resetsAt(visitor), signedIn: false };
 }
 
 function failure(err: unknown): Response {
@@ -47,7 +51,7 @@ function failure(err: unknown): Response {
 
 /**
  * Runs one check for `request`. Signed-in accounts aren't metered beyond a fair-use ceiling.
- * Everyone else gets FREE_LIMIT free checks, and a check only counts against them when it
+ * Everyone else gets FREE_LIMIT free checks per day, and a check only counts against them when it
  * succeeds, so a typo or an unreachable server doesn't use one up.
  */
 export async function gatedCheck<T extends object>(
@@ -71,19 +75,19 @@ export async function gatedCheck<T extends object>(
     }
     try {
       const result = await run(host);
-      return Response.json({ ...result, usage: { used: 0, limit: FREE_LIMIT, signedIn: true } satisfies UsageInfo });
+      return Response.json({ ...result, usage: { used: 0, limit: FREE_LIMIT, resetsAt: null, signedIn: true } satisfies UsageInfo });
     } catch (err) {
       return failure(err);
     }
   }
 
   if (countInWindow(`ip-day:${ip}`, DAY_MS) >= IP_DAILY_LIMIT) {
-    return Response.json(LIMIT_REACHED, { status: 429 });
+    return Response.json(exhausted(nextSlotAt(`ip-day:${ip}`, DAY_MS)), { status: 429 });
   }
 
   const visitor = readVisitor(request);
   if (!reserve(visitor)) {
-    return Response.json(LIMIT_REACHED, {
+    return Response.json(exhausted(resetsAt(visitor)), {
       status: 429,
       headers: { "Set-Cookie": cookieHeader({ ...visitor, used: FREE_LIMIT }) },
     });
@@ -93,7 +97,7 @@ export async function gatedCheck<T extends object>(
     const result = await run(host);
     record(`ip-day:${ip}`, DAY_MS);
     return Response.json(
-      { ...result, usage: { used: visitor.used, limit: FREE_LIMIT, signedIn: false } satisfies UsageInfo },
+      { ...result, usage: { used: visitor.used, limit: FREE_LIMIT, resetsAt: resetsAt(visitor), signedIn: false } satisfies UsageInfo },
       { headers: { "Set-Cookie": cookieHeader(visitor) } },
     );
   } catch (err) {

@@ -35,6 +35,12 @@ export function countInWindow(key: string, windowMs: number): number {
   return recent(key, windowMs).length;
 }
 
+/** When the oldest hit in the window expires, which is when one more slot opens up. Null if there are none. */
+export function nextSlotAt(key: string, windowMs: number): number | null {
+  const times = recent(key, windowMs);
+  return times.length ? times[0] + windowMs : null;
+}
+
 export function record(key: string, windowMs: number): void {
   recent(key, windowMs).push(Date.now());
   sweep();

@@ -104,8 +104,8 @@ export default function SslChecker() {
             <WatchDomain
               key={result.host}
               domain={result.host}
-              kind="ssl"
               subject="SSL certificate"
+              signedIn={usage?.signedIn ?? false}
               daysRemaining={result.cert.daysRemaining}
             />
 

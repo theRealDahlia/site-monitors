@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import ProfileMenu from "@/components/ProfileMenu";
 
 export default function AuthNav() {
   // undefined = still loading, null = signed out
@@ -18,25 +19,9 @@ export default function AuthNav() {
     };
   }, []);
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    window.location.reload();
-  }
-
   if (user === undefined) return <span className="h-9 w-28" aria-hidden />;
 
-  if (user) {
-    return (
-      <>
-        <span className="hidden max-w-[12rem] truncate sm:inline" title={user.email}>
-          {user.email}
-        </span>
-        <button onClick={logout} className="hover:text-foreground">
-          Log out
-        </button>
-      </>
-    );
-  }
+  if (user) return <ProfileMenu email={user.email} />;
 
   return (
     <>
