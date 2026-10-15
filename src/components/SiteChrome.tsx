@@ -16,6 +16,9 @@ export function Header() {
           <Link href="/domain-checker" className="hover:text-foreground">
             Domain<span className="hidden sm:inline"> checker</span>
           </Link>
+          <Link href="/pricing" className="hidden hover:text-foreground sm:inline">
+            Pricing
+          </Link>
           <AuthNav />
         </nav>
       </div>
@@ -26,9 +29,22 @@ export function Header() {
 export function Footer() {
   return (
     <footer className="mt-auto border-t border-border">
-      <div className="mx-auto flex max-w-5xl flex-col gap-2 px-4 py-8 text-sm text-muted sm:flex-row sm:justify-between sm:px-6">
-        <p>{BRAND}</p>
-        <p>SSL, domain and uptime monitoring for agencies.</p>
+      <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div>
+          <p className="font-medium text-foreground">{BRAND}</p>
+          <p className="mt-1">SSL, domain and uptime monitoring for agencies.</p>
+        </div>
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-5 gap-y-2">
+          <Link href="/pricing" className="hover:text-foreground">
+            Pricing
+          </Link>
+          <Link href="/ssl-checker" className="hover:text-foreground">
+            SSL checker
+          </Link>
+          <Link href="/domain-checker" className="hover:text-foreground">
+            Domain checker
+          </Link>
+        </nav>
       </div>
     </footer>
   );

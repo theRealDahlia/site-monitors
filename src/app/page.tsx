@@ -2,6 +2,7 @@ import Link from "next/link";
 import SslChecker from "@/components/SslChecker";
 import AlertsCta from "@/components/AlertsCta";
 import { Footer, Header } from "@/components/SiteChrome";
+import { PLANS } from "@/lib/plans";
 
 const FEATURES = [
   {
@@ -20,13 +21,6 @@ const FEATURES = [
     title: "One dashboard",
     body: "See every site's uptime, certificate and domain status in one place, and add, edit or remove sites whenever you like.",
   },
-];
-
-const PLANS = [
-  { name: "Free", price: "$0", detail: "5 sites with uptime, SSL and domain checks and email alerts", available: true },
-  { name: "Starter", price: "$9", detail: "25 sites, 1-minute checks, Slack and Discord", available: false },
-  { name: "Pro", price: "$29", detail: "100 sites, AI-visibility checks, white-label status page", available: false },
-  { name: "Agency", price: "$79", detail: "500 sites, client workspaces, monthly client reports", available: false },
 ];
 
 export default function Home() {
@@ -75,6 +69,11 @@ export default function Home() {
           <p className="mt-2 text-sm text-muted">
             The free plan is available now. The paid plans are planned and may change.
           </p>
+          <p className="mt-3 text-sm">
+            <Link href="/pricing" className="text-accent underline underline-offset-2">
+              See full pricing and plan comparison
+            </Link>
+          </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p) => (
               <div key={p.name} className="rounded-xl border border-border bg-surface p-5">
@@ -85,10 +84,10 @@ export default function Home() {
                   </span>
                 </div>
                 <p className="mt-2 text-3xl font-semibold tracking-tight">
-                  {p.price}
+                  ${p.price}
                   <span className="text-base font-normal text-muted">/mo</span>
                 </p>
-                <p className="mt-3 text-sm text-muted">{p.detail}</p>
+                <p className="mt-3 text-sm text-muted">{p.summary}</p>
               </div>
             ))}
           </div>
