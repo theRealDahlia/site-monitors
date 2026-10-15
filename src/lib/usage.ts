@@ -3,7 +3,7 @@ import { secret } from "./secret";
 
 export const FREE_LIMIT = 4;
 
-const COOKIE = "td_visitor";
+const COOKIE = "sm_visitor";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export interface Visitor {

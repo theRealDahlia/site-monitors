@@ -14,7 +14,7 @@ import { secret } from "./secret";
 
 export { safeNext } from "./safe-next";
 
-const SESSION_COOKIE = "td_session";
+const SESSION_COOKIE = "sm_session";
 const SESSION_DAYS = 30;
 
 // scrypt cost: ~32 MB and tens of milliseconds per hash. Raise N as hardware allows.

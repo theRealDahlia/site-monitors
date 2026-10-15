@@ -45,7 +45,7 @@ export default function AuthNav() {
       </Link>
       <Link
         href="/signup"
-        className="rounded-lg bg-accent px-3.5 py-2 font-medium text-accent-foreground hover:opacity-90"
+        className="rounded-lg bg-accent px-3 py-2 font-medium sm:px-3.5 text-accent-foreground hover:opacity-90"
       >
         Sign up
       </Link>

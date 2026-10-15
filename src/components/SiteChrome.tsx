@@ -5,11 +5,11 @@ import { BRAND } from "@/lib/brand";
 export function Header() {
   return (
     <header className="border-b border-border">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
+      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
+        <Link href="/" className="whitespace-nowrap text-base font-semibold tracking-tight sm:text-lg">
           {BRAND}
         </Link>
-        <nav className="flex items-center gap-3 whitespace-nowrap text-sm text-muted sm:gap-5">
+        <nav className="flex items-center gap-2.5 whitespace-nowrap text-sm text-muted sm:gap-5">
           <Link href="/ssl-checker" className="hover:text-foreground">
             SSL<span className="hidden sm:inline"> checker</span>
           </Link>
