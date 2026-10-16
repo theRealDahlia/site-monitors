@@ -143,7 +143,7 @@ export function getMonitorWithOwner(id: number): (MonitorRow & { owner_email: st
 
 export interface EventRow {
   id: number;
-  monitor_id: number;
+  monitor_id: number | null;
   host: string;
   kind: string;
   message: string;
@@ -153,26 +153,29 @@ export interface EventRow {
   created_at: number;
 }
 
-export function addEvent(
-  monitorId: number,
-  userId: number,
-  kind: string,
-  message: string,
-  emailed: boolean,
-  now: number,
-  details?: string,
-): void {
+export function addEvent(event: {
+  userId: number;
+  /** The monitor this is about. May no longer exist by the time anyone reads it. */
+  monitorId: number | null;
+  host: string;
+  kind: string;
+  message: string;
+  emailed: boolean;
+  details?: string;
+  at?: number;
+}): void {
   db()
-    .prepare("INSERT INTO monitor_events (monitor_id, user_id, kind, message, details, emailed, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .run(monitorId, userId, kind, message, details ?? null, emailed ? 1 : 0, now);
+    .prepare(
+      "INSERT INTO monitor_events (user_id, monitor_id, host, kind, message, details, emailed, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .run(event.userId, event.monitorId, event.host, event.kind, event.message, event.details ?? null, event.emailed ? 1 : 0, event.at ?? Date.now());
 }
 
 export function recentEvents(userId: number, limit: number): EventRow[] {
   return db()
     .prepare(
-      `SELECT e.id, e.monitor_id, m.host, e.kind, e.message, e.details, e.emailed, e.created_at
-       FROM monitor_events e JOIN monitors m ON m.id = e.monitor_id
-       WHERE e.user_id = ? ORDER BY e.created_at DESC, e.id DESC LIMIT ?`,
+      `SELECT id, monitor_id, host, kind, message, details, emailed, created_at
+       FROM monitor_events WHERE user_id = ? ORDER BY created_at DESC, id DESC LIMIT ?`,
     )
     .all(userId, limit) as unknown as EventRow[];
 }

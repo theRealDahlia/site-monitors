@@ -34,7 +34,7 @@ export async function sendWatchConfirmation(opts: {
       `Added on ${added} (UTC).\n\n` +
       `If you didn't add this site, log in and remove it from the Manage sites tab.`,
   });
-  addEvent(opts.monitorId, opts.userId, "created", `Started watching ${opts.host}`, true, Date.now());
+  addEvent({ userId: opts.userId, monitorId: opts.monitorId, host: opts.host, kind: "created", message: `Started watching ${opts.host}`, emailed: true });
 }
 
 /**
@@ -72,8 +72,47 @@ export async function sendEditNotice(opts: { monitor: MonitorRow; oldHost: strin
     console.error(`edit notice for ${m.host} failed`, err);
   }
   try {
-    addEvent(m.id, m.user_id, "edited", `Updated ${oldHost} to ${m.host}: ${health.overall}`, emailed, Date.now(), details);
+    addEvent({ userId: m.user_id, monitorId: m.id, host: m.host, kind: "edited", message: `Updated ${oldHost} to ${m.host}: ${health.overall}`, emailed, details });
   } catch {
     // The monitor was deleted in the meantime; there's nothing to attach a notification to.
   }
+}
+
+/**
+ * Tells the owner a monitor was removed, with the last thing we knew about it. The notification is
+ * kept even though the monitor is gone, and records honestly whether the email went out.
+ * Returns whether the email was sent.
+ */
+export async function sendRemovalNotice(opts: { monitor: MonitorRow; email: string }): Promise<boolean> {
+  const { monitor: m, email } = opts;
+  const health = describeHealth(m);
+  const since = new Date(m.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+
+  const details =
+    `Site: ${m.host}\n` +
+    `Watched since: ${since}\n\n` +
+    `Last known status: ${health.overall}\n` +
+    health.lines.join("\n");
+
+  let emailed = true;
+  try {
+    await sendMail({
+      to: email,
+      subject: `Stopped watching ${m.host}`,
+      text:
+        `You removed ${m.host} from your monitors. We've stopped checking it, so you won't get any more alerts about it.\n\n` +
+        `${details}\n\n` +
+        `Your earlier notifications about it are still in your dashboard. You can start watching it again any time: ${appUrl()}/dashboard/sites\n\n` +
+        `If you didn't remove this site, log in and review your account.`,
+    });
+  } catch (err) {
+    emailed = false;
+    console.error(`removal notice for ${m.host} failed`, err);
+  }
+  try {
+    addEvent({ userId: m.user_id, monitorId: m.id, host: m.host, kind: "removed", message: `Stopped watching ${m.host}`, emailed, details });
+  } catch (err) {
+    console.error(`couldn't record the removal of ${m.host}`, err);
+  }
+  return emailed;
 }

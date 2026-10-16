@@ -7,6 +7,23 @@ import { DatabaseSync } from "node:sqlite";
 // everything that touches the database lives in this file, monitors-db.ts and auth.ts to keep that swap small.
 const DB_PATH = process.env.DATABASE_PATH ?? path.join(process.cwd(), "data", "app.db");
 
+/**
+ * Notifications. They deliberately do NOT depend on the monitor still existing: each keeps its own
+ * copy of the site's name, so a "site removed" notification survives the removal it describes.
+ * They belong to the user, and go when the user's account does.
+ */
+const eventsTable = (name: string) => `CREATE TABLE IF NOT EXISTS ${name} (
+    id         INTEGER PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    monitor_id INTEGER,
+    host       TEXT    NOT NULL,
+    kind       TEXT    NOT NULL,
+    message    TEXT    NOT NULL,
+    details    TEXT,
+    emailed    INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
+  );`;
+
 const SCHEMA = `
   CREATE TABLE IF NOT EXISTS users (
     id             INTEGER PRIMARY KEY,
@@ -80,16 +97,7 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS monitors_user ON monitors(user_id);
 
   -- What the system did and told the user: alerts raised, and whether the email went out.
-  CREATE TABLE IF NOT EXISTS monitor_events (
-    id         INTEGER PRIMARY KEY,
-    monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
-    user_id    INTEGER NOT NULL,
-    kind       TEXT    NOT NULL,
-    message    TEXT    NOT NULL,
-    details    TEXT,
-    emailed    INTEGER NOT NULL DEFAULT 0,
-    created_at INTEGER NOT NULL
-  );
+  ${eventsTable("monitor_events")}
   CREATE INDEX IF NOT EXISTS monitor_events_user ON monitor_events(user_id, created_at);
 
   CREATE TABLE IF NOT EXISTS uptime_checks (
@@ -101,10 +109,30 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS uptime_checks_monitor ON uptime_checks(monitor_id, at);
 `;
 
-/** CREATE TABLE IF NOT EXISTS won't add columns to a table that already exists, so older databases get them here. */
+/** CREATE TABLE IF NOT EXISTS won't change a table that already exists, so older databases are brought up to date here. */
 function migrate(conn: DatabaseSync) {
-  const columns = (conn.prepare("PRAGMA table_info(monitor_events)").all() as { name: string }[]).map((c) => c.name);
-  if (!columns.includes("details")) conn.exec("ALTER TABLE monitor_events ADD COLUMN details TEXT");
+  const columns = () => (conn.prepare("PRAGMA table_info(monitor_events)").all() as { name: string }[]).map((c) => c.name);
+
+  if (!columns().includes("details")) conn.exec("ALTER TABLE monitor_events ADD COLUMN details TEXT");
+
+  // Older notifications were tied to their monitor and deleted with it. Rebuild the table so they keep
+  // their own site name and outlive it. One transaction: it either fully happens or not at all.
+  if (!columns().includes("host")) {
+    conn.exec("BEGIN");
+    try {
+      conn.exec(eventsTable("monitor_events_new"));
+      conn.exec(`INSERT INTO monitor_events_new (id, user_id, monitor_id, host, kind, message, details, emailed, created_at)
+                 SELECT e.id, e.user_id, e.monitor_id, COALESCE(m.host, 'a removed site'), e.kind, e.message, e.details, e.emailed, e.created_at
+                 FROM monitor_events e LEFT JOIN monitors m ON m.id = e.monitor_id`);
+      conn.exec("DROP TABLE monitor_events");
+      conn.exec("ALTER TABLE monitor_events_new RENAME TO monitor_events");
+      conn.exec("CREATE INDEX IF NOT EXISTS monitor_events_user ON monitor_events(user_id, created_at)");
+      conn.exec("COMMIT");
+    } catch (err) {
+      conn.exec("ROLLBACK");
+      throw err;
+    }
+  }
 }
 
 // Dev mode reloads modules often; keep one connection on globalThis instead of one per reload.

@@ -7,6 +7,7 @@ import { type EventItem, ago, useMonitors } from "@/components/monitor-ui";
 const KINDS: Record<string, { label: string; tone: string }> = {
   created: { label: "Site added", tone: "bg-ok-bg text-ok" },
   edited: { label: "Site edited", tone: "bg-accent/15 text-accent" },
+  removed: { label: "Site removed", tone: "border border-border text-muted" },
   recovered: { label: "Back up", tone: "bg-ok-bg text-ok" },
   ssl_expiry: { label: "SSL expiry", tone: "bg-warn-bg text-warn" },
   domain_expiry: { label: "Domain expiry", tone: "bg-warn-bg text-warn" },
@@ -92,8 +93,7 @@ export default function Notifications() {
               ))}
             </ul>
             <p className="mt-3 text-xs text-muted">
-              Showing your latest {data.events.length} notifications. Notifications for a site are removed when you stop
-              watching it.
+              Showing your latest {data.events.length} notifications.
             </p>
           </>
         )}

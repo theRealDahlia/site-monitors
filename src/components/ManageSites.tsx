@@ -203,8 +203,13 @@ export default function ManageSites() {
     try {
       const res = await fetch(`/api/monitors/${id}`, { method: "DELETE" });
       if (res.ok) {
+        const body = await res.json();
         setConfirmingId(null);
-        setNotice("Site removed. We've stopped watching it.");
+        setNotice(
+          body.emailed
+            ? "Site removed. We've stopped watching it and emailed you a confirmation."
+            : "Site removed. We've stopped watching it. We couldn't send the confirmation email, but it's recorded in your Notifications.",
+        );
         await reload();
       } else {
         setRowError({ id, message: (await res.json()).error ?? "Couldn't remove it." });

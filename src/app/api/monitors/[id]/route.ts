@@ -1,7 +1,7 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
 import { CheckError, parseHostname } from "@/lib/hostname";
 import { ALL_CHECKS, runChecks } from "@/lib/monitor-runner";
-import { sendEditNotice } from "@/lib/watch-email";
+import { sendEditNotice, sendRemovalNotice } from "@/lib/watch-email";
 import { monitorView } from "@/lib/monitor-view";
 import { type MonitorRow, deleteMonitor, getMonitor, retargetMonitor } from "@/lib/monitors-db";
 import { rateLimit } from "@/lib/rate-limit";
@@ -65,8 +65,13 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/monitors/
   if (!user) return Response.json({ error: "Log in first." }, { status: 401 });
 
   const id = Number((await ctx.params).id);
-  if (!Number.isInteger(id) || !deleteMonitor(id, user.id)) {
+  // Read it first: once it's deleted there's nothing left to describe in the email.
+  const monitor = Number.isInteger(id) ? getMonitor(id, user.id) : undefined;
+  if (!monitor || !deleteMonitor(id, user.id)) {
     return Response.json({ error: "Monitor not found." }, { status: 404 });
   }
-  return Response.json({ ok: true });
+
+  // The site is already gone, so nothing about the email can undo or block the removal.
+  const emailed = await sendRemovalNotice({ monitor, email: user.email });
+  return Response.json({ ok: true, emailed });
 }

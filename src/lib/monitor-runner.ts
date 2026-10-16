@@ -207,7 +207,7 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
   updateMonitor(m.id, update);
   for (const e of logged) {
     try {
-      addEvent(m.id, m.user_id, e.kind, e.message, e.emailed, Date.now());
+      addEvent({ userId: m.user_id, monitorId: m.id, host: m.host, kind: e.kind, message: e.message, emailed: e.emailed });
     } catch {
       // The monitor was deleted while its checks were running; nothing to log.
     }
