@@ -1,8 +1,18 @@
 import { DOMAIN_THRESHOLDS, SSL_THRESHOLDS } from "./alerts";
+import { sendAlertToChannels } from "./channels";
 import { appUrl, sendMail } from "./mail";
-import { DOMAIN_EVERY, SSL_EVERY, UPTIME_EVERY, everyText } from "./monitor-config";
+import { DOMAIN_EVERY, SSL_EVERY, everyText } from "./monitor-config";
 import { describeHealth } from "./monitor-summary";
 import { type MonitorRow, addEvent } from "./monitors-db";
+
+/**
+ * Posts to the owner's Slack and Discord channels (Starter plan). It doesn't wait: nobody should sit
+ * on a slow Slack when they've just added a site, and a broken channel is recorded against that
+ * channel and never affects the email or the change itself.
+ */
+function tellChannels(userId: number, plan: string, message: Parameters<typeof sendAlertToChannels>[2]): void {
+  sendAlertToChannels(userId, plan, message).catch((err) => console.error("channel notice failed", err));
+}
 
 const list = (nums: number[]) => {
   const sorted = [...nums].sort((a, b) => b - a);
@@ -16,9 +26,23 @@ export async function sendWatchConfirmation(opts: {
   host: string;
   email: string;
   createdAt: number;
+  /** How often this account's uptime checks run, in milliseconds. */
+  uptimeEveryMs: number;
+  /** The account's plan, which decides whether Slack and Discord get this too. */
+  plan: string;
 }): Promise<void> {
   const added = new Date(opts.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
   const subject = `Now watching ${opts.host}`;
+
+  tellChannels(opts.userId, opts.plan, {
+    kind: "created",
+    subject,
+    body:
+      `Your monitor for ${opts.host} is now active.\n` +
+      `• Uptime: checked every ${everyText(opts.uptimeEveryMs)}\n` +
+      `• SSL certificate: checked every ${everyText(SSL_EVERY)}\n` +
+      `• Domain registration: checked every ${everyText(DOMAIN_EVERY)}`,
+  });
 
   await sendMail({
     to: opts.email,
@@ -26,7 +50,7 @@ export async function sendWatchConfirmation(opts: {
     text:
       `Your monitor for ${opts.host} has been created and is now active.\n\n` +
       `Here's what we're watching:\n` +
-      `- Uptime: checked every ${everyText(UPTIME_EVERY)}\n` +
+      `- Uptime: checked every ${everyText(opts.uptimeEveryMs)}\n` +
       `- SSL certificate: checked every ${everyText(SSL_EVERY)}, with warnings ${list(SSL_THRESHOLDS)} days before it expires\n` +
       `- Domain registration: checked every ${everyText(DOMAIN_EVERY)}, with warnings ${list(DOMAIN_THRESHOLDS)} days before it expires\n\n` +
       `We'll email you at this address if the site goes down or something is about to expire, and again when it's back up.\n\n` +
@@ -42,8 +66,14 @@ export async function sendWatchConfirmation(opts: {
  * site. The same text is saved as a notification, so the Notifications tab matches the email. The
  * notification is recorded even if the email can't be sent, and says so.
  */
-export async function sendEditNotice(opts: { monitor: MonitorRow; oldHost: string; email: string }): Promise<void> {
-  const { monitor: m, oldHost, email } = opts;
+export async function sendEditNotice(opts: {
+  monitor: MonitorRow;
+  oldHost: string;
+  email: string;
+  uptimeEveryMs: number;
+  plan: string;
+}): Promise<void> {
+  const { monitor: m, oldHost, email, uptimeEveryMs } = opts;
   const health = describeHealth(m);
 
   const details =
@@ -52,6 +82,7 @@ export async function sendEditNotice(opts: { monitor: MonitorRow; oldHost: strin
     `New status: ${health.overall}\n` +
     health.lines.join("\n");
   const subject = `Monitor updated: ${oldHost} to ${m.host} (${health.overall})`;
+  tellChannels(m.user_id, opts.plan, { kind: "edited", subject, body: details });
 
   let emailed = true;
   try {
@@ -62,7 +93,7 @@ export async function sendEditNotice(opts: { monitor: MonitorRow; oldHost: strin
         `Your monitor was updated. It now watches ${m.host} instead of ${oldHost}.\n\n` +
         `${details}\n\n` +
         `We've cleared everything we knew about ${oldHost} and run all the checks again on ${m.host}. ` +
-        `From now on we'll check uptime every ${everyText(UPTIME_EVERY)}, the SSL certificate every ${everyText(SSL_EVERY)} ` +
+        `From now on we'll check uptime every ${everyText(uptimeEveryMs)}, the SSL certificate every ${everyText(SSL_EVERY)} ` +
         `and the domain registration every ${everyText(DOMAIN_EVERY)}, and email you at this address if anything needs attention.\n\n` +
         `See its status: ${appUrl()}/dashboard\n\n` +
         `If you didn't make this change, log in and review your sites on the Manage sites tab.`,
@@ -83,7 +114,7 @@ export async function sendEditNotice(opts: { monitor: MonitorRow; oldHost: strin
  * kept even though the monitor is gone, and records honestly whether the email went out.
  * Returns whether the email was sent.
  */
-export async function sendRemovalNotice(opts: { monitor: MonitorRow; email: string }): Promise<boolean> {
+export async function sendRemovalNotice(opts: { monitor: MonitorRow; email: string; plan: string }): Promise<boolean> {
   const { monitor: m, email } = opts;
   const health = describeHealth(m);
   const since = new Date(m.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
@@ -93,6 +124,8 @@ export async function sendRemovalNotice(opts: { monitor: MonitorRow; email: stri
     `Watched since: ${since}\n\n` +
     `Last known status: ${health.overall}\n` +
     health.lines.join("\n");
+
+  tellChannels(m.user_id, opts.plan, { kind: "removed", subject: `Stopped watching ${m.host}`, body: details });
 
   let emailed = true;
   try {

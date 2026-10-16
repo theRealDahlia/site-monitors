@@ -30,6 +30,9 @@ const SCHEMA = `
     email          TEXT    NOT NULL UNIQUE,
     password_hash  TEXT    NOT NULL,
     email_verified INTEGER NOT NULL DEFAULT 0,
+    plan           TEXT    NOT NULL DEFAULT 'free',
+    -- The development-only admin flag. No code in this project sets it, and the database allows at most one.
+    is_admin       INTEGER NOT NULL DEFAULT 0,
     created_at     TEXT    NOT NULL
   );
 
@@ -92,6 +95,12 @@ const SCHEMA = `
     dom_alert_bucket INTEGER,
 
     last_manual_check_at INTEGER,
+
+    -- Public status page. The slug is random so the address can't be guessed, and it stays the
+    -- same if the page is switched off and on again.
+    status_public INTEGER NOT NULL DEFAULT 0,
+    status_slug   TEXT,
+
     UNIQUE (user_id, host)
   );
   CREATE INDEX IF NOT EXISTS monitors_user ON monitors(user_id);
@@ -99,6 +108,39 @@ const SCHEMA = `
   -- What the system did and told the user: alerts raised, and whether the email went out.
   ${eventsTable("monitor_events")}
   CREATE INDEX IF NOT EXISTS monitor_events_user ON monitor_events(user_id, created_at);
+
+  -- Raw one-minute checks are only kept for a couple of days; older ones are rolled up into hourly totals.
+  CREATE TABLE IF NOT EXISTS uptime_hourly (
+    monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
+    hour       INTEGER NOT NULL,
+    total      INTEGER NOT NULL,
+    ok         INTEGER NOT NULL,
+    PRIMARY KEY (monitor_id, hour)
+  );
+
+  -- Periods when a site was confirmed down, shown on its status page.
+  CREATE TABLE IF NOT EXISTS monitor_incidents (
+    id         INTEGER PRIMARY KEY,
+    monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
+    started_at INTEGER NOT NULL,
+    ended_at   INTEGER,
+    error      TEXT
+  );
+  CREATE INDEX IF NOT EXISTS monitor_incidents_monitor ON monitor_incidents(monitor_id, started_at);
+
+  -- Slack and Discord webhooks. The URL is a secret, so it is stored encrypted.
+  CREATE TABLE IF NOT EXISTS notification_channels (
+    id              INTEGER PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind            TEXT    NOT NULL,
+    name            TEXT    NOT NULL,
+    url_enc         TEXT    NOT NULL,
+    created_at      INTEGER NOT NULL,
+    last_attempt_at INTEGER,
+    last_ok_at      INTEGER,
+    last_error      TEXT
+  );
+  CREATE INDEX IF NOT EXISTS notification_channels_user ON notification_channels(user_id);
 
   CREATE TABLE IF NOT EXISTS uptime_checks (
     monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
@@ -114,6 +156,22 @@ function migrate(conn: DatabaseSync) {
   const columns = () => (conn.prepare("PRAGMA table_info(monitor_events)").all() as { name: string }[]).map((c) => c.name);
 
   if (!columns().includes("details")) conn.exec("ALTER TABLE monitor_events ADD COLUMN details TEXT");
+
+  const has = (table: string, column: string) =>
+    (conn.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column);
+  if (!has("users", "plan")) conn.exec("ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'");
+  if (!has("users", "is_admin")) conn.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+  if (!has("monitors", "status_public")) conn.exec("ALTER TABLE monitors ADD COLUMN status_public INTEGER NOT NULL DEFAULT 0");
+  if (!has("monitors", "status_slug")) conn.exec("ALTER TABLE monitors ADD COLUMN status_slug TEXT");
+  // At most one account can ever carry the admin flag. The database itself refuses a second one, so
+  // nothing (a stray command, a mistake, a bug) can create more admins.
+  try {
+    conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS users_single_admin ON users(is_admin) WHERE is_admin = 1");
+  } catch {
+    console.error("[admin] More than one account has the admin flag, so the one-admin rule couldn't be applied. Remove the extras.");
+  }
+  // Created here, not in SCHEMA, because on an older database the column only exists after the ALTER above.
+  conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS monitors_status_slug ON monitors(status_slug) WHERE status_slug IS NOT NULL");
 
   // Older notifications were tied to their monitor and deleted with it. Rebuild the table so they keep
   // their own site name and outlive it. One transaction: it either fully happens or not at all.
@@ -183,13 +241,19 @@ export function insertSession(tokenHash: string, userId: number, expiresAt: numb
     .run(tokenHash, userId, new Date().toISOString(), expiresAt);
 }
 
-export function findSessionUser(tokenHash: string): { id: number; email: string } | undefined {
-  return db()
+export function findSessionUser(tokenHash: string): { id: number; email: string; plan: string; isAdmin: boolean } | undefined {
+  const row = db()
     .prepare(
-      `SELECT u.id, u.email FROM sessions s JOIN users u ON u.id = s.user_id
+      `SELECT u.id, u.email, u.plan, u.is_admin FROM sessions s JOIN users u ON u.id = s.user_id
        WHERE s.token_hash = ? AND s.expires_at > ?`,
     )
-    .get(tokenHash, Date.now()) as { id: number; email: string } | undefined;
+    .get(tokenHash, Date.now()) as { id: number; email: string; plan: string; is_admin: number } | undefined;
+  return row && { id: row.id, email: row.email, plan: row.plan, isAdmin: row.is_admin === 1 };
+}
+
+/** Changes an account's plan. Callers must have decided the change is allowed. */
+export function setUserPlan(userId: number, plan: string): void {
+  db().prepare("UPDATE users SET plan = ? WHERE id = ?").run(plan, userId);
 }
 
 export function deleteSession(tokenHash: string): void {

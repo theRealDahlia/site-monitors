@@ -1,5 +1,6 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
 import { CheckError, parseHostname } from "@/lib/hostname";
+import { entitlementsFor } from "@/lib/entitlements";
 import { ALL_CHECKS, runChecks } from "@/lib/monitor-runner";
 import { sendEditNotice, sendRemovalNotice } from "@/lib/watch-email";
 import { monitorView } from "@/lib/monitor-view";
@@ -43,7 +44,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/monitors/[
     let notified = false;
     const notify = async (row: MonitorRow) => {
       notified = true;
-      await sendEditNotice({ monitor: row, oldHost: monitor.host, email: user.email });
+      await sendEditNotice({ monitor: row, oldHost: monitor.host, email: user.email, uptimeEveryMs: entitlementsFor(user.plan).uptimeEveryMs, plan: user.plan });
     };
     for (let attempt = 0; attempt < 4; attempt++) {
       if (await runChecks(id, ALL_CHECKS, { afterChecks: notify })) break;
@@ -72,6 +73,6 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/monitors/
   }
 
   // The site is already gone, so nothing about the email can undo or block the removal.
-  const emailed = await sendRemovalNotice({ monitor, email: user.email });
+  const emailed = await sendRemovalNotice({ monitor, email: user.email, plan: user.plan });
   return Response.json({ ok: true, emailed });
 }

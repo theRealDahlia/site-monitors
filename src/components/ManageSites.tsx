@@ -59,8 +59,84 @@ function EditForm({ m, busy, onSave, onCancel }: { m: Monitor; busy: Busy | unde
   );
 }
 
+/** Switch a site's public status page on or off, and share its link. */
+function StatusPageControl({ m, allowed, onChanged }: { m: Monitor; allowed: boolean; onChanged: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const enabled = m.statusPage.enabled && !!m.statusPage.slug;
+  const link = m.statusPage.slug ? `${typeof window === "undefined" ? "" : window.location.origin}/status/${m.statusPage.slug}` : "";
+
+  async function toggle() {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/monitors/${m.id}/status-page`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: !enabled }),
+      });
+      if (!res.ok) setError((await res.json()).error ?? "Something went wrong.");
+      else await onChanged();
+    } catch {
+      setError("Couldn't reach the server. Try again.");
+    }
+    setBusy(false);
+  }
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Couldn't copy. Select the link and copy it yourself.");
+    }
+  }
+
+  if (!allowed) {
+    return <p className="mt-4 border-t border-border pt-4 text-sm text-muted">A public status page for this site is part of the Starter plan.</p>;
+  }
+
+  return (
+    <div className="mt-4 border-t border-border pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">Public status page</p>
+          <p className="text-xs text-muted">
+            {enabled ? "Anyone with the link can see this site's status and uptime." : "Off. Share a live status and uptime page for this site."}
+          </p>
+        </div>
+        <button onClick={toggle} disabled={busy} role="switch" aria-checked={enabled} className={SMALL_BUTTON}>
+          {busy ? "Saving…" : enabled ? "Turn off" : "Turn on"}
+        </button>
+      </div>
+      {enabled && (
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <input readOnly value={link} aria-label="Status page link" onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm text-muted" />
+          <div className="flex gap-2">
+            <button onClick={copy} className={SMALL_BUTTON}>
+              {copied ? "Copied" : "Copy link"}
+            </button>
+            <a href={link} target="_blank" rel="noopener noreferrer" className={SMALL_BUTTON}>
+              Open
+            </a>
+          </div>
+        </div>
+      )}
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-bad">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function SiteRow({
   m,
+  statusPagesAllowed,
+  onChanged,
   editing,
   busy,
   confirming,
@@ -73,6 +149,8 @@ function SiteRow({
   onDelete,
 }: {
   m: Monitor;
+  statusPagesAllowed: boolean;
+  onChanged: () => Promise<void>;
   editing: boolean;
   busy: Busy | undefined;
   confirming: boolean;
@@ -93,6 +171,8 @@ function SiteRow({
         </div>
         <StatusBadge status={m.overall} />
       </div>
+
+      {!editing && <StatusPageControl m={m} allowed={statusPagesAllowed} onChanged={onChanged} />}
 
       {editing ? (
         <EditForm m={m} busy={busy} onSave={onSave} onCancel={onCancelEdit} />
@@ -243,7 +323,7 @@ export default function ManageSites() {
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="font-semibold">Add a site</h2>
           <p className="text-sm text-muted">
-            {data.monitors.length} of {data.limit} sites
+            {data.monitors.length} of {data.limit} sites · {data.plan.name} plan
           </p>
         </div>
         <form onSubmit={addSite} className="mt-3 flex flex-col gap-3 sm:flex-row">
@@ -308,6 +388,8 @@ export default function ManageSites() {
               <SiteRow
                 key={m.id}
                 m={m}
+                statusPagesAllowed={data.plan.statusPages}
+                onChanged={reload}
                 editing={editingId === m.id}
                 busy={busyId?.id === m.id ? busyId.what : undefined}
                 confirming={confirmingId === m.id}

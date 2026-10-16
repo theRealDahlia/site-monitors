@@ -31,6 +31,26 @@ sudo systemctl reload caddy
 sh /opt/site-monitors/deploy/update.sh
 ```
 
+## Setting an account's plan
+
+There's no billing yet. To give an account the Starter plan (25 sites, 1-minute checks, Slack and Discord
+alerts, public status pages), run this on the server from `/opt/site-monitors`:
+
+```sh
+node scripts/set-plan.mjs someone@example.com starter
+node scripts/set-plan.mjs someone@example.com free     # to put them back
+```
+
+It takes effect straight away. Downgrading never deletes anything: extra sites stay (but no new ones can be
+added), and Slack/Discord alerts and status pages simply stop working until the account is on Starter again.
+
+## There is no admin in production
+
+The site has a development-only admin that can switch its own account between plans, to test the site at
+every price point. It works only in development mode (`next dev`) and nothing turns it on in production:
+no setting, no environment variable, no command. A production server has no admin accounts, can't create
+one, and ignores the admin flag even if a copied database contains it.
+
 ## Notes
 
 - Run **one** copy only. The monitor checker, rate limits and SQLite database all assume a single server.

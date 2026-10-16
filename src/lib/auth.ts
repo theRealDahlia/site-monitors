@@ -1,5 +1,7 @@
 import { createHash, createHmac, randomBytes, randomInt, scrypt, timingSafeEqual } from "node:crypto";
 import { BRAND } from "./brand";
+import { adminEnabled } from "./admin";
+import { type PlanId, planId } from "./entitlements";
 import {
   deleteSession,
   deleteSignupCode,
@@ -26,6 +28,9 @@ export const PASSWORD_MAX = 128; // bounds hashing work per request
 export interface SessionUser {
   id: number;
   email: string;
+  plan: PlanId;
+  /** The development-only admin. Always false outside development mode. */
+  isAdmin: boolean;
 }
 
 // ---------- input validation ----------
@@ -121,7 +126,9 @@ export function startSession(userId: number): string {
 
 export function currentUser(request: Request): SessionUser | null {
   const token = cookieValue(request.headers.get("cookie"), SESSION_COOKIE);
-  return token ? (findSessionUser(sha256(token)) ?? null) : null;
+  const user = token ? findSessionUser(sha256(token)) : undefined;
+  // The admin flag only counts where admin is switched on (always in development, opt-in in production).
+  return user ? { ...user, plan: planId(user.plan), isAdmin: user.isAdmin && adminEnabled() } : null;
 }
 
 /** Ends the session and returns the Set-Cookie header that clears it. */

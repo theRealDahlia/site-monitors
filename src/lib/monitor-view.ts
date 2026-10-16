@@ -1,7 +1,5 @@
 import { type MonitorRow, uptimeSince } from "./monitors-db";
 
-export const MAX_MONITORS = 5;
-
 export type OverallStatus = "pending" | "ok" | "warning" | "problem" | "down";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -25,6 +23,7 @@ export function monitorView(m: MonitorRow) {
     host: m.host,
     createdAt: m.created_at,
     overall,
+    statusPage: { enabled: !!m.status_public, slug: m.status_slug },
     uptime: {
       status: m.up_status,
       code: m.up_code,

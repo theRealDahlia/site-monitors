@@ -6,7 +6,7 @@ import ProfileMenu from "@/components/ProfileMenu";
 
 export default function AuthNav() {
   // undefined = still loading, null = signed out
-  const [user, setUser] = useState<{ email: string } | null | undefined>(undefined);
+  const [user, setUser] = useState<{ email: string; plan: string; isAdmin: boolean; plans?: { id: string; name: string }[] } | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
@@ -21,7 +21,7 @@ export default function AuthNav() {
 
   if (user === undefined) return <span className="h-9 w-28" aria-hidden />;
 
-  if (user) return <ProfileMenu email={user.email} />;
+  if (user) return <ProfileMenu email={user.email} plan={user.plan} isAdmin={user.isAdmin} plans={user.plans ?? []} />;
 
   return (
     <>

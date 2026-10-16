@@ -1,9 +1,10 @@
 import { runChecks } from "./monitor-runner";
-import { dueMonitors, pruneHistory } from "./monitors-db";
+import { dueMonitors, pruneHistory, rollupHistory } from "./monitors-db";
 
-const TICK_MS = Number(process.env.MONITOR_TICK_MS) || 30_000;
-const BATCH = 40;
-const CONCURRENCY = 4;
+// Starter checks every minute, so look for due work often: with a 15-second tick a one-minute check runs every 60 to 75 seconds.
+const TICK_MS = Number(process.env.MONITOR_TICK_MS) || 15_000;
+const BATCH = 100;
+const CONCURRENCY = Number(process.env.MONITOR_CONCURRENCY) || 8;
 const KEEP_HISTORY_MS = 35 * 24 * 60 * 60 * 1000;
 
 interface SchedulerGlobals {
@@ -34,6 +35,7 @@ async function tick() {
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, due.length) }, worker));
 
     if (now - (g.__monitorLastPrune ?? 0) > 60 * 60 * 1000) {
+      rollupHistory(now);
       pruneHistory(now - KEEP_HISTORY_MS);
       g.__monitorLastPrune = now;
     }

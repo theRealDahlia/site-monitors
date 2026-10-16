@@ -2,7 +2,19 @@ import { type Alert, evaluateDomain, evaluateSsl, evaluateUptime } from "./alert
 import { checkDomain } from "./domain-check";
 import { CheckError } from "./hostname";
 import { sendMail } from "./mail";
-import { type MonitorRow, type MonitorUpdate, addEvent, countEmailsSince, getMonitorWithOwner, recordUptime, updateMonitor } from "./monitors-db";
+import { sendAlertToChannels } from "./channels";
+import { entitlementsFor } from "./entitlements";
+import {
+  type MonitorRow,
+  type MonitorUpdate,
+  addEvent,
+  closeIncident,
+  countEmailsSince,
+  getMonitorWithOwner,
+  openIncident,
+  recordUptime,
+  updateMonitor,
+} from "./monitors-db";
 import { checkSsl } from "./ssl-check";
 import { checkUptime } from "./uptime-check";
 import {
@@ -12,7 +24,6 @@ import {
   DOMAIN_UNSUPPORTED_EVERY,
   SSL_EVERY,
   SSL_RETRY,
-  UPTIME_EVERY,
   UPTIME_RECHECK,
 } from "./monitor-config";
 
@@ -104,11 +115,15 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
       up_ms: up.ms,
       up_error: up.error,
       up_checked_at: now,
-      up_due_at: now + (r.recheckSoon ? UPTIME_RECHECK : UPTIME_EVERY),
+      up_due_at: now + (r.recheckSoon ? UPTIME_RECHECK : entitlementsFor(m.owner_plan).uptimeEveryMs),
       up_failures: r.state.failures,
       down_since: r.state.downSince,
       down_alerted: r.state.downAlerted ? 1 : 0,
     } satisfies MonitorUpdate);
+    // Keep a record of confirmed outages for the public status page.
+    if (r.state.downAlerted && !m.down_alerted && r.state.downSince) openIncident(m.id, r.state.downSince, up.error);
+    if (!r.state.downAlerted && m.down_alerted) closeIncident(m.id, now);
+
     for (const alert of r.alerts) {
       pending.push({
         alert,
@@ -190,17 +205,28 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
   let sentToday = pending.length ? countEmailsSince(m.user_id, now - DAY) : 0;
   const logged: { kind: string; message: string; emailed: boolean }[] = [];
   for (const { alert, revert } of pending) {
+    // "Handled" means the alert has reached the user by email, or email was deliberately skipped.
+    let handled = false;
     if (sentToday >= EMAILS_PER_DAY) {
       logged.push({ kind: alert.kind, message: `${alert.subject} (email skipped: daily limit reached)`, emailed: false });
-      continue;
+      handled = true;
+    } else {
+      try {
+        await sendMail({ to: ownerEmail, subject: alert.subject, text: alert.body });
+        sentToday++;
+        logged.push({ kind: alert.kind, message: alert.subject, emailed: true });
+        handled = true;
+      } catch (err) {
+        console.error(`alert email for ${m.host} failed; will retry`, err);
+        Object.assign(update, revert);
+      }
     }
-    try {
-      await sendMail({ to: ownerEmail, subject: alert.subject, text: alert.body });
-      sentToday++;
-      logged.push({ kind: alert.kind, message: alert.subject, emailed: true });
-    } catch (err) {
-      console.error(`alert email for ${m.host} failed; will retry`, err);
-      Object.assign(update, revert);
+    // Slack and Discord get it too (Starter plan). Only once email has gone through: if email failed
+    // the alert is retried next time, and sending to the channels now would post it twice.
+    if (handled) {
+      await sendAlertToChannels(m.user_id, m.owner_plan, { subject: alert.subject, body: alert.body, kind: alert.kind }).catch((err) =>
+        console.error(`channel delivery for ${m.host} failed`, err),
+      );
     }
   }
 

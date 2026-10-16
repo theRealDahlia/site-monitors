@@ -1,7 +1,8 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
 import { CheckError, parseHostname } from "@/lib/hostname";
 import { ALL_CHECKS, runChecks } from "@/lib/monitor-runner";
-import { MAX_MONITORS, monitorView } from "@/lib/monitor-view";
+import { entitlementsFor } from "@/lib/entitlements";
+import { monitorView } from "@/lib/monitor-view";
 import { countMonitors, getMonitor, insertMonitor, listMonitors, recentEvents } from "@/lib/monitors-db";
 import { rateLimit } from "@/lib/rate-limit";
 import { sendWatchConfirmation } from "@/lib/watch-email";
@@ -13,9 +14,11 @@ export async function GET(request: Request) {
   const user = currentUser(request);
   if (!user) return Response.json({ error: "Log in to see your monitors." }, { status: 401 });
 
+  const plan = entitlementsFor(user.plan);
   return Response.json({
     email: user.email,
-    limit: MAX_MONITORS,
+    plan: { id: user.plan, name: plan.name, statusPages: plan.statusPages, integrations: plan.integrations },
+    limit: plan.maxMonitors,
     monitors: listMonitors(user.id).map(monitorView),
     events: recentEvents(user.id, 50).map((e) => ({
       id: e.id,
@@ -48,9 +51,10 @@ export async function POST(request: Request) {
     const host = parseHostname(typeof body.host === "string" ? body.host : "", { ignorePort: true });
     await resolvePublicAddress(host); // catches typos and private addresses before we save anything
 
-    if (countMonitors(user.id) >= MAX_MONITORS) {
+    const plan = entitlementsFor(user.plan);
+    if (countMonitors(user.id) >= plan.maxMonitors) {
       return Response.json(
-        { error: `Free accounts can watch up to ${MAX_MONITORS} sites. Remove one to add another.`, code: "monitor_limit" },
+        { error: `${plan.name} accounts can watch up to ${plan.maxMonitors} sites. Remove one to add another.`, code: "monitor_limit" },
         { status: 403 },
       );
     }
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
     // Confirm by email first, so it arrives before any alert the first checks might raise. A failed
     // send must never undo the monitor: it exists either way, and the dashboard shows it.
     try {
-      await sendWatchConfirmation({ monitorId: id, userId: user.id, host, email: user.email, createdAt: Date.now() });
+      await sendWatchConfirmation({ monitorId: id, userId: user.id, host, email: user.email, createdAt: Date.now(), uptimeEveryMs: plan.uptimeEveryMs, plan: user.plan });
     } catch (err) {
       console.error(`watch confirmation for ${host} failed`, err);
     }
