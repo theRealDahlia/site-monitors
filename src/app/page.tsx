@@ -1,3 +1,4 @@
+import SignedInRedirect from "@/components/SignedInRedirect";
 import Link from "next/link";
 import SslChecker from "@/components/SslChecker";
 import AlertsCta from "@/components/AlertsCta";
@@ -27,6 +28,7 @@ export default function Home() {
   return (
     <>
       <Header />
+      <SignedInRedirect />
       <main>
         <section className="mx-auto max-w-5xl px-4 pb-16 pt-14 sm:px-6 sm:pt-20">
           <p className="text-sm font-medium text-accent">For agencies and freelancers</p>

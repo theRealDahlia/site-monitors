@@ -20,8 +20,17 @@ async function post(url: string, body: unknown) {
   return { ok: res.ok, data: await res.json().catch(() => ({})) };
 }
 
-// Keep the visitor's place: /signup?next=/ssl-checker returns them to the checker afterwards.
-const nextUrl = () => safeNext(new URLSearchParams(window.location.search).get("next"));
+// Where to go after logging in or signing up: the dashboard. The one exception is a visitor who was
+// bounced to the login page from a specific dashboard page (/login?next=/dashboard/sites): they go back
+// there. Anything else in `next` (a checker page, another site) is ignored.
+const afterAuthUrl = () => {
+  const next = safeNext(new URLSearchParams(window.location.search).get("next"));
+  return next === "/dashboard" || next.startsWith("/dashboard/") ? next : "/dashboard";
+};
+
+// "replace" instead of "assign", so the login or sign-up page doesn't stay in the browser history
+// for the Back button to return to.
+const goAfterAuth = () => window.location.replace(afterAuthUrl());
 
 function SwitchLink({ mode }: { mode: Mode }) {
   const target = mode === "signup" ? "/login" : "/signup";
@@ -71,7 +80,7 @@ function LoginForm() {
         return;
       }
       // Full navigation so every page re-reads the new session.
-      window.location.assign(nextUrl());
+      goAfterAuth();
     } catch {
       setError("Couldn't reach the server. Try again.");
       setLoading(false);
@@ -173,7 +182,7 @@ function SignupForm() {
         setLoading(false);
         return;
       }
-      window.location.assign(nextUrl());
+      goAfterAuth();
     } catch {
       setError("Couldn't reach the server. Try again.");
       setLoading(false);

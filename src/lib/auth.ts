@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes, randomInt, scrypt, timingSafeEqual } from "node:crypto";
 import { BRAND } from "./brand";
 import { adminEnabled } from "./admin";
+import { SESSION_COOKIE } from "./cookie-names";
 import { type PlanId, planId } from "./entitlements";
 import {
   deleteSession,
@@ -16,7 +17,6 @@ import { secret } from "./secret";
 
 export { safeNext } from "./safe-next";
 
-const SESSION_COOKIE = "sm_session";
 const SESSION_DAYS = 30;
 
 // scrypt cost: ~32 MB and tens of milliseconds per hash. Raise N as hardware allows.

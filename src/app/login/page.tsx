@@ -1,3 +1,4 @@
+import SignedInRedirect from "@/components/SignedInRedirect";
 import type { Metadata } from "next";
 import AuthForm from "@/components/AuthForm";
 import { Footer, Header } from "@/components/SiteChrome";
@@ -10,6 +11,7 @@ export default function LoginPage() {
   return (
     <>
       <Header />
+      <SignedInRedirect />
       <main className="mx-auto w-full max-w-md px-4 py-14 sm:px-6">
         <h1 className="text-3xl font-semibold tracking-tight">Log in</h1>
         <div className="mt-8">

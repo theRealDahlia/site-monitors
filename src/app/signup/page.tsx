@@ -1,3 +1,4 @@
+import SignedInRedirect from "@/components/SignedInRedirect";
 import type { Metadata } from "next";
 import AuthForm from "@/components/AuthForm";
 import { Footer, Header } from "@/components/SiteChrome";
@@ -11,6 +12,7 @@ export default function SignupPage() {
   return (
     <>
       <Header />
+      <SignedInRedirect />
       <main className="mx-auto w-full max-w-md px-4 py-14 sm:px-6">
         <h1 className="text-3xl font-semibold tracking-tight">Create your free account</h1>
         <p className="mt-3 text-muted">
