@@ -1,0 +1,15 @@
+[Unit]
+Description=Site Monitors
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/site-monitors
+Environment=NODE_ENV=production
+# Listen on this machine only. Caddy is the one that faces the internet.
+ExecStart=/usr/bin/npm run start -- -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

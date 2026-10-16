@@ -1,0 +1,7 @@
+site-monitors.net {
+	reverse_proxy 127.0.0.1:3000
+}
+
+www.site-monitors.net {
+	redir https://site-monitors.net{uri} permanent
+}
