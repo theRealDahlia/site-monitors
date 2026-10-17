@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/cookie-names";
+import { LANDING_PARAM, LANDING_VALUE } from "@/lib/landing";
 
 /**
  * Keeps logged-in people on the app: the landing, login and sign-up pages and the free checkers send
@@ -15,6 +16,8 @@ import { SESSION_COOKIE } from "@/lib/cookie-names";
 export function proxy(request: NextRequest) {
   if (request.cookies.has(SESSION_COOKIE)) {
     const path = request.nextUrl.pathname;
+    // The credit link in the app opens the landing page on purpose (see src/lib/landing.ts).
+    if (path === "/" && request.nextUrl.searchParams.get(LANDING_PARAM) === LANDING_VALUE) return NextResponse.next();
     const to = path === "/pricing" ? "/dashboard/plans" : path === "/guides" || path.startsWith("/guides/") ? `/dashboard${path}` : "/dashboard";
     return NextResponse.redirect(new URL(to, request.url)); // 307: temporary, never cached as permanent
   }

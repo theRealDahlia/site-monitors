@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { LANDING_PARAM, LANDING_VALUE } from "@/lib/landing";
 
 /**
  * Sends a logged-in person into the app if they end up on a page that's only for visitors (the
@@ -15,6 +16,8 @@ export default function SignedInRedirect({ to = "/dashboard" }: { to?: `/dashboa
   useEffect(() => {
     let cancelled = false;
     const check = () => {
+      // Opened from the "Run by site-monitors.net" link in the app: stay on this page.
+      if (new URLSearchParams(window.location.search).get(LANDING_PARAM) === LANDING_VALUE) return;
       fetch("/api/auth/me", { cache: "no-store" })
         .then((r) => r.json())
         .then((d) => {

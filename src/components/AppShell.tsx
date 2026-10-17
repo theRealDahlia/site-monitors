@@ -57,6 +57,22 @@ const NAV = [
   { href: "/dashboard/plans", label: "Plans", icon: "plans" },
 ] as const;
 
+/** The logo spot. A logo links to Overview. The "Run by" credit has its own link, so it isn't wrapped in another. */
+function BrandHome({ branding, size, className, onNavigate }: { branding: Branding | null; size?: "sm" | "md"; className?: string; onNavigate?: () => void }) {
+  if (branding && !branding.logoUrl) {
+    return (
+      <div className={className}>
+        <BrandMark branding={branding} size={size} />
+      </div>
+    );
+  }
+  return (
+    <Link href="/dashboard" onClick={onNavigate} aria-label="Overview" className={className}>
+      <BrandMark branding={branding} size={size} />
+    </Link>
+  );
+}
+
 function Sidebar({ user, branding, onNavigate }: { user: User | null; branding: Branding | null; onNavigate?: () => void }) {
   const pathname = usePathname();
 
@@ -69,9 +85,7 @@ function Sidebar({ user, branding, onNavigate }: { user: User | null; branding: 
 
   return (
     <div className="flex h-full flex-col">
-      <Link href="/dashboard" onClick={onNavigate} aria-label="Overview" className="block px-5 py-5 pr-12">
-        <BrandMark branding={branding} />
-      </Link>
+      <BrandHome branding={branding} onNavigate={onNavigate} className="block px-5 py-5 pr-12" />
 
       <nav aria-label="App" className="flex-1 overflow-y-auto px-3">
         <ul className="space-y-0.5">
@@ -196,9 +210,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Narrow screens: a top bar with a button that opens the menu. */}
           <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
-            <Link href="/dashboard" aria-label="Overview">
-              <BrandMark branding={branding} size="sm" />
-            </Link>
+            <BrandHome branding={branding} size="sm" />
             <button
               ref={menuButton}
               type="button"
