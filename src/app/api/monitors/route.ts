@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     // Confirm by email first, so it arrives before any alert the first checks might raise. A failed
     // send must never undo the monitor: it exists either way, and the dashboard shows it.
     try {
-      await sendWatchConfirmation({ monitorId: id, userId: user.id, host, email: user.email, createdAt: Date.now(), uptimeEveryMs: plan.uptimeEveryMs, plan: user.plan });
+      await sendWatchConfirmation({ monitorId: id, userId: user.id, host, createdAt: Date.now(), uptimeEveryMs: plan.uptimeEveryMs, plan: user.plan });
     } catch (err) {
       console.error(`watch confirmation for ${host} failed`, err);
     }

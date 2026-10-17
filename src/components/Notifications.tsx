@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardTabs from "@/components/DashboardTabs";
 import { type EventItem, ago, useMonitors } from "@/components/monitor-ui";
 
 // What each kind of notification is called, and how serious it looks.
@@ -61,12 +60,10 @@ export default function Notifications() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Notifications</h1>
       <p className="mt-2 text-muted">
-        Every alert and confirmation we&apos;ve emailed to <span className="font-medium text-foreground">{data.email}</span>.
+        Every alert and update about your sites, and whether it was emailed.
       </p>
-
-      <DashboardTabs />
 
       {loadError && (
         <p role="alert" className="mt-4 rounded-lg bg-warn-bg px-4 py-3 text-sm text-warn">

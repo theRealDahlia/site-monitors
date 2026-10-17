@@ -1,6 +1,7 @@
 import { DOMAIN_THRESHOLDS, SSL_THRESHOLDS } from "./alerts";
 import { sendAlertToChannels } from "./channels";
-import { appUrl, sendMail } from "./mail";
+import { emailRecipients } from "./alert-emails";
+import { appUrl } from "./mail";
 import { DOMAIN_EVERY, SSL_EVERY, everyText } from "./monitor-config";
 import { describeHealth } from "./monitor-summary";
 import { type MonitorRow, addEvent } from "./monitors-db";
@@ -24,7 +25,6 @@ export async function sendWatchConfirmation(opts: {
   monitorId: number;
   userId: number;
   host: string;
-  email: string;
   createdAt: number;
   /** How often this account's uptime checks run, in milliseconds. */
   uptimeEveryMs: number;
@@ -44,8 +44,7 @@ export async function sendWatchConfirmation(opts: {
       `• Domain registration: checked every ${everyText(DOMAIN_EVERY)}`,
   });
 
-  await sendMail({
-    to: opts.email,
+  const sent = await emailRecipients(opts.userId, {
     subject,
     text:
       `Your monitor for ${opts.host} has been created and is now active.\n\n` +
@@ -53,12 +52,12 @@ export async function sendWatchConfirmation(opts: {
       `- Uptime: checked every ${everyText(opts.uptimeEveryMs)}\n` +
       `- SSL certificate: checked every ${everyText(SSL_EVERY)}, with warnings ${list(SSL_THRESHOLDS)} days before it expires\n` +
       `- Domain registration: checked every ${everyText(DOMAIN_EVERY)}, with warnings ${list(DOMAIN_THRESHOLDS)} days before it expires\n\n` +
-      `We'll email you at this address if the site goes down or something is about to expire, and again when it's back up.\n\n` +
+      `We'll email you if the site goes down or something is about to expire, and again when it's back up.\n\n` +
       `See its status: ${appUrl()}/dashboard\n` +
       `Added on ${added} (UTC).\n\n` +
       `If you didn't add this site, log in and remove it from the Manage sites tab.`,
   });
-  addEvent({ userId: opts.userId, monitorId: opts.monitorId, host: opts.host, kind: "created", message: `Started watching ${opts.host}`, emailed: true });
+  addEvent({ userId: opts.userId, monitorId: opts.monitorId, host: opts.host, kind: "created", message: `Started watching ${opts.host}`, emailed: sent > 0 });
 }
 
 /**
@@ -69,11 +68,10 @@ export async function sendWatchConfirmation(opts: {
 export async function sendEditNotice(opts: {
   monitor: MonitorRow;
   oldHost: string;
-  email: string;
   uptimeEveryMs: number;
   plan: string;
 }): Promise<void> {
-  const { monitor: m, oldHost, email, uptimeEveryMs } = opts;
+  const { monitor: m, oldHost, uptimeEveryMs } = opts;
   const health = describeHealth(m);
 
   const details =
@@ -84,22 +82,21 @@ export async function sendEditNotice(opts: {
   const subject = `Monitor updated: ${oldHost} to ${m.host} (${health.overall})`;
   tellChannels(m.user_id, opts.plan, { kind: "edited", subject, body: details });
 
-  let emailed = true;
+  let emailed = false;
   try {
-    await sendMail({
-      to: email,
+    const sent = await emailRecipients(m.user_id, {
       subject,
       text:
         `Your monitor was updated. It now watches ${m.host} instead of ${oldHost}.\n\n` +
         `${details}\n\n` +
         `We've cleared everything we knew about ${oldHost} and run all the checks again on ${m.host}. ` +
         `From now on we'll check uptime every ${everyText(uptimeEveryMs)}, the SSL certificate every ${everyText(SSL_EVERY)} ` +
-        `and the domain registration every ${everyText(DOMAIN_EVERY)}, and email you at this address if anything needs attention.\n\n` +
+        `and the domain registration every ${everyText(DOMAIN_EVERY)}, and email you if anything needs attention.\n\n` +
         `See its status: ${appUrl()}/dashboard\n\n` +
         `If you didn't make this change, log in and review your sites on the Manage sites tab.`,
     });
+    emailed = sent > 0;
   } catch (err) {
-    emailed = false;
     console.error(`edit notice for ${m.host} failed`, err);
   }
   try {
@@ -114,8 +111,8 @@ export async function sendEditNotice(opts: {
  * kept even though the monitor is gone, and records honestly whether the email went out.
  * Returns whether the email was sent.
  */
-export async function sendRemovalNotice(opts: { monitor: MonitorRow; email: string; plan: string }): Promise<boolean> {
-  const { monitor: m, email } = opts;
+export async function sendRemovalNotice(opts: { monitor: MonitorRow; plan: string }): Promise<boolean> {
+  const { monitor: m } = opts;
   const health = describeHealth(m);
   const since = new Date(m.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
 
@@ -127,10 +124,9 @@ export async function sendRemovalNotice(opts: { monitor: MonitorRow; email: stri
 
   tellChannels(m.user_id, opts.plan, { kind: "removed", subject: `Stopped watching ${m.host}`, body: details });
 
-  let emailed = true;
+  let emailed = false;
   try {
-    await sendMail({
-      to: email,
+    const sent = await emailRecipients(m.user_id, {
       subject: `Stopped watching ${m.host}`,
       text:
         `You removed ${m.host} from your monitors. We've stopped checking it, so you won't get any more alerts about it.\n\n` +
@@ -138,8 +134,8 @@ export async function sendRemovalNotice(opts: { monitor: MonitorRow; email: stri
         `Your earlier notifications about it are still in your dashboard. You can start watching it again any time: ${appUrl()}/dashboard/sites\n\n` +
         `If you didn't remove this site, log in and review your account.`,
     });
+    emailed = sent > 0;
   } catch (err) {
-    emailed = false;
     console.error(`removal notice for ${m.host} failed`, err);
   }
   try {

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import DashboardTabs from "@/components/DashboardTabs";
 import { type Monitor, StatusBadge, ago, day, daysText, useMonitors } from "@/components/monitor-ui";
 
 // ---------- one site ----------
@@ -156,13 +155,21 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-      <p className="mt-2 text-muted">
-        We check your sites around the clock and email <span className="font-medium text-foreground">{data.email}</span>{" "}
-        automatically when something needs attention.
+      <h1 className="text-3xl font-semibold tracking-tight">Overview</h1>
+      <Link
+        href="/dashboard/sites"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90"
+      >
+        <span aria-hidden>+</span> Add a site
+      </Link>
+      <p className="mt-4 text-muted">
+        We check your sites around the clock and email you automatically when something needs attention. Choose which addresses get
+        alerts on the{" "}
+        <Link href="/dashboard/integrations" className="text-accent underline underline-offset-2">
+          Integrations
+        </Link>{" "}
+        page.
       </p>
-
-      <DashboardTabs />
 
       {(notice || loadError) && (
         <p role="alert" className="mt-4 rounded-lg bg-warn-bg px-4 py-3 text-sm text-warn">

@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BRAND } from "@/lib/brand";
+import { BrandMark } from "@/components/branding-context";
 import type { publicStatus } from "@/lib/status-page";
+import { type Branding, applyTheme, resetTheme } from "@/lib/theme";
 
-type Status = ReturnType<typeof publicStatus>;
+type Status = ReturnType<typeof publicStatus> & { branding: Branding };
 type Load = { kind: "loading" } | { kind: "missing" } | { kind: "error" } | { kind: "ok"; data: Status };
 
 function ago(ms: number | null): string {
@@ -65,14 +66,24 @@ export default function StatusView() {
     };
   }, [slug]);
 
-  const footer = (
-    <footer className="mt-12 border-t border-border pt-6 text-center text-xs text-muted">
-      Monitoring by{" "}
-      <Link href="/" className="text-accent underline underline-offset-2">
-        {BRAND}
-      </Link>
-    </footer>
-  );
+  // The owner's light/dark and colour, for as long as this page is open.
+  const look = load.kind === "ok" ? load.data.branding : null;
+  useEffect(() => {
+    if (!look) return;
+    applyTheme(look);
+    return () => resetTheme();
+  }, [look?.mode, look?.accent]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // With the owner's own logo at the top, the page is theirs. Otherwise it says who runs it.
+  const footer =
+    load.kind === "ok" && load.data.branding.logoUrl ? null : (
+      <footer className="mt-12 border-t border-border pt-6 text-center text-xs text-muted">
+        Run by{" "}
+        <Link href="/" className="text-accent underline underline-offset-2">
+          site-monitors.net
+        </Link>
+      </footer>
+    );
 
   if (load.kind === "loading") {
     return <main className="mx-auto max-w-2xl px-4 py-16 text-muted sm:px-6">Loading status…</main>;
@@ -106,6 +117,11 @@ export default function StatusView() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+      {d.branding.logoUrl && (
+        <div className="mb-8">
+          <BrandMark branding={d.branding} />
+        </div>
+      )}
       <h1 className="break-all text-3xl font-semibold tracking-tight">{d.host}</h1>
       <p className="mt-1 text-sm text-muted">Status page</p>
 

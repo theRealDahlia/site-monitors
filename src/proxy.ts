@@ -2,8 +2,9 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/cookie-names";
 
 /**
- * Keeps logged-in people off the landing page and the login and sign-up pages by sending them to the
- * dashboard before the page loads, so there's no flash of the wrong page.
+ * Keeps logged-in people on the app: the landing, login and sign-up pages and the free checkers send
+ * them to the dashboard, and the public pricing page sends them to the in-app Plans page. It happens
+ * before the page loads, so there's no flash of the wrong page.
  *
  * This only checks that a login cookie is present. It can't tell whether the session is still valid,
  * because a proxy should stay light and doesn't look anything up. That's fine here: if the cookie is
@@ -12,12 +13,13 @@ import { SESSION_COOKIE } from "@/lib/cookie-names";
  */
 export function proxy(request: NextRequest) {
   if (request.cookies.has(SESSION_COOKIE)) {
-    return NextResponse.redirect(new URL("/dashboard", request.url)); // 307: temporary, never cached as permanent
+    const to = request.nextUrl.pathname === "/pricing" ? "/dashboard/plans" : "/dashboard";
+    return NextResponse.redirect(new URL(to, request.url)); // 307: temporary, never cached as permanent
   }
   return NextResponse.next();
 }
 
-// Only these three pages. Everything else (pricing, the free checkers, the dashboard, APIs, files) is untouched.
+// Only these pages. Everything else (the dashboard, public status pages, APIs, files) is untouched.
 export const config = {
-  matcher: ["/", "/login", "/signup"],
+  matcher: ["/", "/login", "/signup", "/ssl-checker", "/domain-checker", "/pricing"],
 };

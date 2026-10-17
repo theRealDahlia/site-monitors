@@ -44,6 +44,32 @@ node scripts/set-plan.mjs someone@example.com free     # to put them back
 It takes effect straight away. Downgrading never deletes anything: extra sites stay (but no new ones can be
 added), and Slack/Discord alerts and status pages simply stop working until the account is on Starter again.
 
+## Slack and Discord sign-in
+
+Users connect Slack or Discord by signing in to it and picking a channel. That needs one Slack app and
+one Discord app for the whole site, which you create once. Users never make their own.
+
+**Slack** (api.slack.com/apps → Create New App → From scratch):
+
+1. **Incoming Webhooks** → turn it on. (Don't add a webhook there; each user's is made when they connect.)
+2. **OAuth & Permissions** → Redirect URLs: add `https://site-monitors.net/api/oauth/slack/callback`.
+3. Same page → Scopes → Bot Token Scopes: make sure `incoming-webhook` is there (the only one needed).
+4. **Manage Distribution** → turn on public distribution, so other workspaces can install it.
+5. **Basic Information** → copy the Client ID and Client Secret into `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET`.
+
+**Discord** (discord.com/developers/applications → New Application):
+
+1. **OAuth2** → Redirects: add `https://site-monitors.net/api/oauth/discord/callback`.
+2. Same page → copy the Client ID and (after Reset Secret) the Client Secret into `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
+3. No bot is needed. The app only asks for `webhook.incoming`.
+
+Put the four values in `.env.local` on the server, then `sudo systemctl restart site-monitors`. The
+redirect address is built from `APP_URL`, so it must match exactly what you registered.
+
+For local development, also register the `http://localhost:3000/api/oauth/…/callback` addresses and use
+a separate set of values in your Mac's `.env.local`. Discord accepts `http://localhost`. Slack only
+accepts `https` redirect addresses, so test Slack on the live site (or through an HTTPS tunnel).
+
 ## There is no admin in production
 
 The site has a development-only admin that can switch its own account between plans, to test the site at

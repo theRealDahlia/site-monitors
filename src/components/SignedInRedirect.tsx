@@ -4,11 +4,12 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 /**
- * Sends a logged-in person to the dashboard if they end up on a page that's only for visitors (the
- * landing, login and sign-up pages). The proxy already does this before the page loads. This covers
- * the browser's Back button, which can show a saved copy of the page without asking the server.
+ * Sends a logged-in person into the app if they end up on a page that's only for visitors (the
+ * landing, login, sign-up, checker and pricing pages). The proxy already does this before the page
+ * loads. This covers the browser's Back button, which can show a saved copy of the page without
+ * asking the server.
  */
-export default function SignedInRedirect() {
+export default function SignedInRedirect({ to = "/dashboard" }: { to?: "/dashboard" | "/dashboard/plans" }) {
   const router = useRouter();
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export default function SignedInRedirect() {
       fetch("/api/auth/me", { cache: "no-store" })
         .then((r) => r.json())
         .then((d) => {
-          if (!cancelled && d.user) router.replace("/dashboard");
+          if (!cancelled && d.user) router.replace(to);
         })
         .catch(() => {});
     };
@@ -32,7 +33,7 @@ export default function SignedInRedirect() {
       cancelled = true;
       window.removeEventListener("pageshow", onPageShow);
     };
-  }, [router]);
+  }, [router, to]);
 
   return null;
 }

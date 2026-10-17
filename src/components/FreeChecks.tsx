@@ -21,7 +21,7 @@ function AccountPrompt({ limit, resetsAt }: { limit: number; resetsAt: number | 
     <div className="mt-4 rounded-xl border border-accent/40 bg-accent/5 p-5">
       <h3 className="font-semibold">You&apos;ve used your {limit} free checks for today</h3>
       <p className="mt-1 text-sm text-muted">
-        Your free checks come back {resetText(resetsAt)}. Or create a free account for unlimited checks, and watch up to 5 sites with email alerts.
+        Your free checks come back {resetText(resetsAt)}. Or create a free account and watch up to 5 sites: we check them around the clock and email you when something needs attention.
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <Link

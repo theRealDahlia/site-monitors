@@ -138,9 +138,42 @@ const SCHEMA = `
     created_at      INTEGER NOT NULL,
     last_attempt_at INTEGER,
     last_ok_at      INTEGER,
-    last_error      TEXT
+    last_error      TEXT,
+    -- Off means it's kept but gets no messages.
+    enabled         INTEGER NOT NULL DEFAULT 1,
+    -- 'oauth' when connected by signing in to Slack or Discord, 'manual' for an older pasted webhook.
+    via             TEXT    NOT NULL DEFAULT 'manual'
   );
   CREATE INDEX IF NOT EXISTS notification_channels_user ON notification_channels(user_id);
+
+  -- More addresses for alert emails, besides the account's own. One only receives anything after its
+  -- owner has confirmed it from that inbox, so this can't be used to send email to strangers.
+  CREATE TABLE IF NOT EXISTS alert_emails (
+    id              INTEGER PRIMARY KEY,
+    user_id         INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    email           TEXT    NOT NULL,
+    enabled         INTEGER NOT NULL DEFAULT 1,
+    confirmed_at    INTEGER,
+    -- sha256 of the one-time confirmation link's token; cleared once it's used.
+    confirm_hash    TEXT,
+    confirm_expires INTEGER,
+    confirm_sent_at INTEGER,
+    created_at      INTEGER NOT NULL,
+    UNIQUE (user_id, email)
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS alert_emails_confirm ON alert_emails(confirm_hash) WHERE confirm_hash IS NOT NULL;
+
+  -- Each account's look: light or dark, accent colour, and an optional logo of their own.
+  CREATE TABLE IF NOT EXISTS branding (
+    user_id    INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    theme_mode TEXT    NOT NULL DEFAULT 'system',
+    accent     TEXT    NOT NULL DEFAULT 'teal',
+    logo       BLOB,
+    logo_type  TEXT,
+    -- Random, and changed on every upload, so the logo's address can be cached forever and reveals nothing.
+    logo_id    TEXT UNIQUE,
+    updated_at INTEGER NOT NULL
+  );
 
   CREATE TABLE IF NOT EXISTS uptime_checks (
     monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
@@ -163,6 +196,10 @@ function migrate(conn: DatabaseSync) {
   if (!has("users", "is_admin")) conn.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
   if (!has("monitors", "status_public")) conn.exec("ALTER TABLE monitors ADD COLUMN status_public INTEGER NOT NULL DEFAULT 0");
   if (!has("monitors", "status_slug")) conn.exec("ALTER TABLE monitors ADD COLUMN status_slug TEXT");
+  // Whether alerts go to the account's own address. Off is allowed, as long as the person chooses it.
+  if (!has("users", "alerts_to_account")) conn.exec("ALTER TABLE users ADD COLUMN alerts_to_account INTEGER NOT NULL DEFAULT 1");
+  if (!has("notification_channels", "enabled")) conn.exec("ALTER TABLE notification_channels ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1");
+  if (!has("notification_channels", "via")) conn.exec("ALTER TABLE notification_channels ADD COLUMN via TEXT NOT NULL DEFAULT 'manual'");
   // At most one account can ever carry the admin flag. The database itself refuses a second one, so
   // nothing (a stray command, a mistake, a bug) can create more admins.
   try {
@@ -196,14 +233,22 @@ function migrate(conn: DatabaseSync) {
 // Dev mode reloads modules often; keep one connection on globalThis instead of one per reload.
 const globalForDb = globalThis as unknown as { __siteMonitorDb?: DatabaseSync };
 
+// Whether this copy of the code has brought the database up to date. It lives in the module, not on
+// globalThis, so when dev mode reloads this file with new tables or columns, the kept connection is
+// updated too, instead of only when the server first starts. Both steps are safe to repeat.
+let upToDate = false;
+
 export function db(): DatabaseSync {
   if (!globalForDb.__siteMonitorDb) {
     mkdirSync(path.dirname(DB_PATH), { recursive: true });
     const conn = new DatabaseSync(DB_PATH);
     conn.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
-    conn.exec(SCHEMA);
-    migrate(conn);
     globalForDb.__siteMonitorDb = conn;
+  }
+  if (!upToDate) {
+    globalForDb.__siteMonitorDb.exec(SCHEMA);
+    migrate(globalForDb.__siteMonitorDb);
+    upToDate = true;
   }
   return globalForDb.__siteMonitorDb;
 }

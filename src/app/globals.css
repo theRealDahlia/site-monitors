@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #fafaf9;
   --surface: #ffffff;
   --foreground: #1c1917;
   --muted: #57534e;
   --border: #e7e5e4;
-  --accent: #0f766e;
-  --accent-foreground: #ffffff;
+  /* An account can choose its own accent (see src/lib/theme.ts); otherwise it's teal. */
+  --accent: var(--brand-light, #0f766e);
+  --accent-foreground: var(--brand-light-fg, #ffffff);
   --ok: #15803d;
   --ok-bg: #f0fdf4;
   --warn: #b45309;
@@ -16,15 +18,18 @@
   --bad-bg: #fef2f2;
 }
 
+/* Dark follows the device unless an account has picked light or dark (data-theme on <html>). The two
+   blocks are the same colours: one for "follow the device", one for "always dark". */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --background: #0c0a09;
     --surface: #1c1917;
     --foreground: #fafaf9;
     --muted: #a8a29e;
     --border: #292524;
-    --accent: #2dd4bf;
-    --accent-foreground: #042f2e;
+    --accent: var(--brand-dark, #2dd4bf);
+    --accent-foreground: var(--brand-dark-fg, #042f2e);
     --ok: #4ade80;
     --ok-bg: #052e16;
     --warn: #fbbf24;
@@ -32,6 +37,23 @@
     --bad: #f87171;
     --bad-bg: #2a0a0a;
   }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #0c0a09;
+  --surface: #1c1917;
+  --foreground: #fafaf9;
+  --muted: #a8a29e;
+  --border: #292524;
+  --accent: var(--brand-dark, #2dd4bf);
+  --accent-foreground: var(--brand-dark-fg, #042f2e);
+  --ok: #4ade80;
+  --ok-bg: #052e16;
+  --warn: #fbbf24;
+  --warn-bg: #2a1a03;
+  --bad: #f87171;
+  --bad-bg: #2a0a0a;
 }
 
 @theme inline {

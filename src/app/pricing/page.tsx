@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import SignedInRedirect from "@/components/SignedInRedirect";
 import AlertsCta from "@/components/AlertsCta";
+import PlanComparison from "@/components/PlanComparison";
 import PlanCta from "@/components/PlanCta";
 import { Footer, Header } from "@/components/SiteChrome";
-import { COMPARISON, PLANS } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -25,7 +27,7 @@ const FAQ = [
   },
   {
     q: "Do I need an account to use the free checkers?",
-    a: "No. Without an account you get 4 checks a day across the SSL and domain checkers. With a free account the checkers are unlimited.",
+    a: "No. Without an account you get 4 checks a day across the SSL and domain checkers. With an account you add sites to your dashboard instead, and we check them for you around the clock.",
   },
   {
     q: "When will the paid plans be available?",
@@ -37,16 +39,11 @@ const FAQ = [
   },
 ];
 
-function Cell({ value }: { value: string | boolean }) {
-  if (value === true) return <span aria-label="Included" className="text-ok">✓</span>;
-  if (value === false) return <span aria-label="Not included" className="text-muted">—</span>;
-  return <span>{value}</span>;
-}
-
 export default function PricingPage() {
   return (
     <>
       <Header />
+      <SignedInRedirect to="/dashboard/plans" />
       <main>
         <section className="mx-auto max-w-5xl px-4 pb-6 pt-14 sm:px-6 sm:pt-20">
           <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">Free to start, with more planned.</h1>
@@ -116,38 +113,7 @@ export default function PricingPage() {
           <h2 id="compare-heading" className="text-2xl font-semibold tracking-tight">
             Compare plans
           </h2>
-          <div className="mt-6 overflow-x-auto rounded-xl border border-border">
-            <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-              <caption className="sr-only">What each plan includes</caption>
-              <thead>
-                <tr className="border-b border-border bg-surface">
-                  <th scope="col" className="px-4 py-3 font-medium">
-                    <span className="sr-only">Feature</span>
-                  </th>
-                  {PLANS.map((p) => (
-                    <th key={p.name} scope="col" className="px-4 py-3 font-semibold">
-                      {p.name}
-                      {!p.available && <span className="ml-1.5 text-xs font-normal text-muted">(planned)</span>}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {COMPARISON.map((row) => (
-                  <tr key={row.feature} className="border-b border-border last:border-b-0">
-                    <th scope="row" className="px-4 py-3 font-normal text-muted">
-                      {row.feature}
-                    </th>
-                    {row.values.map((v, i) => (
-                      <td key={PLANS[i].name} className="px-4 py-3">
-                        <Cell value={v} />
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <PlanComparison className="mt-6" />
         </section>
 
         <section aria-labelledby="faq-heading" className="mx-auto max-w-3xl px-4 py-10 sm:px-6">

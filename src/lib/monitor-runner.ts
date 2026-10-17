@@ -1,7 +1,7 @@
 import { type Alert, evaluateDomain, evaluateSsl, evaluateUptime } from "./alerts";
 import { checkDomain } from "./domain-check";
 import { CheckError } from "./hostname";
-import { sendMail } from "./mail";
+import { emailRecipients } from "./alert-emails";
 import { sendAlertToChannels } from "./channels";
 import { entitlementsFor } from "./entitlements";
 import {
@@ -87,7 +87,6 @@ export async function runChecks(monitorId: number, which: Which | "due", options
 async function runLocked(monitorId: number, requested: Which | "due", options: RunOptions): Promise<boolean> {
   const m = getMonitorWithOwner(monitorId);
   if (!m) return false; // deleted while it was waiting
-  const ownerEmail = m.owner_email;
   const now = Date.now();
   const which: Which =
     requested === "due" ? { uptime: m.up_due_at <= now, ssl: m.ssl_due_at <= now, domain: m.dom_due_at <= now } : requested;
@@ -212,9 +211,10 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
       handled = true;
     } else {
       try {
-        await sendMail({ to: ownerEmail, subject: alert.subject, text: alert.body });
-        sentToday++;
-        logged.push({ kind: alert.kind, message: alert.subject, emailed: true });
+        // Every address the owner has switched on. None switched on is their choice, not a failure.
+        const sent = await emailRecipients(m.user_id, { subject: alert.subject, text: alert.body });
+        if (sent) sentToday++;
+        logged.push({ kind: alert.kind, message: sent ? alert.subject : `${alert.subject} (not emailed: every address is switched off)`, emailed: sent > 0 });
         handled = true;
       } catch (err) {
         console.error(`alert email for ${m.host} failed; will retry`, err);

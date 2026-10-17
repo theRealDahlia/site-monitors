@@ -15,7 +15,12 @@ interface ChannelRow {
   last_attempt_at: number | null;
   last_ok_at: number | null;
   last_error: string | null;
+  enabled: number;
+  via: ChannelVia;
 }
+
+/** How a channel was connected: by signing in to Slack or Discord, or (older channels) a pasted webhook. */
+export type ChannelVia = "oauth" | "manual";
 
 export interface ChannelView {
   id: number;
@@ -27,6 +32,9 @@ export interface ChannelView {
   lastAttemptAt: number | null;
   lastOkAt: number | null;
   lastError: string | null;
+  /** Off means the channel is kept but gets no messages until it's switched back on. */
+  enabled: boolean;
+  via: ChannelVia;
 }
 
 function view(row: ChannelRow): ChannelView {
@@ -45,6 +53,8 @@ function view(row: ChannelRow): ChannelView {
     lastAttemptAt: row.last_attempt_at,
     lastOkAt: row.last_ok_at,
     lastError: row.last_error,
+    enabled: row.enabled === 1,
+    via: row.via === "oauth" ? "oauth" : "manual",
   };
 }
 
@@ -57,15 +67,32 @@ export function countChannels(userId: number): number {
 }
 
 /** Saves a channel. The address must already have been validated by the caller. */
-export function addChannel(userId: number, kind: ChannelKind, name: string, url: string): number {
+export function addChannel(userId: number, kind: ChannelKind, name: string, url: string, via: ChannelVia = "oauth"): number {
   const res = db()
-    .prepare("INSERT INTO notification_channels (user_id, kind, name, url_enc, created_at) VALUES (?, ?, ?, ?, ?)")
-    .run(userId, kind, name, seal(url), Date.now());
+    .prepare("INSERT INTO notification_channels (user_id, kind, name, url_enc, created_at, via) VALUES (?, ?, ?, ?, ?, ?)")
+    .run(userId, kind, name, seal(url), Date.now(), via);
   return Number(res.lastInsertRowid);
 }
 
-export function removeChannel(id: number, userId: number): boolean {
-  return Number(db().prepare("DELETE FROM notification_channels WHERE id = ? AND user_id = ?").run(id, userId).changes) > 0;
+export function setChannelEnabled(id: number, userId: number, enabled: boolean): boolean {
+  return Number(db().prepare("UPDATE notification_channels SET enabled = ? WHERE id = ? AND user_id = ?").run(enabled ? 1 : 0, id, userId).changes) > 0;
+}
+
+/**
+ * Deletes a channel and returns what's needed to tidy up on the provider's side (the webhook address
+ * and how it was connected), or null if the user has no such channel.
+ */
+export function removeChannel(id: number, userId: number): { kind: ChannelKind; url: string | null; via: ChannelVia } | null {
+  const row = db().prepare("SELECT * FROM notification_channels WHERE id = ? AND user_id = ?").get(id, userId) as unknown as ChannelRow | undefined;
+  if (!row) return null;
+  db().prepare("DELETE FROM notification_channels WHERE id = ? AND user_id = ?").run(id, userId);
+  let url: string | null = null;
+  try {
+    url = open(row.url_enc);
+  } catch {
+    // Can't be read any more; there's nothing to tidy up remotely.
+  }
+  return { kind: row.kind, url, via: row.via === "oauth" ? "oauth" : "manual" };
 }
 
 function recordResult(id: number, result: DeliveryResult) {
@@ -90,12 +117,12 @@ export async function sendToChannel(id: number, userId: number, message: Message
 }
 
 /**
- * Sends an alert to every channel the user has set up, if their plan includes them. Best effort: a
+ * Sends an alert to every channel the user has switched on, if their plan includes them. Best effort: a
  * broken webhook is recorded against that channel and never stops the email or the other channels.
  */
 export async function sendAlertToChannels(userId: number, plan: string, message: Message): Promise<void> {
   if (!entitlementsFor(plan).integrations) return;
-  const rows = db().prepare("SELECT id FROM notification_channels WHERE user_id = ?").all(userId) as { id: number }[];
+  const rows = db().prepare("SELECT id FROM notification_channels WHERE user_id = ? AND enabled = 1").all(userId) as { id: number }[];
   await Promise.all(rows.map((r) => sendToChannel(r.id, userId, message).catch((err) => console.error(`channel ${r.id} failed`, err))));
 }
 

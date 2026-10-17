@@ -27,6 +27,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // The dashboard sets the account's light/dark and colours on <html> before React starts (see
+      // THEME_BOOT_SCRIPT), so those attributes are expected to differ from the server's copy.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

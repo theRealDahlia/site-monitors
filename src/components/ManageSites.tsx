@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import DashboardTabs from "@/components/DashboardTabs";
 import { type Monitor, StatusBadge, day, useMonitors } from "@/components/monitor-ui";
 
 const INPUT =
@@ -314,10 +313,8 @@ export default function ManageSites() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Manage sites</h1>
       <p className="mt-2 text-muted">Add, edit or remove the sites we watch for you.</p>
-
-      <DashboardTabs />
 
       <section className="mt-6 rounded-xl border border-border bg-surface p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">

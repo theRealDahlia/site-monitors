@@ -1,3 +1,4 @@
+import { getBranding } from "@/lib/branding";
 import { entitlementsFor } from "@/lib/entitlements";
 import { getPublicMonitor } from "@/lib/monitors-db";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
@@ -15,5 +16,6 @@ export async function GET(request: Request, ctx: RouteContext<"/api/status/[slug
   if (!monitor || !entitlementsFor(monitor.owner_plan).statusPages) {
     return Response.json({ error: "Status page not found." }, { status: 404 });
   }
-  return Response.json(publicStatus(monitor), { headers: { "Cache-Control": "public, max-age=15" } });
+  // The owner's own logo and colours, so the page their clients see looks like theirs.
+  return Response.json({ ...publicStatus(monitor), branding: getBranding(monitor.user_id) }, { headers: { "Cache-Control": "public, max-age=15" } });
 }
