@@ -8,6 +8,7 @@ import { PLANS } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing",
+  alternates: { canonical: "/pricing" },
   description:
     "Watch up to 5 sites for free, with uptime, SSL certificate and domain expiry checks and email alerts. Paid plans for more sites are planned.",
 };

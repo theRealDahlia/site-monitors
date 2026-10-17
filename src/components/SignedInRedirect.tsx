@@ -9,7 +9,7 @@ import { useEffect } from "react";
  * loads. This covers the browser's Back button, which can show a saved copy of the page without
  * asking the server.
  */
-export default function SignedInRedirect({ to = "/dashboard" }: { to?: "/dashboard" | "/dashboard/plans" }) {
+export default function SignedInRedirect({ to = "/dashboard" }: { to?: `/dashboard${string}` }) {
   const router = useRouter();
 
   useEffect(() => {

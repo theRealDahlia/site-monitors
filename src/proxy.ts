@@ -3,7 +3,8 @@ import { SESSION_COOKIE } from "@/lib/cookie-names";
 
 /**
  * Keeps logged-in people on the app: the landing, login and sign-up pages and the free checkers send
- * them to the dashboard, and the public pricing page sends them to the in-app Plans page. It happens
+ * them to the dashboard, the public pricing page to the in-app Plans page, and the public guides to
+ * the same guides inside the app. It happens
  * before the page loads, so there's no flash of the wrong page.
  *
  * This only checks that a login cookie is present. It can't tell whether the session is still valid,
@@ -13,7 +14,8 @@ import { SESSION_COOKIE } from "@/lib/cookie-names";
  */
 export function proxy(request: NextRequest) {
   if (request.cookies.has(SESSION_COOKIE)) {
-    const to = request.nextUrl.pathname === "/pricing" ? "/dashboard/plans" : "/dashboard";
+    const path = request.nextUrl.pathname;
+    const to = path === "/pricing" ? "/dashboard/plans" : path === "/guides" || path.startsWith("/guides/") ? `/dashboard${path}` : "/dashboard";
     return NextResponse.redirect(new URL(to, request.url)); // 307: temporary, never cached as permanent
   }
   return NextResponse.next();
@@ -21,5 +23,5 @@ export function proxy(request: NextRequest) {
 
 // Only these pages. Everything else (the dashboard, public status pages, APIs, files) is untouched.
 export const config = {
-  matcher: ["/", "/login", "/signup", "/ssl-checker", "/domain-checker", "/pricing"],
+  matcher: ["/", "/login", "/signup", "/ssl-checker", "/domain-checker", "/pricing", "/guides", "/guides/:path*"],
 };

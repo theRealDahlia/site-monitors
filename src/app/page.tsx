@@ -1,9 +1,13 @@
+import type { Metadata } from "next";
 import SignedInRedirect from "@/components/SignedInRedirect";
 import Link from "next/link";
 import SslChecker from "@/components/SslChecker";
 import AlertsCta from "@/components/AlertsCta";
 import { Footer, Header } from "@/components/SiteChrome";
 import { PLANS } from "@/lib/plans";
+
+// The title and description come from the site-wide defaults. Only the canonical address is set here.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const FEATURES = [
   {

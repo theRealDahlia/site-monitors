@@ -25,6 +25,7 @@ const ICONS = {
   plans: "M3 7h18v10H3zM3 11h18M7 15h3",
   appearance:
     "M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4ZM7.5 12h.01M10 8h.01M14 8h.01",
+  guides: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Zm0 14a2 2 0 0 1 2-2h13M9 7h6",
   menu: "M4 6h16M4 12h16M4 18h16",
   close: "M6 6l12 12M18 6 6 18",
 } as const;
@@ -52,6 +53,7 @@ const NAV = [
   { href: "/dashboard/notifications", label: "Notifications", icon: "notifications" },
   { href: "/dashboard/integrations", label: "Integrations", icon: "integrations" },
   { href: "/dashboard/appearance", label: "Appearance", icon: "appearance" },
+  { href: "/dashboard/guides", label: "Guides", icon: "guides" },
   { href: "/dashboard/plans", label: "Plans", icon: "plans" },
 ] as const;
 
@@ -74,7 +76,8 @@ function Sidebar({ user, branding, onNavigate }: { user: User | null; branding: 
       <nav aria-label="App" className="flex-1 overflow-y-auto px-3">
         <ul className="space-y-0.5">
           {NAV.map((item) => {
-            const active = pathname === item.href;
+            // An article inside Guides keeps the Guides tab lit. Overview is only itself, as every page is under /dashboard.
+            const active = item.href === "/dashboard" ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <li key={item.href}>
                 <Link

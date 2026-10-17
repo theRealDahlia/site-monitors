@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BRAND } from "@/lib/brand";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,6 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Makes every relative address in the page's tags (like the share image) a full one.
+  metadataBase: new URL(SITE_URL),
+  applicationName: BRAND,
+  openGraph: { type: "website", siteName: BRAND, locale: "en_US" },
+  twitter: { card: "summary_large_image" },
   title: {
     default: `${BRAND} — SSL, domain and uptime monitoring for every client site`,
     template: `%s | ${BRAND}`,

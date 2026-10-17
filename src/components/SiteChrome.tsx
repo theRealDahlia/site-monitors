@@ -46,6 +46,9 @@ export function Footer() {
           <Link href="/domain-checker" className="hover:text-foreground">
             Domain checker
           </Link>
+          <Link href="/guides" className="hover:text-foreground">
+            Guides
+          </Link>
         </nav>
       </div>
     </footer>
