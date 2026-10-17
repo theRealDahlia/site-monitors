@@ -31,7 +31,7 @@ const SERVICES: { id: Service; name: string; blurb: string; tile: string; letter
   {
     id: "discord",
     name: "Discord",
-    blurb: "Sign in to Discord and pick the server and channel your alerts should go to.",
+    blurb: "Add the Site Monitors bot to your Discord server and we'll create a #site-monitors-alerts channel for your alerts. You need the Manage Server permission.",
     tile: "bg-[#5865f2] text-white",
     letter: "D",
   },
@@ -57,7 +57,13 @@ function resultMessage(params: URLSearchParams, max: number): { ok: boolean; tex
     case "limit":
       return { ok: false, text: `You can connect up to ${max} channels. Disconnect one to add another.` };
     case "restricted":
-      return { ok: false, text: "Your Slack workspace doesn't allow apps to create channels. Ask a workspace admin to allow it, then connect again." };
+      return {
+        ok: false,
+        text:
+          service === "discord"
+            ? "Site Monitors isn't allowed to create a channel in that Discord server. Check the bot kept its permissions (Manage Channels, Manage Webhooks), then connect again."
+            : "Your Slack workspace doesn't allow apps to create channels. Ask a workspace admin to allow it, then connect again.",
+      };
     case "too_many":
       return { ok: false, text: "Too many connection attempts. Try again in a while." };
     default:
@@ -183,6 +189,12 @@ function ServiceCard({ service, data, onChanged }: { service: (typeof SERVICES)[
             <ChannelRow key={c.id} c={c} onChanged={onChanged} />
           ))}
         </ul>
+      )}
+      {service.id === "discord" && channels.length > 0 && (
+        <p className="mt-4 text-xs text-muted">
+          Disconnecting stops our messages straight away and deletes the webhook, but keeps the channel and its history in Discord. To remove
+          the Site Monitors bot from your server too, remove it in Server Settings → Integrations.
+        </p>
       )}
       {service.id === "slack" && channels.length > 0 && (
         <p className="mt-4 text-xs text-muted">

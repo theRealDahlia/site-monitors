@@ -67,13 +67,22 @@ adds them to it, and posts alerts there. If that name is taken, a short ending i
 Incoming Webhooks don't need to be turned on. Slack connections made before this change (where the
 person picked a channel) keep working until they're disconnected.
 
-**Discord** (discord.com/developers/applications → New Application):
+**Discord** (discord.com/developers/applications → New Application, name it "Site Monitors"):
 
-1. **OAuth2** → Redirects: add `https://site-monitors.net/api/oauth/discord/callback`.
-2. Same page → copy the Client ID and (after Reset Secret) the Client Secret into `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`.
-3. No bot is needed. The app only asks for `webhook.incoming`.
+When someone connects, they add the Site Monitors bot to their server. The app then creates a
+`#site-monitors-alerts` channel (a short ending is added if that name is already used), creates a
+webhook in it, and posts alerts through that webhook. Disconnecting deletes the webhook and keeps the
+channel. The bot's own token is only used at connection time and is never stored per person.
 
-Put the four values in `.env.local` on the server, then `sudo systemctl restart site-monitors`. The
+1. **Installation** → under Installation Contexts tick **Guild Install** and untick **User Install**. Set Install Link to **None** (Connect Discord on the Integrations page builds its own link).
+2. **OAuth2** → Redirects: add `https://site-monitors.net/api/oauth/discord/callback` and click **Save Changes**.
+3. **Bot** → turn **Public Bot** on (otherwise only you can add it). Don't turn on any privileged intents; the bot never connects to Discord's gateway or reads messages.
+4. **Bot** → **Reset Token** and copy it into `DISCORD_BOT_TOKEN`. It's a secret like the client secret.
+5. **OAuth2** → copy the Client ID into `DISCORD_CLIENT_ID`, and **Reset Secret** to copy the Client Secret into `DISCORD_CLIENT_SECRET`.
+
+The sign-in link asks for the `bot` and `identify` scopes and three permissions: **Manage Channels** (create the alerts channel), **Manage Webhooks** (create the webhook) and **View Channel**. It doesn't ask for permission to send or read messages. The person connecting needs permission to add apps to their server, normally **Manage Server**.
+
+Put the five values in `.env.local` on the server, then `sudo systemctl restart site-monitors`. The
 redirect address is built from `APP_URL`, so it must match exactly what you registered.
 
 For local development, also register the `http://localhost:3000/api/oauth/…/callback` addresses and use
