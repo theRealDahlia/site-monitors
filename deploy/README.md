@@ -49,13 +49,23 @@ added), and Slack/Discord alerts and status pages simply stop working until the 
 Users connect Slack or Discord by signing in to it and picking a channel. That needs one Slack app and
 one Discord app for the whole site, which you create once. Users never make their own.
 
-**Slack** (api.slack.com/apps → Create New App → From scratch):
+**Slack** (api.slack.com/apps → Create New App → From scratch, name it "Site Monitors"):
 
-1. **Incoming Webhooks** → turn it on. (Don't add a webhook there; each user's is made when they connect.)
-2. **OAuth & Permissions** → Redirect URLs: add `https://site-monitors.net/api/oauth/slack/callback`.
-3. Same page → Scopes → Bot Token Scopes: make sure `incoming-webhook` is there (the only one needed).
-4. **Manage Distribution** → turn on public distribution, so other workspaces can install it.
-5. **Basic Information** → copy the Client ID and Client Secret into `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET`.
+When someone connects, the app creates a public `#site-monitors-alerts` channel in their workspace,
+adds them to it, and posts alerts there. If that name is taken, a short ending is added.
+
+1. **OAuth & Permissions** → Redirect URLs: add `https://site-monitors.net/api/oauth/slack/callback` and save.
+2. Same page → Scopes → **Bot Token Scopes**: add exactly these three, and no user scopes:
+   - `channels:manage` (create the alerts channel)
+   - `channels:write.invites` (add the person who connected to it)
+   - `chat:write` (post alerts)
+3. **App Home** → make sure the bot's display name is "Site Monitors" (that's who alerts appear from).
+4. **Basic Information** → Display Information: add an icon and short description (Slack shows these on the approval screen).
+5. **Manage Distribution** → tick the checklist and **Activate Public Distribution**, so workspaces other than yours can connect.
+6. **Basic Information** → App Credentials: copy the Client ID and Client Secret into `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET`.
+
+Incoming Webhooks don't need to be turned on. Slack connections made before this change (where the
+person picked a channel) keep working until they're disconnected.
 
 **Discord** (discord.com/developers/applications → New Application):
 

@@ -1,11 +1,14 @@
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { appUrl } from "./mail";
 import { secret } from "./secret";
-import { type ChannelKind, parseWebhookUrl } from "./webhooks";
+import { type ChannelKind, parseSlackBotTarget, parseWebhookUrl } from "./webhooks";
 
-// Connecting Slack or Discord by signing in to them. The person picks a channel on Slack's or Discord's
-// own page, and we get back a webhook for that one channel. Nobody has to make their own app or paste
-// an address. We only ask for permission to post into the channel they choose, nothing else.
+// Connecting Slack or Discord by signing in to them. Nobody has to make their own app or paste an
+// address.
+// - Slack: the person approves the Site Monitors app for their workspace, and we create an alerts
+//   channel there, add them to it, and post into it as the app.
+// - Discord: the person picks a server and channel on Discord's own page, and we get back a webhook
+//   for that one channel.
 
 export type Service = ChannelKind;
 export const SERVICES: Service[] = ["slack", "discord"];
@@ -33,6 +36,13 @@ export function redirectUri(service: Service): string {
   return `${appUrl()}/api/oauth/${service}/callback`;
 }
 
+/**
+ * What the Slack app asks for, and nothing more: create a public channel, add the person who
+ * connected to it, and post messages. It can't read any messages or see private channels.
+ */
+export const SLACK_SCOPES = ["channels:manage", "channels:write.invites", "chat:write"];
+export const SLACK_CHANNEL_NAME = "site-monitors-alerts";
+
 export function authorizeUrl(service: Service, clientId: string, state: string): string {
   const url =
     service === "slack" ? new URL("https://slack.com/oauth/v2/authorize") : new URL("https://discord.com/oauth2/authorize");
@@ -40,7 +50,7 @@ export function authorizeUrl(service: Service, clientId: string, state: string):
   url.searchParams.set("redirect_uri", redirectUri(service));
   url.searchParams.set("state", state);
   if (service === "slack") {
-    url.searchParams.set("scope", "incoming-webhook");
+    url.searchParams.set("scope", SLACK_SCOPES.join(","));
   } else {
     url.searchParams.set("response_type", "code");
     url.searchParams.set("scope", "webhook.incoming");
@@ -96,10 +106,56 @@ export function checkState(cookieHeader: string | null, userId: number, service:
 
 // ---------- swapping the code for a webhook ----------
 
-export type Exchange = { ok: true; url: string; name: string } | { ok: false; error: string };
+/**
+ * A connection ready to save. `secret` is what gets stored (encrypted): a Discord webhook address, or
+ * for Slack the app's token and channel. `via` says which, so it's sent the right way.
+ */
+export type Exchange = { ok: true; secret: string; name: string; via: "oauth" | "bot" } | { ok: false; error: string; code?: "restricted" };
 
 /** Display names come from another service, so keep them short and plain. */
 const tidy = (text: string) => text.replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, 80);
+
+/** One call to Slack's Web API as the app. Slack answers 200 with `ok: false` for most errors. */
+async function slackApi(method: string, token: string, body: Record<string, unknown>, send: typeof fetch): Promise<Record<string, unknown>> {
+  const res = await send(`https://slack.com/api/${method}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json; charset=utf-8" },
+    body: JSON.stringify(body),
+    redirect: "error",
+    signal: AbortSignal.timeout(10_000),
+  });
+  return res.ok ? ((await res.json()) as Record<string, unknown>) : { ok: false, error: `http_${res.status}` };
+}
+
+/**
+ * Creates the alerts channel in the person's workspace and adds them to it. If the name is taken (an
+ * existing or archived channel, or another Site Monitors account in the same workspace), a short
+ * random ending is added rather than posting into a channel someone else made.
+ */
+async function createSlackChannel(
+  token: string,
+  userId: string | null,
+  send: typeof fetch,
+): Promise<{ id: string; name: string } | { error: string; code?: "restricted" }> {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const name = attempt === 0 ? SLACK_CHANNEL_NAME : `${SLACK_CHANNEL_NAME}-${Math.random().toString(36).slice(2, 6)}`;
+    const created = await slackApi("conversations.create", token, { name, is_private: false }, send);
+    if (created.ok) {
+      const channel = created.channel as { id?: unknown; name?: unknown } | undefined;
+      const id = typeof channel?.id === "string" ? channel.id : "";
+      if (!/^[CG][A-Z0-9]{6,20}$/.test(id)) return { error: "Slack created the channel but didn't say which one. Try connecting again." };
+      // Best effort: if this fails the channel still works, and it's public, so they can join it themselves.
+      if (userId) await slackApi("conversations.invite", token, { channel: id, users: userId }, send).catch(() => null);
+      return { id, name: typeof channel?.name === "string" ? tidy(channel.name) : name };
+    }
+    if (created.error === "name_taken") continue;
+    if (created.error === "restricted_action") {
+      return { error: "Your Slack workspace doesn't allow apps to create channels. Ask a workspace admin to allow it, then connect again.", code: "restricted" };
+    }
+    return { error: "Slack didn't let us create the alerts channel. Try connecting again." };
+  }
+  return { error: "Couldn't find a free channel name in your Slack workspace. Try connecting again." };
+}
 
 /** `send` is replaceable so tests don't need the network. */
 export async function exchangeCode(service: Service, code: string, config: ClientConfig, send: typeof fetch = fetch): Promise<Exchange> {
@@ -126,24 +182,34 @@ export async function exchangeCode(service: Service, code: string, config: Clien
   } catch {
     return { ok: false, error: `Couldn't reach ${who}. Try again in a moment.` };
   }
-  if (service === "slack" && data.ok !== true) return { ok: false, error: `${who} didn't accept the sign-in. Try connecting again.` };
 
-  const hook = (service === "slack" ? data.incoming_webhook : data.webhook) as Record<string, unknown> | undefined;
-  const url = typeof hook?.url === "string" ? hook.url : "";
-  // Only ever keep an address that is exactly a Slack or Discord webhook, whatever came back.
-  const parsed = parseWebhookUrl(service, url);
-  if (!parsed) return { ok: false, error: `${who} didn't give us a channel to post to. Try connecting again and pick a channel.` };
-
-  let name: string;
   if (service === "slack") {
-    const channel = typeof hook?.channel === "string" ? tidy(hook.channel) : "";
-    const team = typeof (data.team as { name?: unknown } | undefined)?.name === "string" ? tidy((data.team as { name: string }).name) : "";
-    name = [channel, team].filter(Boolean).join(" in ") || "Slack channel";
-  } else {
-    const guild = (data.guild as { name?: unknown } | undefined)?.name;
-    name = typeof guild === "string" && tidy(guild) ? `A channel in ${tidy(guild)}` : "Discord channel";
+    if (data.ok !== true) return { ok: false, error: `${who} didn't accept the sign-in. Try connecting again.` };
+    const token = typeof data.access_token === "string" ? data.access_token : "";
+    const userId = (data.authed_user as { id?: unknown } | undefined)?.id;
+    const team = (data.team as { name?: unknown } | undefined)?.name;
+    let channel: Awaited<ReturnType<typeof createSlackChannel>>;
+    try {
+      channel = token.startsWith("xoxb-")
+        ? await createSlackChannel(token, typeof userId === "string" && /^[UW][A-Z0-9]{6,20}$/.test(userId) ? userId : null, send)
+        : { error: `${who} didn't give us permission to post. Try connecting again.` };
+    } catch {
+      return { ok: false, error: `Couldn't reach ${who}. Try again in a moment.` };
+    }
+    if ("error" in channel) return { ok: false, error: channel.error, code: "code" in channel ? channel.code : undefined };
+    const secret = JSON.stringify({ token, channel: channel.id });
+    if (!parseSlackBotTarget(secret)) return { ok: false, error: `${who} sent back something unexpected. Try connecting again.` };
+    const teamName = typeof team === "string" ? tidy(team) : "";
+    return { ok: true, secret, name: `#${channel.name}${teamName ? ` in ${teamName}` : ""}`, via: "bot" };
   }
-  return { ok: true, url: parsed.href, name };
+
+  const hook = data.webhook as Record<string, unknown> | undefined;
+  // Only ever keep an address that is exactly a Discord webhook, whatever came back.
+  const parsed = parseWebhookUrl("discord", typeof hook?.url === "string" ? hook.url : "");
+  if (!parsed) return { ok: false, error: `${who} didn't give us a channel to post to. Try connecting again and pick a channel.` };
+  const guild = (data.guild as { name?: unknown } | undefined)?.name;
+  const name = typeof guild === "string" && tidy(guild) ? `A channel in ${tidy(guild)}` : "Discord channel";
+  return { ok: true, secret: parsed.href, name, via: "oauth" };
 }
 
 /**

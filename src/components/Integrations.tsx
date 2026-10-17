@@ -24,7 +24,7 @@ const SERVICES: { id: Service; name: string; blurb: string; tile: string; letter
   {
     id: "slack",
     name: "Slack",
-    blurb: "Sign in to Slack and pick the channel your alerts should go to.",
+    blurb: "Sign in to Slack and we'll create a #site-monitors-alerts channel for your alerts and add you to it.",
     tile: "bg-[#4a154b] text-white",
     letter: "S",
   },
@@ -56,6 +56,8 @@ function resultMessage(params: URLSearchParams, max: number): { ok: boolean; tex
       return { ok: false, text: `${who} isn't set up on Site Monitors yet. Try again later.` };
     case "limit":
       return { ok: false, text: `You can connect up to ${max} channels. Disconnect one to add another.` };
+    case "restricted":
+      return { ok: false, text: "Your Slack workspace doesn't allow apps to create channels. Ask a workspace admin to allow it, then connect again." };
     case "too_many":
       return { ok: false, text: "Too many connection attempts. Try again in a while." };
     default:
@@ -184,8 +186,8 @@ function ServiceCard({ service, data, onChanged }: { service: (typeof SERVICES)[
       )}
       {service.id === "slack" && channels.length > 0 && (
         <p className="mt-4 text-xs text-muted">
-          Disconnecting stops our messages straight away. To remove the Site Monitors app from your Slack workspace too, open Slack&apos;s
-          Apps settings and remove it there.
+          Disconnecting stops our messages straight away and keeps the channel and its history in Slack. To remove the Site Monitors
+          app from your workspace too, open Slack&apos;s Apps settings and remove it there.
         </p>
       )}
     </section>

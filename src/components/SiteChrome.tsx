@@ -1,12 +1,14 @@
 import Link from "next/link";
 import AuthNav from "@/components/AuthNav";
+import LogoMark from "@/components/LogoMark";
 import { BRAND } from "@/lib/brand";
 
 export function Header() {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
-        <Link href="/" className="whitespace-nowrap text-base font-semibold tracking-tight sm:text-lg">
+        <Link href="/" className="flex shrink-0 items-center gap-2 whitespace-nowrap text-base font-semibold tracking-tight sm:gap-2.5 sm:text-lg">
+          <LogoMark className="h-7 w-7 sm:h-8 sm:w-8" />
           {BRAND}
         </Link>
         <nav className="flex items-center gap-2.5 whitespace-nowrap text-sm text-muted sm:gap-5">

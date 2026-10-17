@@ -1,7 +1,7 @@
 import { db } from "./db";
 import { entitlementsFor } from "./entitlements";
 import { open, seal } from "./secret-box";
-import { type ChannelKind, type DeliveryResult, type Message, deliver, maskWebhook, parseWebhookUrl } from "./webhooks";
+import { type ChannelKind, type DeliveryResult, type Message, deliver, deliverSlackBot, maskWebhook, parseSlackBotTarget, parseWebhookUrl } from "./webhooks";
 
 export const MAX_CHANNELS = 5;
 
@@ -19,8 +19,14 @@ interface ChannelRow {
   via: ChannelVia;
 }
 
-/** How a channel was connected: by signing in to Slack or Discord, or (older channels) a pasted webhook. */
-export type ChannelVia = "oauth" | "manual";
+/**
+ * How a channel was connected:
+ * - bot: Slack sign-in that created its own alerts channel; we post into it as the app
+ * - oauth: a webhook from signing in (Discord, and Slack connections made before the alerts channel)
+ * - manual: an older pasted webhook
+ */
+export type ChannelVia = "bot" | "oauth" | "manual";
+const asVia = (value: string): ChannelVia => (value === "bot" || value === "oauth" ? value : "manual");
 
 export interface ChannelView {
   id: number;
@@ -40,7 +46,7 @@ export interface ChannelView {
 function view(row: ChannelRow): ChannelView {
   let hint = row.kind === "slack" ? "hooks.slack.com/…" : "discord.com/…";
   try {
-    hint = maskWebhook(row.kind, open(row.url_enc));
+    hint = row.via === "bot" ? "Posts as the Site Monitors app" : maskWebhook(row.kind, open(row.url_enc));
   } catch {
     // Can't be decrypted (SESSION_SECRET changed). Show a generic hint; sending to it will fail and say so.
   }
@@ -54,7 +60,7 @@ function view(row: ChannelRow): ChannelView {
     lastOkAt: row.last_ok_at,
     lastError: row.last_error,
     enabled: row.enabled === 1,
-    via: row.via === "oauth" ? "oauth" : "manual",
+    via: asVia(row.via),
   };
 }
 
@@ -92,7 +98,7 @@ export function removeChannel(id: number, userId: number): { kind: ChannelKind; 
   } catch {
     // Can't be read any more; there's nothing to tidy up remotely.
   }
-  return { kind: row.kind, url, via: row.via === "oauth" ? "oauth" : "manual" };
+  return { kind: row.kind, url, via: asVia(row.via) };
 }
 
 function recordResult(id: number, result: DeliveryResult) {
@@ -108,7 +114,12 @@ export async function sendToChannel(id: number, userId: number, message: Message
   if (!row) return null;
   let result: DeliveryResult;
   try {
-    result = await deliver(row.kind, open(row.url_enc), message);
+    if (row.via === "bot") {
+      const target = parseSlackBotTarget(open(row.url_enc));
+      result = target ? await deliverSlackBot(target, message) : { ok: false, error: "This connection's saved details couldn't be read. Connect Slack again." };
+    } else {
+      result = await deliver(row.kind, open(row.url_enc), message);
+    }
   } catch {
     result = { ok: false, error: "This channel's saved address couldn't be read. Remove it and add it again." };
   }

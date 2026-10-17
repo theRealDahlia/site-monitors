@@ -33,10 +33,10 @@ export async function GET(request: Request, ctx: RouteContext<"/api/oauth/[servi
   const result = await exchangeCode(service, code, config);
   if (!result.ok) {
     console.error(`[oauth] ${service} connection failed for user ${user.id}: ${result.error}`);
-    return back("error=failed");
+    return back(result.code === "restricted" ? "error=restricted" : "error=failed");
   }
 
-  const id = addChannel(user.id, service, result.name, result.url, "oauth");
+  const id = addChannel(user.id, service, result.name, result.secret, result.via);
   // A first message, so the person sees it working in the channel. If it fails, the channel still
   // shows the error and can be tested again or disconnected.
   await sendToChannel(id, user.id, {

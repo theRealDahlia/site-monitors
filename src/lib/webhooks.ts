@@ -114,3 +114,56 @@ export async function deliver(kind: ChannelKind, url: string, message: Message, 
     return { ok: false, error: timedOut ? `${NAME[kind]} didn't respond in time.` : `Couldn't reach ${NAME[kind]}.` };
   }
 }
+
+// ---------- Slack, posting as the Site Monitors app ----------
+
+/**
+ * What's saved for a Slack connection made by signing in: the app's token for that workspace and the
+ * channel it created. Both are checked strictly, and messages only ever go to Slack's own
+ * chat.postMessage address, so a bad saved value can't send anything anywhere else.
+ */
+export interface SlackBotTarget {
+  token: string;
+  channel: string;
+}
+
+export function parseSlackBotTarget(value: string): SlackBotTarget | null {
+  try {
+    const t = JSON.parse(value) as Partial<SlackBotTarget>;
+    return typeof t.token === "string" && /^xoxb-[A-Za-z0-9-]{10,250}$/.test(t.token) && typeof t.channel === "string" && /^[CG][A-Z0-9]{6,20}$/.test(t.channel)
+      ? { token: t.token, channel: t.channel }
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+const SLACK_BOT_ERRORS: Record<string, string> = {
+  channel_not_found: "The alerts channel no longer exists in Slack. Disconnect Slack and connect it again to get a new one.",
+  is_archived: "The alerts channel has been archived in Slack. Unarchive it, or disconnect Slack and connect it again.",
+  not_in_channel: "Site Monitors was removed from the alerts channel. Add it back with /invite @Site Monitors, or connect Slack again.",
+  invalid_auth: "Slack no longer accepts this connection. The app may have been removed from the workspace. Connect Slack again.",
+  token_revoked: "Slack no longer accepts this connection. The app may have been removed from the workspace. Connect Slack again.",
+  account_inactive: "Slack no longer accepts this connection. The app may have been removed from the workspace. Connect Slack again.",
+  ratelimited: "Slack is rate limiting messages right now.",
+};
+
+/** Posts a message into the channel as the Site Monitors app. `send` is replaceable so tests don't need the network. */
+export async function deliverSlackBot(target: SlackBotTarget, message: Message, send: typeof fetch = fetch): Promise<DeliveryResult> {
+  try {
+    const res = await send("https://slack.com/api/chat.postMessage", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${target.token}`, "Content-Type": "application/json; charset=utf-8" },
+      body: JSON.stringify({ channel: target.channel, ...(formatPayload("slack", message) as object) }),
+      redirect: "error",
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) return { ok: false, error: explain("slack", res.status) };
+    const data = (await res.json()) as { ok?: boolean; error?: string };
+    if (data.ok) return { ok: true, error: null };
+    return { ok: false, error: SLACK_BOT_ERRORS[data.error ?? ""] ?? "Slack didn't accept the message." };
+  } catch (err) {
+    const timedOut = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+    return { ok: false, error: timedOut ? "Slack didn't respond in time." : "Couldn't reach Slack." };
+  }
+}
