@@ -1,4 +1,5 @@
 import { db } from "./db";
+import { ENTITLEMENTS } from "./entitlements";
 
 export interface MonitorRow {
   id: number;
@@ -37,6 +38,13 @@ export interface MonitorRow {
   dom_due_at: number;
   dom_alert_bucket: number | null;
 
+  ai_status: "pending" | "ok" | "attention" | "problem" | "unknown";
+  ai_result: string | null; // JSON, see ai-bots.ts
+  ai_checked_at: number | null;
+  ai_due_at: number;
+  ai_alerted_sig: string | null;
+  ai_pending_sig: string | null;
+
   last_manual_check_at: number | null;
 
   status_public: number;
@@ -51,6 +59,7 @@ const UPDATABLE = new Set<string>([
   "ssl_alert_bucket", "ssl_problem_alerted",
   "dom_status", "dom_name", "dom_expires_at", "dom_days", "dom_registrar", "dom_note", "dom_checked_at", "dom_due_at",
   "dom_alert_bucket", "last_manual_check_at",
+  "ai_status", "ai_result", "ai_checked_at", "ai_due_at", "ai_alerted_sig", "ai_pending_sig",
 ]);
 
 export function listMonitors(userId: number): MonitorRow[] {
@@ -73,8 +82,8 @@ export function insertMonitor(userId: number, host: string, now: number): number
   const due = now + FIRST_CHECK_GRACE_MS;
   try {
     const res = db()
-      .prepare("INSERT INTO monitors (user_id, host, created_at, up_due_at, ssl_due_at, dom_due_at) VALUES (?, ?, ?, ?, ?, ?)")
-      .run(userId, host, now, due, due, due);
+      .prepare("INSERT INTO monitors (user_id, host, created_at, up_due_at, ssl_due_at, dom_due_at, ai_due_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+      .run(userId, host, now, due, due, due, due);
     return Number(res.lastInsertRowid);
   } catch (err) {
     if ((err as { errcode?: number }).errcode === 2067) return null; // UNIQUE constraint
@@ -98,10 +107,11 @@ export function retargetMonitor(id: number, userId: number, host: string, now: n
            ssl_error = NULL, ssl_checked_at = NULL, ssl_due_at = ?, ssl_alert_bucket = NULL, ssl_problem_alerted = NULL,
            dom_status = 'pending', dom_name = NULL, dom_expires_at = NULL, dom_days = NULL, dom_registrar = NULL,
            dom_note = NULL, dom_checked_at = NULL, dom_due_at = ?, dom_alert_bucket = NULL,
+           ai_status = 'pending', ai_result = NULL, ai_checked_at = NULL, ai_due_at = ?, ai_alerted_sig = NULL, ai_pending_sig = NULL,
            last_manual_check_at = NULL
          WHERE id = ? AND user_id = ?`,
       )
-      .run(host, now, now, now, id, userId);
+      .run(host, now, now, now, now, id, userId);
     if (Number(res.changes) === 0) return "missing";
     db().prepare("DELETE FROM uptime_checks WHERE monitor_id = ?").run(id);
     return "ok";
@@ -124,15 +134,25 @@ export function updateMonitor(id: number, fields: MonitorUpdate): void {
     .run(...(values as (string | number | null)[]), id);
 }
 
+// The plans whose sites get AI checks. They come from our own plan list (letters only), never from a request, so
+// they're safe to write straight into the query. The AI check is due for a site only if its owner's plan is one of these.
+const AI_PLANS = Object.entries(ENTITLEMENTS)
+  .filter(([, e]) => e.aiVisibility)
+  .map(([id]) => {
+    if (!/^[a-z]+$/.test(id)) throw new Error(`Unexpected plan id ${id}`);
+    return `'${id}'`;
+  })
+  .join(", ");
+
 /** Monitors with at least one check due, oldest first, together with the owner's email. */
 export function dueMonitors(now: number, limit: number): (MonitorRow & { owner_email: string; owner_plan: string })[] {
   return db()
     .prepare(
       `SELECT m.*, u.email AS owner_email, u.plan AS owner_plan FROM monitors m JOIN users u ON u.id = m.user_id
-       WHERE m.up_due_at <= ? OR m.ssl_due_at <= ? OR m.dom_due_at <= ?
-       ORDER BY MIN(m.up_due_at, m.ssl_due_at, m.dom_due_at) LIMIT ?`,
+       WHERE m.up_due_at <= ? OR m.ssl_due_at <= ? OR m.dom_due_at <= ? OR (m.ai_due_at <= ? AND u.plan IN (${AI_PLANS}))
+       ORDER BY MIN(m.up_due_at, m.ssl_due_at, m.dom_due_at, CASE WHEN u.plan IN (${AI_PLANS}) THEN m.ai_due_at ELSE m.up_due_at END) LIMIT ?`,
     )
-    .all(now, now, now, limit) as unknown as (MonitorRow & { owner_email: string; owner_plan: string })[];
+    .all(now, now, now, now, limit) as unknown as (MonitorRow & { owner_email: string; owner_plan: string })[];
 }
 
 /** A monitor with its owner's email, read fresh. Used right before running checks so alerts never use stale state. */
@@ -183,9 +203,16 @@ export function recentEvents(userId: number, limit: number): EventRow[] {
     .all(userId, limit) as unknown as EventRow[];
 }
 
+/**
+ * How many alert emails an account has been sent since a time, for the daily limit. The notices about adding,
+ * editing or removing a site are left out: the person did those themselves, and counting them let setting up
+ * a batch of sites use up the day's limit so that real alerts were skipped.
+ */
 export function countEmailsSince(userId: number, since: number): number {
   return (
-    db().prepare("SELECT COUNT(*) AS c FROM monitor_events WHERE user_id = ? AND emailed = 1 AND created_at >= ?").get(userId, since) as {
+    db()
+      .prepare("SELECT COUNT(*) AS c FROM monitor_events WHERE user_id = ? AND emailed = 1 AND created_at >= ? AND kind NOT IN ('created', 'edited', 'removed')")
+      .get(userId, since) as {
       c: number;
     }
   ).c;

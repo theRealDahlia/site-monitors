@@ -47,6 +47,8 @@ const COLORS: Record<MessageKind, number> = {
   ssl_expiry: 0xb45309,
   domain_expiry: 0xb45309,
   recovered: 0x15803d,
+  ai_problem: 0xb45309,
+  ai_recovered: 0x15803d,
   test: 0x0f766e,
   created: 0x0f766e,
   edited: 0x0f766e,

@@ -34,7 +34,7 @@ export default function PlanSwitcher({ plan, plans }: { plan: string; plans: { i
   return (
     <div role="group" aria-label="Admin plan switcher">
       <p className="text-xs font-medium text-accent">Admin · switch your plan</p>
-      <div className="mt-2 grid grid-cols-2 gap-1.5">
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {plans.map((p) => (
           <button
             key={p.id}
@@ -42,7 +42,7 @@ export default function PlanSwitcher({ plan, plans }: { plan: string; plans: { i
             onClick={() => switchPlan(p.id)}
             disabled={switching}
             aria-pressed={plan === p.id}
-            className={`rounded-md border px-2 py-1.5 text-sm disabled:opacity-60 ${
+            className={`flex-1 whitespace-nowrap rounded-md border px-2.5 py-1.5 text-sm disabled:opacity-60 ${
               plan === p.id ? "border-accent bg-accent/10 font-medium text-foreground" : "border-border text-muted hover:border-accent"
             }`}
           >

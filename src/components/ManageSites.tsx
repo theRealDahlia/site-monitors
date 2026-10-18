@@ -1,5 +1,6 @@
 "use client";
 
+import CustomDomainPanel from "@/components/CustomDomainPanel";
 import { useState } from "react";
 import { type Monitor, StatusBadge, day, useMonitors } from "@/components/monitor-ui";
 
@@ -123,6 +124,7 @@ function StatusPageControl({ m, allowed, onChanged }: { m: Monitor; allowed: boo
           </div>
         </div>
       )}
+      {enabled && <CustomDomainPanel monitorId={m.id} />}
       {error && (
         <p role="alert" className="mt-2 text-sm text-bad">
           {error}

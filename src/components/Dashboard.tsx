@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import AiVisibilityRow from "@/components/AiVisibilityRow";
 import { type Monitor, StatusBadge, ago, day, daysText, useMonitors } from "@/components/monitor-ui";
 
 // ---------- one site ----------
@@ -92,7 +93,7 @@ function DomainRow({ m }: { m: Monitor }) {
 }
 
 function MonitorCard({ m, busy, onCheck }: { m: Monitor; busy: boolean; onCheck: () => void }) {
-  const lastChecked = Math.max(m.uptime.checkedAt ?? 0, m.ssl.checkedAt ?? 0, m.domain.checkedAt ?? 0) || null;
+  const lastChecked = Math.max(m.uptime.checkedAt ?? 0, m.ssl.checkedAt ?? 0, m.domain.checkedAt ?? 0, m.ai?.checkedAt ?? 0) || null;
   return (
     <li className="rounded-xl border border-border bg-surface p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -107,6 +108,7 @@ function MonitorCard({ m, busy, onCheck }: { m: Monitor; busy: boolean; onCheck:
         <UptimeRow m={m} />
         <SslRow m={m} />
         <DomainRow m={m} />
+        {m.ai && <AiVisibilityRow ai={m.ai} />}
       </dl>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">

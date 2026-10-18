@@ -11,6 +11,8 @@ interface User {
   email: string;
   plan: string;
   planName: string;
+  /** The plan includes white label (status pages on your own domain, no Site Monitors credit). */
+  whiteLabel: boolean;
   isAdmin: boolean;
   plans?: { id: string; name: string }[];
   branding: Branding;
@@ -182,7 +184,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     setBrandingState(b);
     applyTheme(b, true);
   }, []);
-  const brandingValue = useMemo(() => ({ branding, setBranding }), [branding, setBranding]);
+  const whiteLabel = !!user?.whiteLabel;
+  const brandingValue = useMemo(() => ({ branding, setBranding, whiteLabel }), [branding, setBranding, whiteLabel]);
 
   // While the menu is open: Escape closes it, focus moves into it, and the page behind doesn't scroll.
   useEffect(() => {

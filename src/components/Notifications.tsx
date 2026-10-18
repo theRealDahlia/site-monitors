@@ -12,6 +12,8 @@ const KINDS: Record<string, { label: string; tone: string }> = {
   domain_expiry: { label: "Domain expiry", tone: "bg-warn-bg text-warn" },
   ssl_problem: { label: "SSL problem", tone: "bg-bad-bg text-bad" },
   down: { label: "Site down", tone: "bg-bad-bg text-bad" },
+  ai_problem: { label: "AI visibility", tone: "bg-warn-bg text-warn" },
+  ai_recovered: { label: "AI visibility OK", tone: "bg-ok-bg text-ok" },
 };
 const FALLBACK = { label: "Notice", tone: "border border-border text-muted" };
 

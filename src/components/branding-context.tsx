@@ -5,9 +5,10 @@ import { LANDING_FROM_APP } from "@/lib/landing";
 import { type Branding, DEFAULT_BRANDING } from "@/lib/theme";
 
 /** The signed-in account's look, shared by the app shell and the Appearance page so a change shows everywhere at once. */
-export const BrandingContext = createContext<{ branding: Branding | null; setBranding: (b: Branding) => void }>({
+export const BrandingContext = createContext<{ branding: Branding | null; setBranding: (b: Branding) => void; whiteLabel: boolean }>({
   branding: null,
   setBranding: () => {},
+  whiteLabel: false,
 });
 
 export const useBranding = () => useContext(BrandingContext);

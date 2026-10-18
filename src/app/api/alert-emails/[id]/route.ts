@@ -1,4 +1,4 @@
-import { MAX_EXTRA_EMAILS, listRecipients, removeAlertEmail, setAccountAlerts, setAlertEmailEnabled } from "@/lib/alert-emails";
+import { recipientsView, removeAlertEmail, setAccountAlerts, setAlertEmailEnabled } from "@/lib/alert-emails";
 import { currentUser, sameOrigin } from "@/lib/auth";
 
 /** Switches an address on or off. `account` is the account's own address; anything else is an added one's id. */
@@ -20,7 +20,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/alert-emai
   else if (!Number.isInteger(Number(id)) || !setAlertEmailEnabled(Number(id), user.id, body.enabled)) {
     return Response.json({ error: "Address not found." }, { status: 404 });
   }
-  return Response.json({ ...listRecipients(user.id), max: MAX_EXTRA_EMAILS });
+  return Response.json(recipientsView(user.id, user.plan));
 }
 
 export async function DELETE(request: Request, ctx: RouteContext<"/api/alert-emails/[id]">) {
@@ -30,5 +30,5 @@ export async function DELETE(request: Request, ctx: RouteContext<"/api/alert-ema
 
   const id = Number((await ctx.params).id);
   if (!Number.isInteger(id) || !removeAlertEmail(id, user.id)) return Response.json({ error: "Address not found." }, { status: 404 });
-  return Response.json({ ...listRecipients(user.id), max: MAX_EXTRA_EMAILS });
+  return Response.json(recipientsView(user.id, user.plan));
 }

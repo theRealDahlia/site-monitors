@@ -94,6 +94,14 @@ const SCHEMA = `
     dom_due_at       INTEGER NOT NULL,
     dom_alert_bucket INTEGER,
 
+    -- AI visibility (Pro): the latest result as JSON, plus what we've already alerted about.
+    ai_status      TEXT    NOT NULL DEFAULT 'pending',
+    ai_result      TEXT,
+    ai_checked_at  INTEGER,
+    ai_due_at      INTEGER NOT NULL DEFAULT 0,
+    ai_alerted_sig TEXT,
+    ai_pending_sig TEXT,
+
     last_manual_check_at INTEGER,
 
     -- Public status page. The slug is random so the address can't be guessed, and it stays the
@@ -182,8 +190,29 @@ const SCHEMA = `
     logo_type  TEXT,
     -- Random, and changed on every upload, so the logo's address can be cached forever and reveals nothing.
     logo_id    TEXT UNIQUE,
+    -- White label (Pro): leave "Run by site-monitors.net" off the account's status pages.
+    hide_credit INTEGER NOT NULL DEFAULT 0,
     updated_at INTEGER NOT NULL
   );
+
+  -- A status page on the owner's own domain (Pro). Someone only owns a domain once they've shown they control its
+  -- DNS (verified_at). Until then it's just a claim, and several accounts can claim the same name; the first to
+  -- prove it wins, and only one account can ever hold a verified domain.
+  CREATE TABLE IF NOT EXISTS custom_domains (
+    id          INTEGER PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    monitor_id  INTEGER NOT NULL UNIQUE REFERENCES monitors(id) ON DELETE CASCADE,
+    domain      TEXT    NOT NULL,
+    -- Goes in a DNS TXT record to prove control. Not a password: anyone who can read the owner's DNS can read it.
+    token       TEXT    NOT NULL,
+    verified_at INTEGER,
+    last_check_at INTEGER,
+    -- How many daily re-checks in a row have failed to find the TXT record.
+    fail_count  INTEGER NOT NULL DEFAULT 0,
+    created_at  INTEGER NOT NULL
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS custom_domains_verified ON custom_domains(domain) WHERE verified_at IS NOT NULL;
+  CREATE INDEX IF NOT EXISTS custom_domains_domain ON custom_domains(domain);
 
   CREATE TABLE IF NOT EXISTS uptime_checks (
     monitor_id INTEGER NOT NULL REFERENCES monitors(id) ON DELETE CASCADE,
@@ -205,7 +234,15 @@ function migrate(conn: DatabaseSync) {
   if (!has("users", "plan")) conn.exec("ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'");
   if (!has("users", "is_admin")) conn.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
   if (!has("monitors", "status_public")) conn.exec("ALTER TABLE monitors ADD COLUMN status_public INTEGER NOT NULL DEFAULT 0");
+  if (!has("branding", "hide_credit")) conn.exec("ALTER TABLE branding ADD COLUMN hide_credit INTEGER NOT NULL DEFAULT 0");
   if (!has("monitors", "status_slug")) conn.exec("ALTER TABLE monitors ADD COLUMN status_slug TEXT");
+  if (!has("monitors", "ai_status")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_status TEXT NOT NULL DEFAULT 'pending'");
+  if (!has("monitors", "ai_result")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_result TEXT");
+  if (!has("monitors", "ai_checked_at")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_checked_at INTEGER");
+  // Existing sites are due straight away, so an account that has just moved up to Pro gets its first AI check at once.
+  if (!has("monitors", "ai_due_at")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_due_at INTEGER NOT NULL DEFAULT 0");
+  if (!has("monitors", "ai_alerted_sig")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_alerted_sig TEXT");
+  if (!has("monitors", "ai_pending_sig")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_pending_sig TEXT");
   // Whether alerts go to the account's own address. Off is allowed, as long as the person chooses it.
   if (!has("users", "alerts_to_account")) conn.exec("ALTER TABLE users ADD COLUMN alerts_to_account INTEGER NOT NULL DEFAULT 1");
   if (!has("notification_channels", "enabled")) conn.exec("ALTER TABLE notification_channels ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1");

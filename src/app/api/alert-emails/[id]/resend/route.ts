@@ -1,4 +1,4 @@
-import { MAX_EXTRA_EMAILS, listRecipients, renewConfirmation, sendConfirmationLink } from "@/lib/alert-emails";
+import { recipientsView, renewConfirmation, sendConfirmationLink } from "@/lib/alert-emails";
 import { currentUser, sameOrigin } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 
@@ -20,5 +20,5 @@ export async function POST(request: Request, ctx: RouteContext<"/api/alert-email
     console.error("alert email confirmation resend failed", err);
     return Response.json({ error: "We couldn't send the confirmation email. Try again in a moment." }, { status: 502 });
   }
-  return Response.json({ ...listRecipients(user.id), max: MAX_EXTRA_EMAILS });
+  return Response.json(recipientsView(user.id, user.plan));
 }

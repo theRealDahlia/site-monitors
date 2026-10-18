@@ -1,4 +1,5 @@
-import { type Alert, evaluateDomain, evaluateSsl, evaluateUptime } from "./alerts";
+import { runAiVisibilityWithin } from "./ai-visibility";
+import { type Alert, evaluateAi, evaluateDomain, evaluateSsl, evaluateUptime } from "./alerts";
 import { checkDomain } from "./domain-check";
 import { CheckError } from "./hostname";
 import { emailRecipients } from "./alert-emails";
@@ -18,6 +19,9 @@ import {
 import { checkSsl } from "./ssl-check";
 import { checkUptime } from "./uptime-check";
 import {
+  AI_EVERY,
+  AI_RECHECK,
+  AI_RETRY,
   DAY,
   DOMAIN_EVERY,
   DOMAIN_RETRY,
@@ -27,15 +31,14 @@ import {
   UPTIME_RECHECK,
 } from "./monitor-config";
 
-/** A safety valve: no account is ever emailed more than this many alerts in 24 hours. */
-const EMAILS_PER_DAY = 40;
-
 export interface Which {
   uptime: boolean;
   ssl: boolean;
   domain: boolean;
+  /** AI visibility. Only runs for plans that include it, whatever is asked for here. */
+  ai: boolean;
 }
-export const ALL_CHECKS: Which = { uptime: true, ssl: true, domain: true };
+export const ALL_CHECKS: Which = { uptime: true, ssl: true, domain: true, ai: true };
 
 type Settled<T> = { ok: true; value: T } | { ok: false; error: string; code?: string };
 
@@ -88,14 +91,18 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
   const m = getMonitorWithOwner(monitorId);
   if (!m) return false; // deleted while it was waiting
   const now = Date.now();
+  const aiIncluded = entitlementsFor(m.owner_plan).aiVisibility;
   const which: Which =
-    requested === "due" ? { uptime: m.up_due_at <= now, ssl: m.ssl_due_at <= now, domain: m.dom_due_at <= now } : requested;
-  if (!which.uptime && !which.ssl && !which.domain) return false;
+    requested === "due"
+      ? { uptime: m.up_due_at <= now, ssl: m.ssl_due_at <= now, domain: m.dom_due_at <= now, ai: aiIncluded && m.ai_due_at <= now }
+      : { ...requested, ai: requested.ai && aiIncluded };
+  if (!which.uptime && !which.ssl && !which.domain && !which.ai) return false;
 
-  const [up, ssl, dom] = await Promise.all([
+  const [up, ssl, dom, ai] = await Promise.all([
     which.uptime ? checkUptime(m.host) : null,
     which.ssl ? settle(checkSsl(m.host)) : null,
     which.domain ? settle(checkDomain(m.host)) : null,
+    which.ai ? settle(runAiVisibilityWithin(m.host)) : null,
   ]);
 
   // If the site was edited or removed while these checks were running, the results belong to
@@ -192,6 +199,38 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
     }
   }
 
+  if (ai) {
+    if (!ai.ok) {
+      // The check itself crashed. Keep what we knew and try again later.
+      Object.assign(update, { ai_due_at: now + AI_RETRY } satisfies MonitorUpdate);
+    } else if (ai.value.status === "unknown") {
+      // We couldn't read the site (it's down, or it turns our check away). That's not an AI problem, so no alert,
+      // and what we'd alerted about stays as it was.
+      Object.assign(update, {
+        ai_status: "unknown",
+        ai_result: JSON.stringify(ai.value),
+        ai_checked_at: now,
+        ai_due_at: now + AI_RETRY,
+      } satisfies MonitorUpdate);
+    } else {
+      const v = ai.value;
+      const r = evaluateAi(
+        { alertedSig: m.ai_alerted_sig, pendingSig: m.ai_pending_sig },
+        m.host,
+        { sig: v.problemSig, problems: v.findings.filter((f) => f.severity === "problem") },
+      );
+      Object.assign(update, {
+        ai_status: v.status,
+        ai_result: JSON.stringify(v),
+        ai_checked_at: now,
+        ai_due_at: now + (r.recheckSoon ? AI_RECHECK : AI_EVERY),
+        ai_alerted_sig: r.state.alertedSig,
+        ai_pending_sig: r.state.pendingSig,
+      } satisfies MonitorUpdate);
+      for (const alert of r.alerts) pending.push({ alert, revert: { ai_alerted_sig: m.ai_alerted_sig, ai_pending_sig: m.ai_pending_sig } });
+    }
+  }
+
   if (options.afterChecks) {
     try {
       await options.afterChecks({ ...m, ...update } as MonitorRow);
@@ -206,7 +245,7 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
   for (const { alert, revert } of pending) {
     // "Handled" means the alert has reached the user by email, or email was deliberately skipped.
     let handled = false;
-    if (sentToday >= EMAILS_PER_DAY) {
+    if (sentToday >= entitlementsFor(m.owner_plan).maxEmailsPerDay) {
       logged.push({ kind: alert.kind, message: `${alert.subject} (email skipped: daily limit reached)`, emailed: false });
       handled = true;
     } else {
@@ -237,5 +276,6 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
     } catch {
       // The monitor was deleted while its checks were running; nothing to log.
     }
-  }  return true;
+  }
+  return true;
 }

@@ -1,3 +1,4 @@
+import type { AiResult } from "./ai-bots";
 import { type MonitorRow, uptimeSince } from "./monitors-db";
 
 export type OverallStatus = "pending" | "ok" | "warning" | "problem" | "down";
@@ -8,8 +9,22 @@ function percent(window: { total: number; ok: number }): number | null {
   return window.total === 0 ? null : Math.round((window.ok / window.total) * 1000) / 10;
 }
 
-/** The shape sent to the dashboard: current state of each check plus one overall status. */
-export function monitorView(m: MonitorRow) {
+/** The stored AI result, or null if there isn't one or it's from a version we don't recognise. */
+function parseAi(json: string | null): AiResult | null {
+  if (!json) return null;
+  try {
+    const v = JSON.parse(json) as AiResult;
+    return v && v.v === 1 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The shape sent to the dashboard: current state of each check plus one overall status. AI-visibility results
+ * are only included for accounts whose plan has them (`opts.aiVisibility`); everyone else gets `ai: null`.
+ */
+export function monitorView(m: MonitorRow, opts: { aiVisibility?: boolean } = {}) {
   const now = Date.now();
 
   let overall: OverallStatus = "ok";
@@ -24,6 +39,7 @@ export function monitorView(m: MonitorRow) {
     createdAt: m.created_at,
     overall,
     statusPage: { enabled: !!m.status_public, slug: m.status_slug },
+    ai: opts.aiVisibility ? { status: m.ai_status, checkedAt: m.ai_checked_at, result: parseAi(m.ai_result) } : null,
     uptime: {
       status: m.up_status,
       code: m.up_code,

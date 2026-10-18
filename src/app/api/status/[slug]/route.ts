@@ -16,6 +16,11 @@ export async function GET(request: Request, ctx: RouteContext<"/api/status/[slug
   if (!monitor || !entitlementsFor(monitor.owner_plan).statusPages) {
     return Response.json({ error: "Status page not found." }, { status: 404 });
   }
-  // The owner's own logo and colours, so the page their clients see looks like theirs.
-  return Response.json({ ...publicStatus(monitor), branding: getBranding(monitor.user_id) }, { headers: { "Cache-Control": "public, max-age=15" } });
+  // The owner's own logo and colours, so the page their clients see looks like theirs. Leaving our credit off is a
+  // Pro feature, so it's only reported for accounts that still have it.
+  const branding = getBranding(monitor.user_id);
+  return Response.json(
+    { ...publicStatus(monitor), branding: { ...branding, hideCredit: branding.hideCredit && entitlementsFor(monitor.owner_plan).whiteLabel } },
+    { headers: { "Cache-Control": "public, max-age=15" } },
+  );
 }

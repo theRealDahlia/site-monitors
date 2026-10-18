@@ -13,19 +13,31 @@ interface Row {
   theme_mode: string;
   accent: string;
   logo_id: string | null;
+  hide_credit: number;
 }
 
 const logoUrl = (id: string | null) => (id ? `/api/logo/${id}` : null);
 
 export function getBranding(userId: number): Branding {
-  const row = db().prepare("SELECT theme_mode, accent, logo_id FROM branding WHERE user_id = ?").get(userId) as Row | undefined;
+  const row = db().prepare("SELECT theme_mode, accent, logo_id, hide_credit FROM branding WHERE user_id = ?").get(userId) as Row | undefined;
   if (!row) return DEFAULT_BRANDING;
   // Anything unexpected in the database falls back to the default rather than reaching a page.
   return {
     mode: isThemeMode(row.theme_mode) ? row.theme_mode : DEFAULT_BRANDING.mode,
     accent: isAccent(row.accent) ? row.accent : DEFAULT_BRANDING.accent,
     logoUrl: logoUrl(row.logo_id),
+    hideCredit: row.hide_credit === 1,
   };
+}
+
+/** Saves the "leave our credit off my status pages" setting. Whether the plan allows it is for the caller to decide. */
+export function setHideCredit(userId: number, hide: boolean): void {
+  db()
+    .prepare(
+      `INSERT INTO branding (user_id, hide_credit, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET hide_credit = excluded.hide_credit, updated_at = excluded.updated_at`,
+    )
+    .run(userId, hide ? 1 : 0, Date.now());
 }
 
 export function saveTheme(userId: number, mode: ThemeMode, accent: string): void {

@@ -42,6 +42,7 @@ export const PLANS: Plan[] = [
     features: [
       "Watch up to 100 sites",
       "Everything in Starter",
+      "Alerts to up to 10 more email addresses",
       "AI-visibility checks: can AI search tools read your site?",
       "White-label status pages on your own domain",
     ],
@@ -54,6 +55,7 @@ export const PLANS: Plan[] = [
     features: [
       "Watch up to 500 sites",
       "Everything in Pro",
+      "Alerts to up to 20 more email addresses",
       "Separate workspaces for each client",
       "Monthly health reports to send to clients",
       "Team seats",
@@ -69,7 +71,7 @@ export const COMPARISON: { feature: string; values: (string | boolean)[] }[] = [
   { feature: "SSL certificate expiry alerts", values: [true, true, true, true] },
   { feature: "Domain expiry alerts", values: [true, true, true, true] },
   { feature: "Email alerts", values: [true, true, true, true] },
-  { feature: "Extra alert email addresses", values: ["5", "5", "5", "5"] },
+  { feature: "Extra alert email addresses", values: ["5", "5", "10", "20"] },
   { feature: "Your own logo and colours", values: [true, true, true, true] },
   { feature: "Dashboard and notification history", values: [true, true, true, true] },
   { feature: "Slack and Discord alerts", values: [false, true, true, true] },

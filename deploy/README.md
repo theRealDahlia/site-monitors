@@ -33,16 +33,18 @@ sh /opt/site-monitors/deploy/update.sh
 
 ## Setting an account's plan
 
-There's no billing yet. To give an account the Starter plan (25 sites, 1-minute checks, Slack and Discord
-alerts, public status pages), run this on the server from `/opt/site-monitors`:
+There's no billing yet. To give an account a paid plan, run this on the server from `/opt/site-monitors`:
 
 ```sh
-node scripts/set-plan.mjs someone@example.com starter
-node scripts/set-plan.mjs someone@example.com free     # to put them back
+node scripts/set-plan.mjs someone@example.com starter   # 25 sites, 1-minute checks, Slack and Discord, status pages
+node scripts/set-plan.mjs someone@example.com pro       # 100 sites, and everything in Starter
+node scripts/set-plan.mjs someone@example.com free      # to put them back
 ```
 
-It takes effect straight away. Downgrading never deletes anything: extra sites stay (but no new ones can be
-added), and Slack/Discord alerts and status pages simply stop working until the account is on Starter again.
+It takes effect straight away. Pro also includes AI-visibility checks and white-label status pages (see below).
+Downgrading never deletes anything: extra sites and extra alert addresses stay and keep working (but no
+new ones can be added until the account is under the new limit), and Slack/Discord alerts and status
+pages simply stop working until the account is on Starter or Pro again.
 
 ## Slack and Discord sign-in
 
@@ -88,6 +90,31 @@ redirect address is built from `APP_URL`, so it must match exactly what you regi
 For local development, also register the `http://localhost:3000/api/oauth/…/callback` addresses and use
 a separate set of values in your Mac's `.env.local`. Discord accepts `http://localhost`. Slack only
 accepts `https` redirect addresses, so test Slack on the live site (or through an HTTPS tunnel).
+
+## Status pages on customers' own domains (Pro)
+
+A Pro customer can show a site's public status page at their own address, like `status.theircompany.com`, with no Site
+Monitors branding. They add two DNS records (shown in Manage sites): a TXT record that proves they own the domain, and a
+CNAME that points it at `site-monitors.net`.
+
+For this server to answer for those domains over HTTPS, Caddy needs the updated config in `deploy/Caddyfile`. It gets a
+certificate for a customer's domain the first time someone visits it, but only after asking the app
+(`/api/domains/allowed`), which says yes only for a verified domain whose owner is still on a plan that includes it.
+
+```sh
+cd /opt/site-monitors && git pull
+sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
+```
+
+Needs: the app running (Caddy asks it), `APP_URL=https://site-monitors.net` in `.env.local` (that's the address customers
+point at), and ports 80 and 443 open in the Lightsail firewall (they already are). If a customer's page shows a certificate
+error, look at `journalctl -u caddy -n 50 --no-pager` for the domain. The usual causes are DNS that doesn't point here yet
+(Caddy can only get a certificate once it does) or a customer using a CDN proxy in front of the domain.
+
+Ownership is re-checked daily. If a customer's TXT record has been missing for three daily checks in a row, the domain is
+released, so a domain that lapses and is bought by someone else can't keep serving the old owner's page.
 
 ## There is no admin in production
 

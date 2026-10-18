@@ -1,5 +1,6 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
 import { ALL_CHECKS, runChecks } from "@/lib/monitor-runner";
+import { entitlementsFor } from "@/lib/entitlements";
 import { monitorView } from "@/lib/monitor-view";
 import { getMonitor, updateMonitor } from "@/lib/monitors-db";
 import { rateLimit } from "@/lib/rate-limit";
@@ -26,5 +27,5 @@ export async function POST(request: Request, ctx: RouteContext<"/api/monitors/[i
 
   updateMonitor(monitor.id, { last_manual_check_at: Date.now() });
   await runChecks(monitor.id, ALL_CHECKS);
-  return Response.json({ monitor: monitorView(getMonitor(id, user.id)!) });
+  return Response.json({ monitor: monitorView(getMonitor(id, user.id)!, entitlementsFor(user.plan)) });
 }

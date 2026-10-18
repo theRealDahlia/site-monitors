@@ -39,8 +39,13 @@ function barColor(uptime: number | null): string {
   return "bg-bad";
 }
 
-export default function StatusView() {
-  const { slug } = useParams<{ slug: string }>();
+/**
+ * A public status page. `slug` is given when the page is shown on a customer's own domain (`customDomain`), and
+ * otherwise comes from the address (/status/<slug>).
+ */
+export default function StatusView({ slug: given, customDomain = false }: { slug?: string; customDomain?: boolean }) {
+  const params = useParams<{ slug?: string }>();
+  const slug = given ?? params?.slug ?? "";
   const [load, setLoad] = useState<Load>({ kind: "loading" });
 
   useEffect(() => {
@@ -74,9 +79,25 @@ export default function StatusView() {
     return () => resetTheme();
   }, [look?.mode, look?.accent]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // White label: on their own domain, or when they've asked us to leave our credit off, nothing says Site Monitors.
+  // The server only reports the setting for accounts whose plan includes it.
+  const whiteLabel = customDomain || (load.kind === "ok" && load.data.branding.hideCredit);
+  const siteName = load.kind === "ok" ? load.data.host : null;
+  const logo = load.kind === "ok" ? load.data.branding.logoUrl : null;
+  useEffect(() => {
+    if (!whiteLabel || !siteName) return;
+    document.title = `${siteName} status`;
+    // The browser tab shouldn't show our icon: the owner's logo if they have one, otherwise nothing.
+    document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]').forEach((l) => l.remove());
+    const icon = document.createElement("link");
+    icon.rel = "icon";
+    icon.href = logo ?? "data:,";
+    document.head.appendChild(icon);
+  }, [whiteLabel, siteName, logo]);
+
   // With the owner's own logo at the top, the page is theirs. Otherwise it says who runs it.
   const footer =
-    load.kind === "ok" && load.data.branding.logoUrl ? null : (
+    whiteLabel || (load.kind === "ok" && load.data.branding.logoUrl) ? null : (
       <footer className="mt-12 border-t border-border pt-6 text-center text-xs text-muted">
         Run by{" "}
         <Link href="/" className="text-accent underline underline-offset-2">

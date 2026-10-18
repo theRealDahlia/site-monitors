@@ -1,14 +1,14 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { db } from "./db";
+import { entitlementsFor } from "./entitlements";
 import { type Mail, appUrl, sendMail } from "./mail";
 import { secret } from "./secret";
 
-// Who gets alert emails: the account's own address, plus up to MAX_EXTRA_EMAILS more (a colleague, a
+// Who gets alert emails: the account's own address, plus more addresses up to the plan's limit (a colleague, a
 // shared inbox). Each one can be switched on or off. An added address only ever receives alerts after
 // someone has clicked the confirmation link we sent to it, and every alert it gets has a link to stop
 // them, so this can't be used to send email to people who didn't ask for it.
 
-export const MAX_EXTRA_EMAILS = 5;
 const CONFIRM_DAYS = 7;
 export const CONFIRM_RESEND_SECONDS = 60;
 
@@ -61,11 +61,20 @@ export function setAccountAlerts(userId: number, enabled: boolean): void {
 
 export type AddResult = { ok: true; id: number; token: string } | { ok: false; error: string; status: number };
 
-/** Saves an address as waiting for confirmation and returns the token for its confirmation link. */
-export function addAlertEmail(userId: number, accountEmail: string, email: string, now = Date.now()): AddResult {
+/**
+ * The account's addresses, and how many extra ones its plan allows. An account that has fallen to a smaller
+ * plan can have more than that: nothing is removed, they all keep working, and no more can be added until
+ * it's back under the limit.
+ */
+export function recipientsView(userId: number, plan: string) {
+  return { ...listRecipients(userId), max: entitlementsFor(plan).maxExtraEmails };
+}
+
+/** Saves an address as waiting for confirmation and returns the token for its confirmation link. `maxExtras` is the plan's limit. */
+export function addAlertEmail(userId: number, accountEmail: string, email: string, maxExtras: number, now = Date.now()): AddResult {
   if (email === accountEmail) return { ok: false, error: "That's already your account's email address.", status: 409 };
   const count = (db().prepare("SELECT COUNT(*) AS c FROM alert_emails WHERE user_id = ?").get(userId) as { c: number }).c;
-  if (count >= MAX_EXTRA_EMAILS) return { ok: false, error: `You can add up to ${MAX_EXTRA_EMAILS} more addresses. Remove one to add another.`, status: 403 };
+  if (count >= maxExtras) return { ok: false, error: `Your plan includes up to ${maxExtras} extra addresses. Remove one to add another.`, status: 403 };
   const token = randomBytes(32).toString("base64url");
   try {
     const res = db()

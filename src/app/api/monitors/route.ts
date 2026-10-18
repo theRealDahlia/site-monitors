@@ -17,9 +17,9 @@ export async function GET(request: Request) {
   const plan = entitlementsFor(user.plan);
   return Response.json({
     email: user.email,
-    plan: { id: user.plan, name: plan.name, statusPages: plan.statusPages, integrations: plan.integrations },
+    plan: { id: user.plan, name: plan.name, statusPages: plan.statusPages, integrations: plan.integrations, aiVisibility: plan.aiVisibility },
     limit: plan.maxMonitors,
-    monitors: listMonitors(user.id).map(monitorView),
+    monitors: listMonitors(user.id).map((m) => monitorView(m, plan)),
     events: recentEvents(user.id, 50).map((e) => ({
       id: e.id,
       host: e.host,
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: "Request blocked." }, { status: 403 });
   const user = currentUser(request);
   if (!user) return Response.json({ error: "Log in to add a monitor." }, { status: 401 });
-  if (!rateLimit(`monitor-add:${user.id}`, 10, HOUR_MS)) {
+  if (!rateLimit(`monitor-add:${user.id}`, entitlementsFor(user.plan).addsPerHour, HOUR_MS)) {
     return Response.json({ error: "You're adding monitors too quickly. Try again later." }, { status: 429 });
   }
 
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
 
     // Run every check now so the dashboard has real results straight away.
     await runChecks(id, ALL_CHECKS);
-    return Response.json({ monitor: monitorView(getMonitor(id, user.id)!) }, { status: 201 });
+    return Response.json({ monitor: monitorView(getMonitor(id, user.id)!, plan) }, { status: 201 });
   } catch (err) {
     if (err instanceof CheckError) return Response.json({ error: err.message }, { status: err.httpStatus });
     console.error("create monitor failed", err);

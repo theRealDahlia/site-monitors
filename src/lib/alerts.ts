@@ -8,7 +8,7 @@ export const DOMAIN_THRESHOLDS = [60, 30, 14, 7, 1];
 /** A site is only reported down after this many failed checks in a row, so one blip emails nobody. */
 export const DOWN_AFTER_FAILURES = 2;
 
-export type AlertKind = "ssl_expiry" | "ssl_problem" | "domain_expiry" | "down" | "recovered";
+export type AlertKind = "ssl_expiry" | "ssl_problem" | "domain_expiry" | "down" | "recovered" | "ai_problem" | "ai_recovered";
 
 export interface Alert {
   kind: AlertKind;
@@ -179,4 +179,56 @@ export function evaluateUptime(prev: UptimeState, host: string, r: UptimeFinding
     };
   }
   return { state: { failures, downAlerted: prev.downAlerted, downSince }, alerts: [], recheckSoon: failures < DOWN_AFTER_FAILURES };
+}
+
+// ---------- AI visibility ----------
+
+export interface AiAlertState {
+  /** The set of problems we last told the owner about, or null if none is outstanding. */
+  alertedSig: string | null;
+  /** A set of problems seen once and waiting for a second look before anyone is told. */
+  pendingSig: string | null;
+}
+
+/**
+ * Decides whether to email about AI visibility. `sig` identifies the current set of problems and is empty when
+ * there are none. A new set of problems is only reported once a second look, an hour later, finds the same
+ * ones, so a short glitch (a firewall rule being changed, a deploy) emails nobody. Problems going away is
+ * reported straight away, but only if we had reported them.
+ */
+export function evaluateAi(
+  prev: AiAlertState,
+  host: string,
+  r: { sig: string; problems: { title: string; detail: string }[] },
+): { state: AiAlertState; alerts: Alert[]; recheckSoon: boolean } {
+  if (!r.sig) {
+    const alerts: Alert[] = prev.alertedSig
+      ? [
+          {
+            kind: "ai_recovered",
+            subject: `AI search tools can read ${host} again`,
+            body: `The problems we reported about AI search access to ${host} are gone. Crawlers that build AI search results are no longer being turned away.${footer()}`,
+          },
+        ]
+      : [];
+    return { state: { alertedSig: null, pendingSig: null }, alerts, recheckSoon: false };
+  }
+  if (r.sig === prev.alertedSig) return { state: { alertedSig: prev.alertedSig, pendingSig: null }, alerts: [], recheckSoon: false };
+  if (r.sig !== prev.pendingSig) return { state: { alertedSig: prev.alertedSig, pendingSig: r.sig }, alerts: [], recheckSoon: true };
+
+  const list = r.problems.map((p) => `• ${p.title}\n  ${p.detail}`).join("\n\n");
+  return {
+    state: { alertedSig: r.sig, pendingSig: null },
+    recheckSoon: false,
+    alerts: [
+      {
+        kind: "ai_problem",
+        subject: `AI search tools may not be able to read ${host}`,
+        body:
+          `We found ${plural(r.problems.length, "thing")} that can keep AI search tools from reading ${host}:\n\n${list}\n\n` +
+          `This checks whether the site can be read. It can't tell you whether any AI tool actually mentions it.` +
+          footer(),
+      },
+    ],
+  };
 }

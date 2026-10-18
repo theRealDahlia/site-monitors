@@ -30,7 +30,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/monitors/[
 
   try {
     const host = parseHostname(typeof body.host === "string" ? body.host : "", { ignorePort: true });
-    if (host === monitor.host) return Response.json({ monitor: monitorView(monitor), changed: false });
+    if (host === monitor.host) return Response.json({ monitor: monitorView(monitor, entitlementsFor(user.plan)), changed: false });
     await resolvePublicAddress(host); // catches typos and private addresses before anything is changed
 
     const result = retargetMonitor(id, user.id, host, Date.now());
@@ -52,7 +52,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/monitors/[
     }
     // If the checks still couldn't run, report what we know so the user isn't left without a message.
     if (!notified) await notify(getMonitor(id, user.id)!);
-    return Response.json({ monitor: monitorView(getMonitor(id, user.id)!), changed: true });
+    return Response.json({ monitor: monitorView(getMonitor(id, user.id)!, entitlementsFor(user.plan)), changed: true });
   } catch (err) {
     if (err instanceof CheckError) return Response.json({ error: err.message }, { status: err.httpStatus });
     console.error("edit monitor failed", err);

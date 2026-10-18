@@ -1,12 +1,13 @@
-import { MAX_EXTRA_EMAILS, addAlertEmail, listRecipients, removeAlertEmail, sendConfirmationLink } from "@/lib/alert-emails";
+import { addAlertEmail, recipientsView, removeAlertEmail, sendConfirmationLink } from "@/lib/alert-emails";
 import { currentUser, normalizeEmail, sameOrigin } from "@/lib/auth";
+import { entitlementsFor } from "@/lib/entitlements";
 import { rateLimit } from "@/lib/rate-limit";
 
 /** The addresses alert emails go to. Every plan has this. */
 export async function GET(request: Request) {
   const user = currentUser(request);
   if (!user) return Response.json({ error: "Log in first." }, { status: 401 });
-  return Response.json({ ...listRecipients(user.id), max: MAX_EXTRA_EMAILS });
+  return Response.json(recipientsView(user.id, user.plan));
 }
 
 /** Adds an address and emails it a link to confirm. It gets nothing else until that link is used. */
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "You're adding addresses too quickly. Try again later." }, { status: 429 });
   }
 
-  const added = addAlertEmail(user.id, user.email, email);
+  const added = addAlertEmail(user.id, user.email, email, entitlementsFor(user.plan).maxExtraEmails);
   if (!added.ok) return Response.json({ error: added.error }, { status: added.status });
   try {
     await sendConfirmationLink(user.email, email, added.token);
@@ -37,5 +38,5 @@ export async function POST(request: Request) {
     removeAlertEmail(added.id, user.id);
     return Response.json({ error: "We couldn't send the confirmation email. Check the address and try again." }, { status: 502 });
   }
-  return Response.json({ ...listRecipients(user.id), max: MAX_EXTRA_EMAILS }, { status: 201 });
+  return Response.json(recipientsView(user.id, user.plan), { status: 201 });
 }

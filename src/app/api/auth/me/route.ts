@@ -17,6 +17,7 @@ export async function GET(request: Request) {
             email: user.email,
             plan: user.plan,
             planName: ENTITLEMENTS[user.plan].name,
+            whiteLabel: ENTITLEMENTS[user.plan].whiteLabel,
             isAdmin: user.isAdmin,
             // The account's look, so the app can show it straight away.
             branding: getBranding(user.id),

@@ -16,7 +16,7 @@ export interface EventItem {
 }
 export interface MonitorData {
   email: string;
-  plan: { id: string; name: string; statusPages: boolean; integrations: boolean };
+  plan: { id: string; name: string; statusPages: boolean; integrations: boolean; aiVisibility: boolean };
   limit: number;
   monitors: Monitor[];
   events: EventItem[];

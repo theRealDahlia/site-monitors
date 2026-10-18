@@ -175,7 +175,9 @@ export default function AlertEmails() {
             </form>
           ) : (
             <p className="mt-4 border-t border-border pt-4 text-sm text-muted">
-              You&apos;ve added the most extra addresses ({data.max}). Remove one to add another.
+              {data.extras.length > data.max
+                ? `Your plan includes ${data.max} extra addresses and you have ${data.extras.length}. They all keep working. Remove ${data.extras.length - data.max} to add another.`
+                : `You've used all ${data.max} extra addresses on your plan. Remove one to add another.`}
             </p>
           )}
 

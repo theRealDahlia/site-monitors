@@ -12,6 +12,11 @@ export const SSL_RETRY = 5 * MIN;
 export const DOMAIN_EVERY = 12 * HOUR;
 export const DOMAIN_RETRY = HOUR;
 export const DOMAIN_UNSUPPORTED_EVERY = 7 * DAY;
+// AI access rarely changes, so once a day is plenty. A problem is looked at again an hour later before anyone is told,
+// and a site we couldn't read is retried in a few hours.
+export const AI_EVERY = DAY;
+export const AI_RECHECK = HOUR;
+export const AI_RETRY = 3 * HOUR;
 
 /** "5 minutes", "6 hours", "1 hour". */
 export function everyText(ms: number): string {

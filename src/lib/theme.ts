@@ -22,9 +22,11 @@ export interface Branding {
   /** A ready-made accent's id, or a custom colour as #rrggbb. */
   accent: string;
   logoUrl: string | null;
+  /** Leave "Run by site-monitors.net" off this account's status pages. Only counts on plans with white label. */
+  hideCredit: boolean;
 }
 
-export const DEFAULT_BRANDING: Branding = { mode: "system", accent: "teal", logoUrl: null };
+export const DEFAULT_BRANDING: Branding = { mode: "system", accent: "teal", logoUrl: null, hideCredit: false };
 
 const HEX = /^#[0-9a-f]{6}$/;
 

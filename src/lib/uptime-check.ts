@@ -17,7 +17,7 @@ const TIMEOUT_MS = 10_000;
  * to exactly the address we validated, so a hostname that changes its DNS answer between our
  * check and the connection (DNS rebinding) can't aim us at an internal service.
  */
-const safeLookup: typeof dns.lookup = ((hostname: string, options: dns.LookupOptions, callback: (...args: unknown[]) => void) => {
+export const safeLookup: typeof dns.lookup = ((hostname: string, options: dns.LookupOptions, callback: (...args: unknown[]) => void) => {
   dns.lookup(hostname, { all: true }, (err, addresses) => {
     if (err) return callback(err);
     if (addresses.length === 0 || !addresses.every((a) => isPublicAddress(a.address, a.family))) {

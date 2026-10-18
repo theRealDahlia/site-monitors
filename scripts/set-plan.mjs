@@ -1,6 +1,7 @@
-// Sets an account's plan. There's no billing yet, so this is how an account gets Starter.
+// Sets an account's plan. There's no billing yet, so this is how an account gets Starter or Pro.
 //
 //   node scripts/set-plan.mjs someone@example.com starter
+//   node scripts/set-plan.mjs someone@example.com pro
 //   node scripts/set-plan.mjs someone@example.com free
 //
 // Run it on the server, from the project folder. It uses the same database as the app
@@ -9,7 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-const PLANS = ["free", "starter"];
+const PLANS = ["free", "starter", "pro"];
 const [email, plan] = process.argv.slice(2);
 
 if (!email || !PLANS.includes(plan)) {

@@ -1,7 +1,25 @@
+# Global settings. "ask" is how Caddy decides whether to get an HTTPS certificate for a domain it has never seen: it asks
+# the app, which says yes only for a customer's verified status-page domain (Pro). Without that check anyone could make
+# this server request certificates for any domain.
+{
+	on_demand_tls {
+		ask http://127.0.0.1:3000/api/domains/allowed
+	}
+}
+
 site-monitors.net {
 	reverse_proxy 127.0.0.1:3000
 }
 
 www.site-monitors.net {
 	redir https://site-monitors.net{uri} permanent
+}
+
+# Customers' own domains, like status.theircompany.com. Any other host name that reaches this server gets a
+# certificate only if the app approves it above, and is then served that customer's status page and nothing else.
+https:// {
+	tls {
+		on_demand
+	}
+	reverse_proxy 127.0.0.1:3000
 }
