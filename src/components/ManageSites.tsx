@@ -1,6 +1,6 @@
 "use client";
 
-import CustomDomainPanel from "@/components/CustomDomainPanel";
+import Link from "next/link";
 import { useState } from "react";
 import { type Monitor, StatusBadge, day, useMonitors } from "@/components/monitor-ui";
 
@@ -124,7 +124,15 @@ function StatusPageControl({ m, allowed, onChanged }: { m: Monitor; allowed: boo
           </div>
         </div>
       )}
-      {enabled && <CustomDomainPanel monitorId={m.id} />}
+      {enabled && (
+        <p className="mt-3 text-xs text-muted">
+          Want it on your own domain? See{" "}
+          <Link href="/dashboard/white-label" className="text-accent underline underline-offset-2">
+            White label
+          </Link>
+          .
+        </p>
+      )}
       {error && (
         <p role="alert" className="mt-2 text-sm text-bad">
           {error}

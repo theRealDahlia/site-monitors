@@ -1,9 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BrandMark, useBranding } from "@/components/branding-context";
-import Toggle from "@/components/Toggle";
 import { ACCENTS, type Branding, type ThemeMode, accentVars } from "@/lib/theme";
 
 const MODES: { id: ThemeMode; label: string }[] = [
@@ -18,8 +16,7 @@ type Status = { ok: boolean; text: string } | null;
 
 /** The Appearance page: the account's own logo, light or dark, and accent colour. Every plan has it. */
 export default function Appearance() {
-  const { branding, setBranding, whiteLabel } = useBranding();
-  const [creditBusy, setCreditBusy] = useState(false);
+  const { branding, setBranding } = useBranding();
   const [logoStatus, setLogoStatus] = useState<Status>(null);
   const [themeStatus, setThemeStatus] = useState<Status>(null);
   const [uploading, setUploading] = useState(false);
@@ -61,28 +58,6 @@ export default function Appearance() {
         setThemeStatus({ ok: false, text: err instanceof Error && err.message !== "Failed to fetch" ? err.message : "Couldn't reach the server. Try again." });
       }
     }, wait);
-  }
-
-  /** Switches "leave Run by site-monitors.net off my status pages" on or off. */
-  async function setCredit(hide: boolean) {
-    if (!branding || creditBusy) return;
-    setCreditBusy(true);
-    setThemeStatus(null);
-    try {
-      const res = await fetch("/api/branding", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: branding.mode, accent: branding.accent, hideCredit: hide }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? "Couldn't save.");
-      saved.current = body;
-      setBranding(body);
-      setThemeStatus({ ok: true, text: "Saved" });
-    } catch (err) {
-      setThemeStatus({ ok: false, text: err instanceof Error && err.message !== "Failed to fetch" ? err.message : "Couldn't reach the server. Try again." });
-    }
-    setCreditBusy(false);
   }
 
   async function sendLogo(init: RequestInit, done: string) {
@@ -220,39 +195,6 @@ export default function Appearance() {
         </fieldset>
       </section>
 
-      <section className="mt-4 rounded-xl border border-border bg-surface p-5" aria-labelledby="white-label-heading">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 id="white-label-heading" className="flex flex-wrap items-center gap-2 font-semibold">
-              White label
-              {!whiteLabel && <span className="rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted">Pro</span>}
-            </h2>
-            <p className="mt-0.5 text-sm text-muted">Leave &ldquo;Run by site-monitors.net&rdquo; off your public status pages, so they carry only your own logo and colours.</p>
-          </div>
-          {whiteLabel && (
-            <Toggle on={branding.hideCredit} disabled={creditBusy} label="Leave Site Monitors off my status pages" onChange={setCredit} />
-          )}
-        </div>
-        <p className="mt-3 text-sm text-muted">
-          {whiteLabel ? (
-            <>
-              You can also show a site&apos;s status page on your own domain, like status.yourcompany.com. Set that up per site under{" "}
-              <Link href="/dashboard/sites" className="text-accent underline underline-offset-2">
-                Manage sites
-              </Link>
-              , in its public status page.
-            </>
-          ) : (
-            <>
-              White label is part of the Pro plan.{" "}
-              <Link href="/dashboard/plans" className="text-accent underline underline-offset-2">
-                See the plans
-              </Link>
-              .
-            </>
-          )}
-        </p>
-      </section>
     </div>
   );
 }

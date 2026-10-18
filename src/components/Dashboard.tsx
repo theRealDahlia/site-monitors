@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import AiVisibilityRow from "@/components/AiVisibilityRow";
-import { type Monitor, StatusBadge, ago, day, daysText, useMonitors } from "@/components/monitor-ui";
+import { type Monitor, StatusBadge, ago, day, daysText, useMonitors, useNotice } from "@/components/monitor-ui";
 
 // ---------- one site ----------
 
@@ -108,7 +107,6 @@ function MonitorCard({ m, busy, onCheck }: { m: Monitor; busy: boolean; onCheck:
         <UptimeRow m={m} />
         <SslRow m={m} />
         <DomainRow m={m} />
-        {m.ai && <AiVisibilityRow ai={m.ai} />}
       </dl>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
@@ -130,7 +128,7 @@ function MonitorCard({ m, busy, onCheck }: { m: Monitor; busy: boolean; onCheck:
 export default function Dashboard() {
   const { data, loadError, reload } = useMonitors("/dashboard");
   const [checking, setChecking] = useState<number | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useNotice();
 
   async function checkNow(id: number) {
     setChecking(id);

@@ -110,3 +110,27 @@ export function useMonitors(returnTo: string) {
 
   return { data, loadError, reload };
 }
+
+/**
+ * A short-lived message, like "Checked just now. Try again in 28s." One that names a wait counts down by itself and
+ * disappears when the wait is over; any other message clears after a few seconds.
+ */
+export function useNotice() {
+  const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const wait = /^(.*Try again in )(\d+)s\.$/.exec(notice);
+    const t = setTimeout(
+      () => {
+        if (!wait) return setNotice(null);
+        const left = Number(wait[2]) - 1;
+        setNotice(left > 0 ? `${wait[1]}${left}s.` : null);
+      },
+      wait ? 1000 : 8000,
+    );
+    return () => clearTimeout(t);
+  }, [notice]);
+
+  return [notice, setNotice] as const;
+}
