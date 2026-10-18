@@ -128,6 +128,16 @@ const SCHEMA = `
   );
   CREATE INDEX IF NOT EXISTS monitor_incidents_monitor ON monitor_incidents(monitor_id, started_at);
 
+  -- Links for choosing a new password. Only a hash of each link's token is kept, so a copy of the
+  -- database can't be used to take over an account. At most one is active per account.
+  CREATE TABLE IF NOT EXISTS password_resets (
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT    NOT NULL UNIQUE,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS password_resets_user ON password_resets(user_id);
+
   -- Slack and Discord webhooks. The URL is a secret, so it is stored encrypted.
   CREATE TABLE IF NOT EXISTS notification_channels (
     id              INTEGER PRIMARY KEY,
