@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { type Monitor, ago } from "@/components/monitor-ui";
 import { AI_BOTS, type AiResult, type AiStatus, type BotRole, ROLE_LABEL, type Severity } from "@/lib/ai-bots";
 
@@ -133,8 +134,11 @@ function RoleRows({ role, result }: { role: BotRole; result: AiResult }) {
   );
 }
 
-/** One row on a site's card: whether AI search tools can read the site, with the full detail a click away. */
-export default function AiVisibilityRow({ ai }: { ai: NonNullable<Monitor["ai"]> }) {
+/**
+ * One row on a site's card: whether AI search tools can read the site. By default the full detail is a click away;
+ * `compact` (the Overview) shows only the status and links to the AI visibility tab for the rest.
+ */
+export default function AiVisibilityRow({ ai, compact = false }: { ai: NonNullable<Monitor["ai"]>; compact?: boolean }) {
   const result = ai.result;
   const status: AiStatus | "pending" = result ? result.status : ai.status === "pending" ? "pending" : (ai.status as AiStatus);
   const headline = HEADLINE[status] ?? HEADLINE.pending;
@@ -153,7 +157,12 @@ export default function AiVisibilityRow({ ai }: { ai: NonNullable<Monitor["ai"]>
       <dd className="min-w-0">
         <p className={`font-medium ${TEXT[headline.tone]}`}>{headline.text}</p>
         {summary && <div className="mt-0.5 break-words text-muted">{summary}</div>}
-        {result && (
+        {compact && result && (
+          <Link href="/dashboard/ai-visibility" className="mt-1 inline-block text-xs text-accent underline underline-offset-2 hover:opacity-80">
+            See details
+          </Link>
+        )}
+        {!compact && result && (
           <details className="group mt-2">
             <summary className="inline-block cursor-pointer text-xs text-accent underline underline-offset-2 hover:opacity-80">
               <span className="group-open:hidden">Show details</span>

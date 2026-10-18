@@ -32,11 +32,101 @@ const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { mon
 const fmtTime = (ms: number) => new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const show = (v: number | null) => (v === null ? "—" : `${v}%`);
 
-function barColor(uptime: number | null): string {
-  if (uptime === null) return "bg-border";
-  if (uptime >= 99.9) return "bg-ok";
-  if (uptime >= 95) return "bg-warn";
-  return "bg-bad";
+/** One example of each kind of day, for the legend and for reserving room for the message. */
+const SAMPLES: (number | null)[] = [100, 97, 80, null];
+/** A long-looking date used to size the hidden messages, so a real one never needs more room. */
+const WIDE_DAY = Date.UTC(2026, 8, 28);
+
+/** What each daily bar's colour means, in the words shown when a bar is clicked. */
+function barMeaning(uptime: number | null): { color: string; label: string; text: string } {
+  if (uptime === null) return { color: "bg-border", label: "No data", text: "We weren't checking this site on this day, so there is nothing to show." };
+  if (uptime >= 99.9) return { color: "bg-ok", label: "Fully operational", text: "The site was up for practically the whole day (99.9% or more)." };
+  if (uptime >= 95) return { color: "bg-warn", label: "Some downtime", text: "The site was down for part of the day (between 95% and 99.9% uptime)." };
+  return { color: "bg-bad", label: "Major downtime", text: "The site was down for a large part of the day (under 95% uptime)." };
+}
+
+/**
+ * The last 30 days as daily bars, oldest on the left and newest on the right. A site we only started watching recently
+ * starts at the left and fills towards the right as days pass, rather than sitting in a row of empty bars. Each bar can be
+ * clicked (or tabbed to) to read what its colour means.
+ */
+function DailyBars({ days }: { days: { day: number; uptime: number | null }[] }) {
+  const [picked, setPicked] = useState<number | null>(null);
+  // Days before the first check have nothing to show; they're left out so the bars start at the left edge.
+  const first = days.findIndex((d) => d.uptime !== null);
+  const shown = first === -1 ? days.slice(-1) : days.slice(first);
+  const empty = days.length - shown.length;
+  const chosen = shown.find((d) => d.day === picked) ?? null;
+  const meaning = chosen ? barMeaning(chosen.uptime) : null;
+  const share = `${(shown.length / days.length) * 100}%`;
+
+  return (
+    <div className="mt-6" role="group" aria-label="Daily uptime for the last 30 days. Select a day for details.">
+      <div className="flex gap-[3px]">
+        {shown.map((day) => {
+          const m = barMeaning(day.uptime);
+          const on = day.day === picked;
+          return (
+            <button
+              key={day.day}
+              type="button"
+              aria-pressed={on}
+              aria-label={`${fmtDate(day.day)}: ${m.label}${day.uptime === null ? "" : `, ${day.uptime}% uptime`}`}
+              title={`${fmtDate(day.day)}: ${day.uptime === null ? "no data" : `${day.uptime}% uptime`}`}
+              onClick={() => setPicked(on ? null : day.day)}
+              className={`h-9 min-w-0 flex-1 rounded-sm outline-none hover:opacity-80 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-background ${m.color} ${
+                on ? "ring-2 ring-foreground ring-offset-2 ring-offset-background" : ""
+              }`}
+            />
+          );
+        })}
+        {Array.from({ length: empty }, (_, i) => (
+          <div key={`later-${i}`} aria-hidden className="h-9 min-w-0 flex-1 rounded-sm border border-dashed border-border" />
+        ))}
+      </div>
+      <div className="mt-1.5 text-xs text-muted" style={{ width: share }}>
+        <div className="flex justify-between gap-2">
+          <span className="truncate">{shown.length === days.length ? "30 days ago" : fmtDate(shown[0].day)}</span>
+          <span className="shrink-0">Today</span>
+        </div>
+      </div>
+      <p className="mt-0.5 text-xs text-muted">Each bar is one day (UTC).</p>
+
+      {/* Every possible message sits in the same spot, and only the current one is visible, so the box keeps one height whatever is picked. */}
+      <div aria-live="polite" className="mt-3 grid min-h-28 rounded-xl border border-border bg-surface px-4 py-3 text-sm sm:min-h-0">
+        <ul className={`col-start-1 row-start-1 flex flex-wrap content-start gap-x-5 gap-y-1.5 text-muted ${chosen ? "invisible" : ""}`}>
+          <li className="w-full text-xs">Select a day to see what its colour means.</li>
+          {SAMPLES.map((u) => {
+            const m = barMeaning(u);
+            return (
+              <li key={m.label} className="flex items-center gap-2 text-xs">
+                <span aria-hidden className={`h-3 w-3 rounded-sm ${m.color}`} />
+                {m.label}
+              </li>
+            );
+          })}
+        </ul>
+        {SAMPLES.map((u) => {
+          const m = barMeaning(u);
+          const active = chosen !== null && meaning?.label === m.label;
+          const day = active ? chosen : null;
+          const uptime = day ? day.uptime : 100;
+          return (
+            <div key={m.label} className={`col-start-1 row-start-1 flex items-start gap-3 ${active ? "" : "invisible"}`}>
+              <span aria-hidden className={`mt-1 h-3 w-3 shrink-0 rounded-sm ${m.color}`} />
+              <div>
+                <p className="font-medium">
+                  {fmtDate(day ? day.day : WIDE_DAY)} · {m.label}
+                  {uptime !== null && <span className="font-normal text-muted"> · {uptime}% uptime</span>}
+                </p>
+                <p className="mt-0.5 text-muted">{m.text}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -169,21 +259,7 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
           ))}
         </dl>
 
-        <div className="mt-6" role="img" aria-label="Daily uptime for the last 30 days">
-          <div className="flex gap-[3px]">
-            {d.days.map((day) => (
-              <div
-                key={day.day}
-                title={`${fmtDate(day.day)}: ${day.uptime === null ? "no data" : `${day.uptime}% uptime`}`}
-                className={`h-9 flex-1 rounded-sm ${barColor(day.uptime)}`}
-              />
-            ))}
-          </div>
-          <div className="mt-1.5 flex justify-between text-xs text-muted">
-            <span>30 days ago</span>
-            <span>Today (UTC days)</span>
-          </div>
-        </div>
+        <DailyBars days={d.days} />
       </section>
 
       <section aria-labelledby="incidents-heading" className="mt-10">

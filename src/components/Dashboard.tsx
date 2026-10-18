@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import AiVisibilityRow from "@/components/AiVisibilityRow";
 import { type Monitor, StatusBadge, ago, day, daysText, useMonitors, useNotice } from "@/components/monitor-ui";
 
 // ---------- one site ----------
@@ -107,6 +108,7 @@ function MonitorCard({ m, busy, onCheck }: { m: Monitor; busy: boolean; onCheck:
         <UptimeRow m={m} />
         <SslRow m={m} />
         <DomainRow m={m} />
+        {m.ai && <AiVisibilityRow ai={m.ai} compact />}
       </dl>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
