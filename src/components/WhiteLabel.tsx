@@ -60,7 +60,7 @@ export default function WhiteLabel() {
           <h2 className="font-semibold">Part of the Pro plan</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
             <li>Show a status page at your own address, like status.yourcompany.com, with a secure certificate we set up for you</li>
-            <li>Leave &ldquo;Run by site-monitors.net&rdquo; off your status pages</li>
+            <li>Leave &ldquo;Run by site-monitors.net&rdquo; off your status pages (other plans show it under your logo)</li>
             <li>Your logo and colours, from the Appearance tab, on every page</li>
           </ul>
           <Link href="/dashboard/plans" className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">
@@ -76,7 +76,7 @@ export default function WhiteLabel() {
                   Hide our credit
                 </h2>
                 <p className="mt-0.5 text-sm text-muted">
-                  Leave &ldquo;Run by site-monitors.net&rdquo; off your status pages, so they carry only your own logo and colours. Pages on your own domain never show it.
+                  Status pages show &ldquo;Run by site-monitors.net&rdquo; at the bottom, even with your logo, unless you turn this on. Pages on your own domain never show it.
                 </p>
                 {status && (
                   <p role={status.ok ? "status" : "alert"} className={`mt-2 text-sm ${status.ok ? "text-ok" : "text-bad"}`}>

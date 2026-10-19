@@ -103,7 +103,7 @@ export default function Appearance() {
           Logo
         </h2>
         <p className="mt-0.5 text-sm text-muted">
-          Shown at the top of the menu and on your status pages. Without one, we show &ldquo;Run by site-monitors.net&rdquo;.
+          Shown at the top of the menu and on your status pages. Without one, the menu shows &ldquo;Run by site-monitors.net&rdquo;.
         </p>
         <div className="mt-4 flex min-h-20 items-center rounded-lg border border-dashed border-border bg-background px-5 py-4">
           <BrandMark branding={branding} />

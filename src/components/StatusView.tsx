@@ -185,9 +185,9 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
     document.head.appendChild(icon);
   }, [whiteLabel, siteName, logo]);
 
-  // With the owner's own logo at the top, the page is theirs. Otherwise it says who runs it.
+  // The credit stays on every page unless white label is on, even when the owner has put their own logo at the top.
   const footer =
-    whiteLabel || (load.kind === "ok" && load.data.branding.logoUrl) ? null : (
+    whiteLabel ? null : (
       <footer className="mt-12 border-t border-border pt-6 text-center text-xs text-muted">
         Run by{" "}
         <Link href="/" className="text-accent underline underline-offset-2">
