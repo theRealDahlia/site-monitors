@@ -14,8 +14,8 @@ export function Row({ label, tone, headline, detail }: { label: string; tone: To
     <div className="grid grid-cols-[5.5rem_1fr] gap-3 py-3 text-sm sm:grid-cols-[7rem_1fr]">
       <dt className="text-muted">{label}</dt>
       <dd className="min-w-0">
-        <p className={`font-medium ${TONE_TEXT[tone]}`}>{headline}</p>
-        {detail && <div className="mt-0.5 break-words text-muted">{detail}</div>}
+        {headline && <p className={`font-medium ${TONE_TEXT[tone]}`}>{headline}</p>}
+        {detail && <div className={`${headline ? "mt-0.5" : ""} break-words text-muted`}>{detail}</div>}
       </dd>
     </div>
   );
@@ -85,6 +85,70 @@ export function DomainRow({ m }: { m: Monitor }) {
   }
 }
 
+// ---------- rows for monitors that aren't whole sites ----------
+
+/** "5 minutes", "6 hours", "1 day", "week". */
+export const intervalText = (ms: number | null) => {
+  if (!ms) return "";
+  const mins = Math.round(ms / 60_000);
+  if (mins < 60) return `${mins} minute${mins === 1 ? "" : "s"}`;
+  const hours = mins / 60;
+  if (hours < 24) return `${hours} hour${hours === 1 ? "" : "s"}`;
+  const days = hours / 24;
+  return days === 7 ? "week" : `${days} day${days === 1 ? "" : "s"}`;
+};
+
+/** A page monitor: is it answering, and does its keyword rule hold. */
+export function PageRows({ m }: { m: Monitor }) {
+  const u = m.uptime;
+  const t = m.target;
+  const keywordRule = t.keyword ? `Must ${t.keywordMode === "absent" ? "not contain" : "contain"} “${t.keyword}”` : null;
+  const status =
+    u.status === "pending" ? (
+      <Row label="Status" tone="muted" headline="Not checked yet" />
+    ) : u.status === "down" ? (
+      <Row label="Status" tone="bad" headline="Down" detail={`${u.error ?? "No response"}${u.downSince ? ` · since ${ago(u.downSince)}` : ""}`} />
+    ) : (
+      <Row label="Status" tone="ok" headline="Up" detail={`HTTP ${u.code ?? "?"} · ${u.ms ?? "?"} ms${u.pct24h !== null ? ` · ${u.pct24h}% over 24h` : ""}`} />
+    );
+  return (
+    <>
+      {status}
+      <Row label="Address" tone="muted" headline="" detail={<span className="break-all">{t.url}</span>} />
+      {keywordRule && <Row label="Keyword" tone="muted" headline="" detail={keywordRule} />}
+    </>
+  );
+}
+
+/** A port monitor: does it accept connections. */
+export function PortRow({ m }: { m: Monitor }) {
+  const u = m.uptime;
+  const label = `Port ${m.target.port}`;
+  if (u.status === "pending") return <Row label={label} tone="muted" headline="Not checked yet" detail={m.target.server ?? undefined} />;
+  if (u.status === "down") return <Row label={label} tone="bad" headline="Closed or not answering" detail={`${u.error ?? "No answer"}${u.downSince ? ` · since ${ago(u.downSince)}` : ""}`} />;
+  return <Row label={label} tone="ok" headline="Open" detail={`${m.target.server} answered in ${u.ms ?? "?"} ms${u.pct24h !== null ? ` · ${u.pct24h}% over 24h` : ""}`} />;
+}
+
+/** A heartbeat: when it last checked in, and when it's next expected. */
+export function HeartbeatRows({ m }: { m: Monitor }) {
+  const h = m.target.heartbeat;
+  if (!h) return null;
+  const u = m.uptime;
+  const expected = `Every ${intervalText(h.everyMs)}, up to ${intervalText(h.graceMs)} late`;
+  return (
+    <>
+      {u.status === "down" ? (
+        <Row label="Check-ins" tone="bad" headline="Overdue" detail={u.error ?? undefined} />
+      ) : h.lastPing ? (
+        <Row label="Check-ins" tone="ok" headline="On time" detail={`Last check-in ${ago(h.lastPing)} · next expected by ${new Date(h.deadline).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`} />
+      ) : (
+        <Row label="Check-ins" tone="muted" headline="Waiting for the first check-in" detail={`Expected by ${new Date(h.deadline).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`} />
+      )}
+      <Row label="Schedule" tone="muted" headline="" detail={expected} />
+    </>
+  );
+}
+
 // ---------- one short word per check, for lists ----------
 
 export interface Brief {
@@ -96,6 +160,10 @@ const shortDays = (days: number | null) => (days === null ? "—" : days < 0 ? "
 
 export function uptimeBrief(m: Monitor): Brief {
   const u = m.uptime;
+  if (m.kind === "heartbeat") {
+    if (u.status === "down") return { tone: "bad", text: "Overdue" };
+    return m.target.heartbeat?.lastPing ? { tone: "ok", text: "On time" } : { tone: "muted", text: "Waiting" };
+  }
   if (u.status === "pending") return { tone: "muted", text: "Checking" };
   if (u.status === "down") return { tone: "bad", text: "Down" };
   return { tone: "ok", text: u.pct24h !== null ? `Up · ${u.pct24h}%` : "Up" };
@@ -135,7 +203,13 @@ export function aiBrief(ai: NonNullable<Monitor["ai"]>): Brief {
  */
 export function attentionReasons(m: Monitor): Brief[] {
   const out: Brief[] = [];
-  if (m.uptime.status === "down") out.push({ tone: "bad", text: `Down${m.uptime.downSince ? ` since ${ago(m.uptime.downSince)}` : ""}: ${m.uptime.error ?? "no response"}` });
+  if (m.uptime.status === "down") {
+    out.push({
+      tone: "bad",
+      text: m.kind === "heartbeat" ? `Missed its check-in: ${m.uptime.error ?? "no check-in"}` : `Down${m.uptime.downSince ? ` since ${ago(m.uptime.downSince)}` : ""}: ${m.uptime.error ?? "no response"}`,
+    });
+  }
+  if (m.kind !== "site") return out;
   if (m.ssl.status === "invalid") out.push({ tone: "bad", text: `Certificate problem: ${m.ssl.problems[0] ?? "it isn't valid"}` });
   if (m.ssl.status === "expired") out.push({ tone: "bad", text: "SSL certificate has expired" });
   if (m.domain.status === "expired") out.push({ tone: "bad", text: "Domain registration has expired" });

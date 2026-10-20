@@ -15,6 +15,8 @@ interface User {
   whiteLabel: boolean;
   /** The plan includes the Appearance page (Starter and up). */
   canBrand: boolean;
+  /** Set when they're working in a team owner's account rather than their own. */
+  team: { ownerEmail: string } | null;
   isAdmin: boolean;
   plans?: { id: string; name: string }[];
   branding: Branding;
@@ -32,6 +34,9 @@ const ICONS = {
   appearance:
     "M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4ZM7.5 12h.01M10 8h.01M14 8h.01",
   guides: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Zm0 14a2 2 0 0 1 2-2h13M9 7h6",
+  reports: "M7 3h7l5 5v13H7V3Zm7 0v5h5M10 17v-3m3 3v-6m3 6v-4",
+  api: "M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16",
+  team: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 10c0-3.3 3.1-6 7-6s7 2.7 7 6M17 3.5a4 4 0 0 1 0 7M22 21c0-2.6-1.8-4.8-4.5-5.6",
   menu: "M4 6h16M4 12h16M4 18h16",
   close: "M6 6l12 12M18 6 6 18",
 } as const;
@@ -62,14 +67,17 @@ const NAV = [
       { href: "/dashboard/sites", label: "Sites", icon: "sites" },
       { href: "/dashboard/notifications", label: "Notifications", icon: "notifications" },
       { href: "/dashboard/ai-visibility", label: "AI visibility", icon: "ai" },
+      { href: "/dashboard/reports", label: "Reports", icon: "reports" },
     ],
   },
   {
     heading: "Settings",
     items: [
       { href: "/dashboard/integrations", label: "Integrations", icon: "integrations" },
+      { href: "/dashboard/team", label: "Team", icon: "team" },
       { href: "/dashboard/white-label", label: "White label", icon: "whiteLabel" },
       { href: "/dashboard/appearance", label: "Appearance", icon: "appearance" },
+      { href: "/dashboard/api", label: "API & export", icon: "api" },
       { href: "/dashboard/plans", label: "Plans", icon: "plans" },
     ],
   },
@@ -153,7 +161,9 @@ function Sidebar({ user, branding, onNavigate }: { user: User | null; branding: 
                 <p className="truncate text-sm font-medium" title={user.email}>
                   {user.email}
                 </p>
-                <p className="text-xs text-muted">{user.planName} plan</p>
+                <p className="truncate text-xs text-muted" title={user.team ? `In ${user.team.ownerEmail}'s account` : undefined}>
+                  {user.team ? `In ${user.team.ownerEmail}'s account` : `${user.planName} plan`}
+                </p>
               </div>
             </div>
             {user.isAdmin && user.plans && <PlanSwitcher plan={user.plan} plans={user.plans} />}

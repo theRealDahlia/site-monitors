@@ -116,6 +116,29 @@ error, look at `journalctl -u caddy -n 50 --no-pager` for the domain. The usual 
 Ownership is re-checked daily. If a customer's TXT record has been missing for three daily checks in a row, the domain is
 released, so a domain that lapses and is bought by someone else can't keep serving the old owner's page.
 
+## Text message and phone call alerts (Pro)
+
+Pro accounts can get outage alerts by text and phone call, sent through [Twilio](https://www.twilio.com). Until the three
+settings below are in `.env.local`, the Integrations page says texts aren't set up, and nothing is sent. Each text or
+call costs money, so phones only get outage alerts (down, back up, escalated), and each account has a monthly limit
+(100 texts and 20 calls on Pro, set in `src/lib/entitlements.ts`).
+
+1. In Twilio, buy a phone number that can send SMS and make calls, in the countries your customers are in.
+2. Add these to `.env.local`, using hidden prompts so they don't end up in your shell history:
+
+```sh
+cd /opt/site-monitors
+read -rs SID && echo "TWILIO_ACCOUNT_SID=$SID" >> .env.local && unset SID
+read -rs TOKEN && echo "TWILIO_AUTH_TOKEN=$TOKEN" >> .env.local && unset TOKEN
+read -r FROM && echo "TWILIO_FROM=$FROM" >> .env.local && unset FROM   # the Twilio number, like +447700900123
+sudo systemctl restart site-monitors
+```
+
+3. Add your own number on the Integrations page, confirm it with the code, and press "Send a test".
+
+Heartbeat monitors are pinged at `https://site-monitors.net/api/ping/<token>`, so `APP_URL` must be right for the
+addresses shown in the dashboard to work.
+
 ## There is no admin in production
 
 The site has a development-only admin that can switch its own account between plans, to test the site at

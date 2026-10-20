@@ -49,6 +49,8 @@ const COLORS: Record<MessageKind, number> = {
   recovered: 0x15803d,
   ai_problem: 0xb45309,
   ai_recovered: 0x15803d,
+  dns_changed: 0xb45309,
+  links_broken: 0xb45309,
   test: 0x0f766e,
   created: 0x0f766e,
   edited: 0x0f766e,

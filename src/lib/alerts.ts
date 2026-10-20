@@ -8,7 +8,7 @@ export const DOMAIN_THRESHOLDS = [60, 30, 14, 7, 1];
 /** A site is only reported down after this many failed checks in a row, so one blip emails nobody. */
 export const DOWN_AFTER_FAILURES = 2;
 
-export type AlertKind = "ssl_expiry" | "ssl_problem" | "domain_expiry" | "down" | "recovered" | "ai_problem" | "ai_recovered";
+export type AlertKind = "ssl_expiry" | "ssl_problem" | "domain_expiry" | "down" | "recovered" | "ai_problem" | "ai_recovered" | "dns_changed" | "links_broken";
 
 export interface Alert {
   kind: AlertKind;
@@ -150,35 +150,73 @@ const duration = (ms: number) => {
   return hours < 24 ? `${plural(hours, "hour")}${mins % 60 ? ` ${plural(mins % 60, "minute")}` : ""}` : plural(Math.round(hours / 24), "day");
 };
 
-export function evaluateUptime(prev: UptimeState, host: string, r: UptimeFinding, now: number): { state: UptimeState; alerts: Alert[]; recheckSoon: boolean } {
+/** What kind of monitor an uptime result is about, which changes how its alerts read. */
+export type UptimeSubject = "site" | "http" | "tcp" | "heartbeat";
+
+function downAlert(subject: UptimeSubject, host: string, failures: number, error: string | null): Alert {
+  const last = `Last error: ${error ?? "no response"}`;
+  switch (subject) {
+    case "heartbeat":
+      return {
+        kind: "down",
+        subject: `${host} missed its check-in`,
+        body: `We haven't heard from ${host}. ${error ?? ""}\n\nCheck that the job is still running and can reach its ping address. We'll email you again when it checks in.` + footer(),
+      };
+    case "tcp":
+      return {
+        kind: "down",
+        subject: `${host} is down`,
+        body: `${host} didn't accept a connection ${failures} times in a row.\n\n${last}\n\nWe'll email you again when it's back up.` + footer(),
+      };
+    case "http":
+      return {
+        kind: "down",
+        subject: `${host} is down`,
+        body: `${host} failed ${failures} checks in a row.\n\n${last}\n\nWe'll email you again when it's working.` + footer(),
+      };
+    default:
+      return {
+        kind: "down",
+        subject: `${host} is down`,
+        body: `${host} didn't respond to ${failures} checks in a row.\n\n${last}\n\nWe'll email you again when it's back up.` + footer(),
+      };
+  }
+}
+
+function recoveredAlert(subject: UptimeSubject, host: string, downFor: string): Alert {
+  if (subject === "heartbeat") {
+    return { kind: "recovered", subject: `${host} checked in again`, body: `${host} has checked in again.${downFor ? ` It was overdue for about ${downFor}.` : ""}` + footer() };
+  }
+  const what = subject === "http" ? "is working again" : subject === "tcp" ? "is accepting connections again" : "is responding again";
+  return { kind: "recovered", subject: `${host} is back up`, body: `${host} ${what}.${downFor ? ` It was down for about ${downFor}.` : ""}` + footer() };
+}
+
+/**
+ * Decides whether to email about a monitor going down or coming back. A site is only reported down after
+ * DOWN_AFTER_FAILURES failed checks in a row; a heartbeat (`downAfter: 1`) as soon as a check-in is overdue, since
+ * its grace period has already allowed for lateness.
+ */
+export function evaluateUptime(
+  prev: UptimeState,
+  host: string,
+  r: UptimeFinding,
+  now: number,
+  opts: { subject?: UptimeSubject; downAfter?: number } = {},
+): { state: UptimeState; alerts: Alert[]; recheckSoon: boolean } {
+  const subject = opts.subject ?? "site";
+  const downAfter = opts.downAfter ?? DOWN_AFTER_FAILURES;
   if (r.up) {
     const alerts: Alert[] = [];
-    if (prev.downAlerted) {
-      alerts.push({
-        kind: "recovered",
-        subject: `${host} is back up`,
-        body: `${host} is responding again.${prev.downSince ? ` It was down for about ${duration(now - prev.downSince)}.` : ""}` + footer(),
-      });
-    }
+    if (prev.downAlerted) alerts.push(recoveredAlert(subject, host, prev.downSince ? duration(now - prev.downSince) : ""));
     return { state: { failures: 0, downAlerted: false, downSince: null }, alerts, recheckSoon: false };
   }
 
   const failures = prev.failures + 1;
   const downSince = prev.downSince ?? now;
-  if (failures >= DOWN_AFTER_FAILURES && !prev.downAlerted) {
-    return {
-      state: { failures, downAlerted: true, downSince },
-      alerts: [
-        {
-          kind: "down",
-          subject: `${host} is down`,
-          body: `${host} didn't respond to ${failures} checks in a row.\n\nLast error: ${r.error ?? "no response"}\n\nWe'll email you again when it's back up.` + footer(),
-        },
-      ],
-      recheckSoon: false,
-    };
+  if (failures >= downAfter && !prev.downAlerted) {
+    return { state: { failures, downAlerted: true, downSince }, alerts: [downAlert(subject, host, failures, r.error)], recheckSoon: false };
   }
-  return { state: { failures, downAlerted: prev.downAlerted, downSince }, alerts: [], recheckSoon: failures < DOWN_AFTER_FAILURES };
+  return { state: { failures, downAlerted: prev.downAlerted, downSince }, alerts: [], recheckSoon: failures < downAfter };
 }
 
 // ---------- AI visibility ----------
@@ -230,5 +268,30 @@ export function evaluateAi(
           footer(),
       },
     ],
+  };
+}
+
+// ---------- health scan ----------
+
+/** A site's DNS records changed since the last scan. The first scan only records them. */
+export function dnsChangedAlert(host: string, changes: string[]): Alert {
+  return {
+    kind: "dns_changed",
+    subject: `DNS records changed for ${host}`,
+    body:
+      `Some of ${host}'s DNS records are different from yesterday:\n\n${changes.map((c) => `- ${c}`).join("\n")}\n\n` +
+      `If you or your host made this change, there's nothing to do. If not, check with whoever manages the domain: an ` +
+      `unexpected change can send visitors or email somewhere else.` +
+      footer(),
+  };
+}
+
+/** Links on the homepage that lead nowhere and that we haven't already reported. */
+export function brokenLinksAlert(host: string, broken: { url: string; status: number | null; error: string | null }[]): Alert {
+  const list = broken.slice(0, 15).map((b) => `- ${b.url} (${b.status ? `HTTP ${b.status}` : (b.error ?? "no answer")})`).join("\n");
+  return {
+    kind: "links_broken",
+    subject: `${plural(broken.length, "broken link")} on ${host}`,
+    body: `We found links on ${host}'s homepage that don't work:\n\n${list}${broken.length > 15 ? `\n...and ${broken.length - 15} more` : ""}` + footer(),
   };
 }

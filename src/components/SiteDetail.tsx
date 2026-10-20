@@ -5,63 +5,103 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import AiVisibilityRow from "@/components/AiVisibilityRow";
 import { KINDS } from "@/components/Notifications";
+import StatusNotices from "@/components/StatusNotices";
+import StatusSubscribers from "@/components/StatusSubscribers";
+import MonitorAlerts from "@/components/MonitorAlerts";
+import MonitorHistory from "@/components/MonitorHistory";
+import HealthScan from "@/components/HealthScan";
 import { useBranding } from "@/components/branding-context";
 import { type Monitor, StatusBadge, ago, day, lastChecked, useCheckNow, useMonitors } from "@/components/monitor-ui";
-import { DomainRow, SslRow, UptimeRow } from "@/components/site-health";
+import { EMPTY_FIELDS, type Kind, KindFields, type MonitorFields, fieldsBody, fieldsReady } from "@/components/AddMonitor";
+import { DomainRow, HeartbeatRows, PageRows, PortRow, SslRow, UptimeRow } from "@/components/site-health";
 
-const INPUT =
-  "min-w-0 flex-1 rounded-lg border border-border bg-surface px-4 py-3 text-base outline-none placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60";
 const SMALL_BUTTON = "rounded-lg border border-border px-3 py-1.5 text-sm hover:border-accent hover:text-accent disabled:opacity-50";
 const CARD = "rounded-xl border border-border bg-surface p-5";
 
 type Busy = "saving" | "deleting";
 
-/** Mounted only while editing, so the field always starts from the site's current hostname. */
-function EditForm({ m, busy, onSave, onCancel }: { m: Monitor; busy: Busy | undefined; onSave: (host: string) => void; onCancel: () => void }) {
-  const [value, setValue] = useState(m.host);
+/** The current settings of a monitor, as form fields. */
+function fieldsOf(m: Monitor): MonitorFields {
+  const t = m.target;
+  return {
+    ...EMPTY_FIELDS,
+    host: m.host,
+    url: t.url ?? "",
+    keyword: t.keyword ?? "",
+    keywordMode: t.keywordMode ?? "contains",
+    server: t.server ?? "",
+    port: t.port ? String(t.port) : "",
+    name: m.host,
+    everyMs: t.heartbeat?.everyMs ?? EMPTY_FIELDS.everyMs,
+    graceMs: t.heartbeat?.graceMs ?? EMPTY_FIELDS.graceMs,
+  };
+}
+
+/** Mounted only while editing, so the fields always start from the monitor's current settings. */
+function EditForm({ m, busy, onSave, onCancel }: { m: Monitor; busy: Busy | undefined; onSave: (body: Record<string, unknown>) => void; onCancel: () => void }) {
+  const [f, setF] = useState<MonitorFields>(() => fieldsOf(m));
+  const kind = m.kind as Kind;
   return (
     <form
       className="mt-4"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave(value);
+        onSave(fieldsBody(kind, f));
       }}
+      onKeyDown={(e) => e.key === "Escape" && onCancel()}
     >
-      <label htmlFor={`edit-${m.id}`} className="mb-1.5 block text-sm font-medium">
-        Domain name
-      </label>
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <input
-          id={`edit-${m.id}`}
-          type="text"
-          inputMode="url"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          autoFocus
-          value={value}
-          disabled={busy === "saving"}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === "Escape" && onCancel()}
-          className={INPUT}
-        />
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={busy === "saving" || !value.trim()}
-            className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
-          >
-            {busy === "saving" ? "Saving & re-checking…" : "Save"}
-          </button>
-          <button type="button" onClick={onCancel} disabled={busy === "saving"} className={SMALL_BUTTON}>
-            Cancel
-          </button>
-        </div>
+      <KindFields kind={kind} f={f} set={(patch) => setF((prev) => ({ ...prev, ...patch }))} disabled={busy === "saving"} idPrefix={`edit-${m.id}`} autoFocus />
+      <div className="mt-3 flex gap-2">
+        <button
+          type="submit"
+          disabled={busy === "saving" || !fieldsReady(kind, f)}
+          className="rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          {busy === "saving" ? "Saving & re-checking…" : "Save"}
+        </button>
+        <button type="button" onClick={onCancel} disabled={busy === "saving"} className={SMALL_BUTTON}>
+          Cancel
+        </button>
       </div>
-      <p className="mt-2 text-xs text-muted">
-        Saving a new domain clears this site&apos;s old results, runs the uptime, SSL and domain checks again, and emails you a summary of its status.
-      </p>
+      <p className="mt-2 text-xs text-muted">Saving clears this monitor&apos;s old results, checks it again, and emails you a summary.</p>
     </form>
+  );
+}
+
+/** Where a heartbeat's job sends its check-ins, with ready-to-paste examples. */
+function PingAddress({ url }: { url: string }) {
+  const [copied, setCopied] = useState<string | null>(null);
+  const examples = [
+    ["Address", url],
+    ["Shell or cron", `curl -fsS -m 10 --retry 3 ${url} > /dev/null`],
+  ];
+  async function copy(label: string, value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(label);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      /* the text is selectable */
+    }
+  }
+  return (
+    <div className="mt-4 rounded-lg border border-border bg-background p-4">
+      <p className="text-sm font-medium">Ping address</p>
+      <p className="text-xs text-muted">Call this from the end of your job each time it runs successfully. Keep it private: anyone with it can check in for the job.</p>
+      <div className="mt-3 space-y-2">
+        {examples.map(([label, value]) => (
+          <div key={label}>
+            <p className="mb-1 text-xs text-muted">{label}</p>
+            <div className="flex items-center gap-2">
+              <input readOnly aria-label={label} value={value} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-xs" />
+              <button type="button" onClick={() => copy(label, value)} className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-xs hover:border-accent hover:text-accent">
+                {copied === label ? "Copied" : "Copy"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -151,6 +191,7 @@ function StatusPageControl({ m, allowed, onChanged }: { m: Monitor; allowed: boo
           .
         </p>
       )}
+      {enabled && <StatusSubscribers monitorId={m.id} />}
       {error && (
         <p role="alert" className="mt-2 text-sm text-bad">
           {error}
@@ -170,7 +211,7 @@ function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<v
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function save(newHost: string) {
+  async function save(fields: Record<string, unknown>) {
     setBusy("saving");
     setError(null);
     setNotice(null);
@@ -178,13 +219,13 @@ function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<v
       const res = await fetch(`/api/monitors/${m.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ host: newHost }),
+        body: JSON.stringify(fields),
       });
       const body = await res.json();
       if (!res.ok) setError(body.error ?? "Something went wrong.");
       else {
         setEditing(false);
-        if (body.changed) setNotice(`Updated. We re-ran every check for ${body.monitor.host} and emailed you a summary.`);
+        if (body.changed) setNotice(`Updated. We checked ${body.monitor.host} again and emailed you a summary.`);
         await onChanged();
       }
     } catch {
@@ -220,7 +261,7 @@ function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<v
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {confirming ? (
             <>
-              <span className="text-sm text-muted">Stop watching {m.host}? Its history goes too.</span>
+              <span className="text-sm text-muted">Stop monitoring {m.host}? Its history goes too.</span>
               <button onClick={remove} disabled={busy === "deleting"} className="rounded-lg bg-bad px-3 py-1.5 text-sm font-medium text-background disabled:opacity-50">
                 {busy === "deleting" ? "Removing…" : "Yes, remove"}
               </button>
@@ -231,10 +272,10 @@ function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<v
           ) : (
             <>
               <button onClick={() => (setEditing(true), setNotice(null), setError(null))} className={SMALL_BUTTON}>
-                Change domain
+                {{ site: "Change domain", http: "Change page or keyword", tcp: "Change server or port", heartbeat: "Change name or schedule" }[m.kind] ?? "Change"}
               </button>
               <button onClick={() => (setConfirming(true), setError(null))} className={SMALL_BUTTON}>
-                Remove site
+                {m.kind === "site" ? "Remove site" : "Remove monitor"}
               </button>
             </>
           )}
@@ -298,7 +339,8 @@ export default function SiteDetail() {
         <div className="min-w-0">
           <h1 className="break-all text-3xl font-semibold tracking-tight">{m.host}</h1>
           <p className="mt-1 text-sm text-muted">
-            Added {day(m.createdAt)} · last checked {ago(lastChecked(m))}
+            {{ site: "Website", http: "Page", tcp: "Port", heartbeat: "Heartbeat" }[m.kind] ?? "Monitor"} · added {day(m.createdAt)}
+            {m.kind !== "heartbeat" && <> · last checked {ago(lastChecked(m))}</>}
           </p>
         </div>
         <StatusBadge status={m.overall} />
@@ -316,15 +358,24 @@ export default function SiteDetail() {
             <h2 id="checks-heading" className="font-semibold">
               Checks
             </h2>
-            <button onClick={() => checkNow(m.id)} disabled={checking !== null} className={SMALL_BUTTON}>
-              {checking === m.id ? "Checking…" : "Check now"}
-            </button>
+            {m.kind !== "heartbeat" && (
+              <button onClick={() => checkNow(m.id)} disabled={checking !== null} className={SMALL_BUTTON}>
+                {checking === m.id ? "Checking…" : "Check now"}
+              </button>
+            )}
           </div>
           <dl className="mt-3 divide-y divide-border border-t border-border">
-            <UptimeRow m={m} />
-            <SslRow m={m} />
-            <DomainRow m={m} />
-            {m.ai ? (
+            {m.kind === "http" && <PageRows m={m} />}
+            {m.kind === "tcp" && <PortRow m={m} />}
+            {m.kind === "heartbeat" && <HeartbeatRows m={m} />}
+            {m.kind === "site" && (
+              <>
+                <UptimeRow m={m} />
+                <SslRow m={m} />
+                <DomainRow m={m} />
+              </>
+            )}
+            {m.kind !== "site" ? null : m.ai ? (
               <AiVisibilityRow ai={m.ai} compact detailsHref={`/dashboard/ai-visibility#site-${m.id}`} />
             ) : (
               <div className="grid grid-cols-[5.5rem_1fr] gap-3 py-3 text-sm sm:grid-cols-[7rem_1fr]">
@@ -338,11 +389,20 @@ export default function SiteDetail() {
               </div>
             )}
           </dl>
+          {m.target.heartbeat && <PingAddress url={m.target.heartbeat.pingUrl} />}
         </section>
+
+        <HealthScan m={m} />
+
+        <MonitorHistory monitorId={m.id} />
+
+        <MonitorAlerts m={m} onChanged={reload} />
 
         <section className={CARD} aria-label="Public status page">
           <StatusPageControl m={m} allowed={data.plan.statusPages} onChanged={reload} />
         </section>
+
+        {data.plan.statusPages && <StatusNotices monitorId={m.id} statusPageOn={m.statusPage.enabled} />}
 
         <section className={CARD} aria-labelledby="activity-heading">
           <div className="flex flex-wrap items-baseline justify-between gap-2">

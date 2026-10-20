@@ -147,12 +147,16 @@ export function stopByToken(token: string): { email: string } | null {
 
 // ---------- sending ----------
 
-/** The addresses an alert goes to right now: the switched-on ones, and only confirmed added addresses. */
-export function activeRecipients(userId: number): { email: string; extraId: number | null }[] {
+/**
+ * The addresses an alert goes to right now: the switched-on ones, and only confirmed added addresses. `only` narrows
+ * it to some destinations ("account", "email:<id>"; see alert-targets.ts); null means all of them.
+ */
+export function activeRecipients(userId: number, only: Set<string> | null = null): { email: string; extraId: number | null }[] {
   const r = listRecipients(userId);
   if (!r) return [];
-  const list: { email: string; extraId: number | null }[] = r.account.enabled ? [{ email: r.account.email, extraId: null }] : [];
-  for (const e of r.extras) if (e.enabled && e.confirmed) list.push({ email: e.email, extraId: e.id });
+  const wanted = (id: string) => !only || only.has(id);
+  const list: { email: string; extraId: number | null }[] = r.account.enabled && wanted("account") ? [{ email: r.account.email, extraId: null }] : [];
+  for (const e of r.extras) if (e.enabled && e.confirmed && wanted(`email:${e.id}`)) list.push({ email: e.email, extraId: e.id });
   return list;
 }
 
@@ -161,8 +165,8 @@ export function activeRecipients(userId: number): { email: string; extraId: numb
  * copy, so nobody sees the others. Returns how many went out (0 if every address is switched off).
  * Throws only if there was someone to send to and every send failed, so callers can retry.
  */
-export async function emailRecipients(userId: number, mail: Omit<Mail, "to">): Promise<number> {
-  const recipients = activeRecipients(userId);
+export async function emailRecipients(userId: number, mail: Omit<Mail, "to">, only: Set<string> | null = null): Promise<number> {
+  const recipients = activeRecipients(userId, only);
   const owner = recipients.length ? listRecipients(userId)?.account.email : null;
   let sent = 0;
   let lastError: unknown = null;

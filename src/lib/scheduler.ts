@@ -1,5 +1,7 @@
 import { runChecks } from "./monitor-runner";
 import { recheckVerifiedDomains } from "./custom-domains";
+import { runEscalations } from "./escalate";
+import { sendMonthlyReports } from "./reports";
 import { dueMonitors, pruneHistory, rollupHistory } from "./monitors-db";
 
 // Starter checks every minute, so look for due work often: with a 15-second tick a one-minute check runs every 60 to 75 seconds.
@@ -35,10 +37,15 @@ async function tick() {
     };
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, due.length) }, worker));
 
+    // Outages nobody has acknowledged in time go to the account's escalation contacts.
+    await runEscalations(now).catch((err) => console.error("escalations failed", err));
+
     if (now - (g.__monitorLastPrune ?? 0) > 60 * 60 * 1000) {
       rollupHistory(now);
       pruneHistory(now - KEEP_HISTORY_MS);
       g.__monitorLastPrune = now;
+      // Client reports go out once a month, for the month just finished.
+      await sendMonthlyReports(now).catch((err) => console.error("monthly reports failed", err));
       // Each verified custom domain is only really looked at about once a day; this just finds the ones that are due.
       const domains = await recheckVerifiedDomains();
       if (domains.released.length) console.log(`[domains] released after their proof record went missing: ${domains.released.join(", ")}`);

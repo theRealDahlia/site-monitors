@@ -15,6 +15,10 @@ export const KINDS: Record<string, { label: string; tone: string }> = {
   down: { label: "Site down", tone: "bg-bad-bg text-bad" },
   ai_problem: { label: "AI visibility", tone: "bg-warn-bg text-warn" },
   ai_recovered: { label: "AI visibility OK", tone: "bg-ok-bg text-ok" },
+  escalated: { label: "Escalated", tone: "bg-bad-bg text-bad" },
+  dns_changed: { label: "DNS changed", tone: "bg-warn-bg text-warn" },
+  links_broken: { label: "Broken links", tone: "bg-warn-bg text-warn" },
+  acknowledged: { label: "Acknowledged", tone: "bg-accent/15 text-accent" },
 };
 const FALLBACK = { label: "Notice", tone: "border border-border text-muted" };
 

@@ -20,10 +20,19 @@ export function describeHealth(m: MonitorRow): { overall: string; lines: string[
   const v = monitorView(m);
   const lines: string[] = [];
 
-  // Uptime
-  if (v.uptime.status === "pending") lines.push("Uptime: not checked yet");
-  else if (v.uptime.status === "down") lines.push(`Uptime: down (${v.uptime.error ?? "no response"})`);
+  // A page, port or heartbeat only has the one check.
+  if (m.kind === "heartbeat") {
+    if (v.uptime.status === "pending") lines.push("Check-ins: waiting for the first one");
+    else if (v.uptime.status === "down") lines.push(`Check-ins: overdue (${v.uptime.error ?? "no check-in"})`);
+    else lines.push(`Check-ins: on time${m.hb_last_ping ? ` (last ${new Date(m.hb_last_ping).toUTCString()})` : ""}`);
+    return { overall: OVERALL_TEXT[v.overall], lines };
+  }
+  if (v.uptime.status === "pending") lines.push(`${m.kind === "tcp" ? "Port" : "Uptime"}: not checked yet`);
+  else if (v.uptime.status === "down") lines.push(`${m.kind === "tcp" ? "Port" : "Uptime"}: down (${v.uptime.error ?? "no response"})`);
+  else if (m.kind === "tcp") lines.push(`Port: open (${v.uptime.ms ?? "?"} ms)`);
   else lines.push(`Uptime: up (HTTP ${v.uptime.code ?? "?"}, ${v.uptime.ms ?? "?"} ms)`);
+  if (m.kind === "http") return { overall: OVERALL_TEXT[v.overall], lines: m.keyword ? [...lines, `Keyword: page must ${m.keyword_mode === "absent" ? "not contain" : "contain"} "${m.keyword}"`] : lines };
+  if (m.kind !== "site") return { overall: OVERALL_TEXT[v.overall], lines };
 
   // SSL certificate
   const s = v.ssl;

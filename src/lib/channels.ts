@@ -131,9 +131,11 @@ export async function sendToChannel(id: number, userId: number, message: Message
  * Sends an alert to every channel the user has switched on, if their plan includes them. Best effort: a
  * broken webhook is recorded against that channel and never stops the email or the other channels.
  */
-export async function sendAlertToChannels(userId: number, plan: string, message: Message): Promise<void> {
+export async function sendAlertToChannels(userId: number, plan: string, message: Message, only: Set<string> | null = null): Promise<void> {
   if (!entitlementsFor(plan).integrations) return;
-  const rows = db().prepare("SELECT id FROM notification_channels WHERE user_id = ? AND enabled = 1").all(userId) as { id: number }[];
+  const rows = (db().prepare("SELECT id FROM notification_channels WHERE user_id = ? AND enabled = 1").all(userId) as { id: number }[]).filter(
+    (r) => !only || only.has(`channel:${r.id}`),
+  );
   await Promise.all(rows.map((r) => sendToChannel(r.id, userId, message).catch((err) => console.error(`channel ${r.id} failed`, err))));
 }
 

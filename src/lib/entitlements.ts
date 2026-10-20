@@ -1,4 +1,5 @@
 import { MIN } from "./monitor-config";
+import type { MonitorKind } from "./monitor-kinds";
 
 // What each plan is allowed to do. The pricing page lists the same things for people; this is the
 // version the server actually enforces. Payment isn't built yet, so an account's plan is set by an
@@ -14,6 +15,8 @@ export interface Entitlements {
   integrations: boolean;
   /** A public status page for each site. */
   statusPages: boolean;
+  /** Which kinds of monitor the account can add (see monitor-kinds.ts). All of them count towards maxMonitors. */
+  monitorKinds: readonly MonitorKind[];
   /** The Appearance page: the account's own logo, name, light or dark, and accent colour. */
   branding: boolean;
   /**
@@ -35,13 +38,34 @@ export interface Entitlements {
   aiVisibility: boolean;
   /** Status pages on the account's own domain, with no Site Monitors branding. */
   whiteLabel: boolean;
+  /** Visitors can subscribe to a status page by email. (Its RSS feed comes with any status page.) */
+  statusSubscribers: boolean;
+  /** Choosing which addresses and channels get each monitor's alerts. */
+  alertRouting: boolean;
+  /** Telling someone else when an outage alert isn't acknowledged in time. */
+  escalation: boolean;
+  /** Outage alerts by text message and phone call, up to this many of each a month (0 means not included). */
+  smsPerMonth: number;
+  callsPerMonth: number;
+  /** Monthly uptime reports emailed to clients. */
+  reports: boolean;
+  /** How many other people can be invited to work in the account (0 means teams aren't included). */
+  teamSeats: number;
+  /** Keys for the read-only API. */
+  apiAccess: boolean;
+  /** How far back uptime history can be seen, in days. */
+  historyDays: number;
+  /** The daily health scan of each site: DNS changes, email setup and security headers. */
+  healthScans: boolean;
+  /** The weekly broken-link check, as part of the health scan. */
+  brokenLinks: boolean;
 }
 
 export const ENTITLEMENTS = {
-  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false },
-  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false },
+  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, monitorKinds: ["site", "http"], branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: false, escalation: false, smsPerMonth: 0, callsPerMonth: 0, reports: false, teamSeats: 0, apiAccess: false, historyDays: 30, healthScans: false, brokenLinks: false },
+  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: true, escalation: false, smsPerMonth: 0, callsPerMonth: 0, reports: false, teamSeats: 0, apiAccess: false, historyDays: 90, healthScans: true, brokenLinks: false },
   // Pro is everything in Starter with room for more, plus AI-visibility checks and white-label status pages.
-  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true },
+  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, smsPerMonth: 100, callsPerMonth: 20, reports: true, teamSeats: 3, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true },
 } as const satisfies Record<string, Entitlements>;
 
 /** Every plan there is. Adding a plan to ENTITLEMENTS adds it here, to the types and to the admin plan switcher. */

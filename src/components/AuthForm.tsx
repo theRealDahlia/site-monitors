@@ -25,7 +25,8 @@ async function post(url: string, body: unknown) {
 // there. Anything else in `next` (a checker page, another site) is ignored.
 const afterAuthUrl = () => {
   const next = safeNext(new URLSearchParams(window.location.search).get("next"));
-  return next === "/dashboard" || next.startsWith("/dashboard/") ? next : "/dashboard";
+  // A team invitation (/join?token=...) also brings them back, so they can accept it once they're signed in.
+  return next === "/dashboard" || next.startsWith("/dashboard/") || next.startsWith("/join?") ? next : "/dashboard";
 };
 
 // "replace" instead of "assign", so the login or sign-up page doesn't stay in the browser history

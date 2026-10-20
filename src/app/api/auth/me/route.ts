@@ -14,7 +14,10 @@ export async function GET(request: Request) {
     {
       user: user
         ? {
-            email: user.email,
+            // The person signed in; with `team`, the account they're working in is someone else's.
+            email: user.actor.email,
+            team: user.role === "member" ? { ownerEmail: user.email } : null,
+            teamSeats: ENTITLEMENTS[user.plan].teamSeats,
             plan: user.plan,
             planName: ENTITLEMENTS[user.plan].name,
             whiteLabel: ENTITLEMENTS[user.plan].whiteLabel,

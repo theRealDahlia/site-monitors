@@ -1,5 +1,6 @@
 import { runAiVisibilityWithin } from "./ai-visibility";
-import { type Alert, evaluateAi, evaluateDomain, evaluateSsl, evaluateUptime } from "./alerts";
+import { type Alert, brokenLinksAlert, dnsChangedAlert, evaluateAi, evaluateDomain, evaluateSsl, evaluateUptime } from "./alerts";
+import { type DnsSnapshot, type ScanResult, dnsChanges, runScan } from "./health-scan";
 import { checkDomain } from "./domain-check";
 import { CheckError } from "./hostname";
 import { emailRecipients } from "./alert-emails";
@@ -18,11 +19,20 @@ import {
 } from "./monitors-db";
 import { checkSsl } from "./ssl-check";
 import { checkUptime } from "./uptime-check";
+import { checkHeartbeat, checkHttp, checkTcp, heartbeatDeadline } from "./monitor-kinds";
+import { alertsSilenced } from "./status-notices";
+import { notifySubscribers } from "./status-subscribers";
+import { listTargets, readTargets } from "./alert-targets";
+import { ackLink, activePolicy } from "./escalation";
+import { alertPhones } from "./phones";
 import {
   AI_EVERY,
   AI_RECHECK,
   AI_RETRY,
   DAY,
+  LINKS_EVERY,
+  SCAN_EVERY,
+  SCAN_RETRY,
   DOMAIN_EVERY,
   DOMAIN_RETRY,
   DOMAIN_UNSUPPORTED_EVERY,
@@ -37,8 +47,10 @@ export interface Which {
   domain: boolean;
   /** AI visibility. Only runs for plans that include it, whatever is asked for here. */
   ai: boolean;
+  /** The health scan (DNS, email setup, security headers, links). Only for sites on plans that include it. */
+  scan?: boolean;
 }
-export const ALL_CHECKS: Which = { uptime: true, ssl: true, domain: true, ai: true };
+export const ALL_CHECKS: Which = { uptime: true, ssl: true, domain: true, ai: true, scan: true };
 
 type Settled<T> = { ok: true; value: T } | { ok: false; error: string; code?: string };
 
@@ -91,37 +103,80 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
   const m = getMonitorWithOwner(monitorId);
   if (!m) return false; // deleted while it was waiting
   const now = Date.now();
-  const aiIncluded = entitlementsFor(m.owner_plan).aiVisibility;
+  const site = m.kind === "site";
+  const aiIncluded = site && entitlementsFor(m.owner_plan).aiVisibility;
+  const scanIncluded = site && entitlementsFor(m.owner_plan).healthScans;
   const which: Which =
     requested === "due"
-      ? { uptime: m.up_due_at <= now, ssl: m.ssl_due_at <= now, domain: m.dom_due_at <= now, ai: aiIncluded && m.ai_due_at <= now }
-      : { ...requested, ai: requested.ai && aiIncluded };
-  if (!which.uptime && !which.ssl && !which.domain && !which.ai) return false;
+      ? {
+          uptime: m.up_due_at <= now,
+          ssl: site && m.ssl_due_at <= now,
+          domain: site && m.dom_due_at <= now,
+          ai: aiIncluded && m.ai_due_at <= now,
+          scan: scanIncluded && m.scan_due_at <= now,
+        }
+      : { uptime: requested.uptime, ssl: site && requested.ssl, domain: site && requested.domain, ai: requested.ai && aiIncluded, scan: !!requested.scan && scanIncluded };
+  if (!which.uptime && !which.ssl && !which.domain && !which.ai && !which.scan) return false;
 
-  const [up, ssl, dom, ai] = await Promise.all([
-    which.uptime ? checkUptime(m.host) : null,
+  // The scan's broken-link part runs weekly, on plans that include it.
+  const lastScan = parseScan(m.scan_result);
+  const withLinks = entitlementsFor(m.owner_plan).brokenLinks && (!lastScan?.linksAt || now - lastScan.linksAt >= LINKS_EVERY);
+
+  // Each kind has its own way of telling up from down; a site's other checks only run for sites.
+  const uptimeCheck = () => {
+    switch (m.kind) {
+      case "http":
+        return checkHttp(m);
+      case "tcp":
+        return checkTcp(m);
+      case "heartbeat":
+        return Promise.resolve(checkHeartbeat(m, now));
+      default:
+        return checkUptime(m.host);
+    }
+  };
+
+  const [up, ssl, dom, ai, scan] = await Promise.all([
+    which.uptime ? uptimeCheck() : null,
     which.ssl ? settle(checkSsl(m.host)) : null,
     which.domain ? settle(checkDomain(m.host)) : null,
     which.ai ? settle(runAiVisibilityWithin(m.host)) : null,
+    which.scan ? settle(runScan(m.host, m.dom_name, { withLinks, now })) : null,
   ]);
 
-  // If the site was edited or removed while these checks were running, the results belong to
-  // the old hostname. Drop them rather than record or email anything about the wrong site.
-  if (getMonitorWithOwner(m.id)?.host !== m.host) return false;
+  // If the monitor was edited or removed while these checks were running, the results belong to what it
+  // watched before. Drop them rather than record or email anything about the wrong thing.
+  const fresh = getMonitorWithOwner(m.id);
+  const target = (x: typeof m) => [x.host, x.url, x.port, x.keyword, x.keyword_mode, x.hb_every_ms, x.hb_grace_ms].join("|");
+  if (!fresh || target(fresh) !== target(m)) return false;
+  // A heartbeat that checked in while we were deciding it was late isn't late.
+  if (m.kind === "heartbeat" && fresh.hb_last_ping !== m.hb_last_ping) return false;
 
   const update: MonitorUpdate = {};
   const pending: PendingAlert[] = [];
 
   if (up) {
     recordUptime(m.id, now, up.up, up.ms);
-    const r = evaluateUptime({ failures: m.up_failures, downAlerted: !!m.down_alerted, downSince: m.down_since }, m.host, up, now);
+    const heartbeat = m.kind === "heartbeat";
+    // A heartbeat has been overdue since its deadline passed, not since we happened to notice.
+    const downSince = m.down_since ?? (heartbeat && !up.up ? heartbeatDeadline(m) : null);
+    const r = evaluateUptime({ failures: m.up_failures, downAlerted: !!m.down_alerted, downSince }, m.host, up, now, {
+      subject: m.kind,
+      downAfter: heartbeat ? 1 : undefined,
+    });
+    // A heartbeat is next looked at when its next check-in is due; once it's overdue, every interval until it's back.
+    const nextDue = heartbeat
+      ? up.up
+        ? heartbeatDeadline(m) + 1
+        : now + (m.hb_every_ms ?? 60_000)
+      : now + (r.recheckSoon ? UPTIME_RECHECK : entitlementsFor(m.owner_plan).uptimeEveryMs);
     Object.assign(update, {
       up_status: up.up ? "up" : "down",
       up_code: up.status,
       up_ms: up.ms,
       up_error: up.error,
       up_checked_at: now,
-      up_due_at: now + (r.recheckSoon ? UPTIME_RECHECK : entitlementsFor(m.owner_plan).uptimeEveryMs),
+      up_due_at: nextDue,
       up_failures: r.state.failures,
       down_since: r.state.downSince,
       down_alerted: r.state.downAlerted ? 1 : 0,
@@ -231,6 +286,33 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
     }
   }
 
+  if (scan) {
+    if (!scan.ok) {
+      Object.assign(update, { scan_due_at: now + SCAN_RETRY } satisfies MonitorUpdate);
+    } else {
+      const v = scan.value;
+      // A week's links result is kept until the next weekly run.
+      const result: ScanResult = v.links ? v : { ...v, links: lastScan?.links ?? null, linksAt: lastScan?.linksAt ?? null };
+      Object.assign(update, { scan_result: JSON.stringify(result), scan_checked_at: now, scan_due_at: now + SCAN_EVERY } satisfies MonitorUpdate);
+
+      // DNS: the first scan only records the records. After that, any change is news. A lookup that failed (null)
+      // never counts as a change.
+      if (v.dns) {
+        const before = parseBaseline(m.dns_baseline);
+        const changes = before ? dnsChanges(before, v.dns) : [];
+        update.dns_baseline = JSON.stringify(v.dns);
+        if (changes.length) pending.push({ alert: dnsChangedAlert(m.host, changes), revert: { dns_baseline: m.dns_baseline } });
+      }
+      // Links: report broken links we haven't reported before. Once they're all fixed, the slate is wiped.
+      if (v.links) {
+        const known = new Set<string>(m.links_alerted ? (JSON.parse(m.links_alerted) as string[]) : []);
+        const fresh = v.links.broken.filter((b) => !known.has(b.url));
+        update.links_alerted = v.links.broken.length ? JSON.stringify(v.links.broken.map((b) => b.url)) : null;
+        if (fresh.length) pending.push({ alert: brokenLinksAlert(m.host, v.links.broken), revert: { links_alerted: m.links_alerted } });
+      }
+    }
+  }
+
   if (options.afterChecks) {
     try {
       await options.afterChecks({ ...m, ...update } as MonitorRow);
@@ -239,21 +321,44 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
     }
   }
 
+  // Who hears about it. A monitor can send its alerts to only some destinations. If the account has an escalation rule,
+  // the people it names only hear about outages nobody has acknowledged, so they're left out of first alerts unless
+  // this monitor chooses them.
+  const policy = pending.length ? activePolicy(m.user_id, m.owner_plan) : null;
+  const route = entitlementsFor(m.owner_plan).alertRouting ? readTargets(m.alert_targets) : null;
+  // If that would leave nobody (the escalation contact is the only address), first alerts go to everyone as usual.
+  const rest = policy ? listTargets(m.user_id).filter((t) => t.active && !policy.targets.includes(t.id)) : [];
+  const firstLine = route ?? (rest.length ? new Set(rest.map((t) => t.id)) : null);
+
   // Email the account owner. If sending fails, roll that alert's bookkeeping back so it's retried.
   let sentToday = pending.length ? countEmailsSince(m.user_id, now - DAY) : 0;
   const logged: { kind: string; message: string; emailed: boolean }[] = [];
-  for (const { alert, revert } of pending) {
+  // During maintenance the owner has asked not to hear about outages: the outage is still recorded, just not sent.
+  const silenced = pending.some((p) => p.alert.kind === "down" || p.alert.kind === "recovered") && alertsSilenced(m.id, now);
+  // Alerts that reached the owner. One that failed is retried next time, so it isn't passed on to anyone else yet.
+  const delivered: Alert[] = [];
+  for (const { alert: raw, revert } of pending) {
     // "Handled" means the alert has reached the user by email, or email was deliberately skipped.
     let handled = false;
+    // With an escalation rule, an outage alert says how to stop it going further.
+    const downSince = (update.down_since ?? m.down_since) as number | null;
+    const alert = raw.kind === "down" && policy && downSince ? { ...raw, body: `${raw.body}\n\nAcknowledge this outage so nobody else is alerted: ${ackLink(m.id, downSince)}` } : raw;
+    // "Back up" after an escalation also goes to whoever it was escalated to.
+    const only = alert.kind === "recovered" && m.escalated_at && policy && firstLine ? new Set([...firstLine, ...policy.targets]) : firstLine;
+    if (silenced && (alert.kind === "down" || alert.kind === "recovered")) {
+      logged.push({ kind: alert.kind, message: `${alert.subject} (not sent: during scheduled maintenance)`, emailed: false });
+      continue;
+    }
     if (sentToday >= entitlementsFor(m.owner_plan).maxEmailsPerDay) {
       logged.push({ kind: alert.kind, message: `${alert.subject} (email skipped: daily limit reached)`, emailed: false });
       handled = true;
     } else {
       try {
         // Every address the owner has switched on. None switched on is their choice, not a failure.
-        const sent = await emailRecipients(m.user_id, { subject: alert.subject, text: alert.body });
+        const sent = await emailRecipients(m.user_id, { subject: alert.subject, text: alert.body }, only);
         if (sent) sentToday++;
-        logged.push({ kind: alert.kind, message: sent ? alert.subject : `${alert.subject} (not emailed: every address is switched off)`, emailed: sent > 0 });
+        const why = only ? "no email address is chosen for this monitor" : "every address is switched off";
+        logged.push({ kind: alert.kind, message: sent ? alert.subject : `${alert.subject} (not emailed: ${why})`, emailed: sent > 0 });
         handled = true;
       } catch (err) {
         console.error(`alert email for ${m.host} failed; will retry`, err);
@@ -263,10 +368,37 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
     // Slack and Discord get it too (Starter plan). Only once email has gone through: if email failed
     // the alert is retried next time, and sending to the channels now would post it twice.
     if (handled) {
-      await sendAlertToChannels(m.user_id, m.owner_plan, { subject: alert.subject, body: alert.body, kind: alert.kind }).catch((err) =>
+      delivered.push(alert);
+      await sendAlertToChannels(m.user_id, m.owner_plan, { subject: alert.subject, body: alert.body, kind: alert.kind }, only).catch((err) =>
         console.error(`channel delivery for ${m.host} failed`, err),
       );
+      // Phones only hear about outages: each text or call costs money, and counts against the month's limit.
+      if (alert.kind === "down" || alert.kind === "recovered") {
+        const phones = await alertPhones(m.user_id, m.owner_plan, only, {
+          text: alert.kind === "down" ? `${alert.subject}. ${m.up_error ?? ""}`.trim() + (policy && downSince ? ` Acknowledge: ${ackLink(m.id, downSince)}` : "") : alert.subject,
+          say: alert.kind === "down" ? `Site Monitors alert. ${m.host} is down.` : `Site Monitors. ${m.host} is back up.`,
+        });
+        if (phones.skipped) {
+          const last = logged[logged.length - 1];
+          if (last) last.message += ` (${phones.skipped} text or call skipped: this month's limit is reached)`;
+        }
+      }
+      // A delivered outage alert starts the clock for escalation; being back up ends it.
+      if (alert.kind === "down") Object.assign(update, { down_alerted_at: now, ack_at: null, escalated_at: null } satisfies MonitorUpdate);
+      if (alert.kind === "recovered") Object.assign(update, { down_alerted_at: null, ack_at: null, escalated_at: null } satisfies MonitorUpdate);
     }
+  }
+
+  // A status page's subscribers hear about confirmed outages too (not during maintenance the owner has scheduled).
+  for (const alert of delivered) {
+    if (alert.kind !== "down" && alert.kind !== "recovered") continue;
+    const text =
+      alert.kind === "down"
+        ? `Our checks found that ${m.host} isn't working. We'll send another update when it's back.`
+        : `${m.host} is working again.`;
+    notifySubscribers(m, { subject: alert.kind === "down" ? `${m.host} is down` : `${m.host} is back up`, text }).catch((err) =>
+      console.error(`subscriber outage notice for ${m.host} failed`, err),
+    );
   }
 
   updateMonitor(m.id, update);
@@ -278,4 +410,24 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
     }
   }
   return true;
+}
+
+/** A stored scan result, or null if there isn't one or it's from a version we don't recognise. */
+function parseScan(json: string | null): ScanResult | null {
+  if (!json) return null;
+  try {
+    const v = JSON.parse(json) as ScanResult;
+    return v?.v === 1 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseBaseline(json: string | null): DnsSnapshot | null {
+  if (!json) return null;
+  try {
+    return JSON.parse(json) as DnsSnapshot;
+  } catch {
+    return null;
+  }
 }

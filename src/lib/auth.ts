@@ -14,6 +14,7 @@ import {
 } from "./db";
 import { sendMail } from "./mail";
 import { secret } from "./secret";
+import { workspaceFor } from "./teams";
 
 export { safeNext } from "./safe-next";
 
@@ -25,12 +26,20 @@ const SCRYPT = { N: 1 << 15, r: 8, p: 1, keylen: 32, maxmem: 64 * 1024 * 1024 };
 export const PASSWORD_MIN = 8;
 export const PASSWORD_MAX = 128; // bounds hashing work per request
 
+/**
+ * Who a request is acting for. `id`, `email` and `plan` are the ACCOUNT's: a team member works in the owner's account,
+ * so everything that reads or changes the account's data uses these. `actor` is the person actually signed in (the
+ * same as the account unless they're a team member); use it for anything about them personally.
+ */
 export interface SessionUser {
   id: number;
   email: string;
   plan: PlanId;
   /** The development-only admin. Always false outside development mode. */
   isAdmin: boolean;
+  actor: { id: number; email: string };
+  /** "owner" in their own account, "member" in a team owner's. */
+  role: "owner" | "member";
 }
 
 // ---------- input validation ----------
@@ -127,8 +136,14 @@ export function startSession(userId: number): string {
 export function currentUser(request: Request): SessionUser | null {
   const token = cookieValue(request.headers.get("cookie"), SESSION_COOKIE);
   const user = token ? findSessionUser(sha256(token)) : undefined;
-  // The admin flag only counts where admin is switched on (always in development, opt-in in production).
-  return user ? { ...user, plan: planId(user.plan), isAdmin: user.isAdmin && adminEnabled() } : null;
+  if (!user) return null;
+  // The admin flag only counts where admin is switched on (always in development, opt-in in production), and is the
+  // signed-in person's own.
+  const isAdmin = user.isAdmin && adminEnabled();
+  const actor = { id: user.id, email: user.email };
+  const team = workspaceFor(user.id);
+  if (team) return { id: team.id, email: team.email, plan: planId(team.plan), isAdmin, actor, role: "member" };
+  return { id: user.id, email: user.email, plan: planId(user.plan), isAdmin, actor, role: "owner" };
 }
 
 /** Ends the session and returns the Set-Cookie header that clears it. */

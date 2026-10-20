@@ -20,8 +20,16 @@ import { LANDING_PARAM, LANDING_VALUE } from "@/lib/landing";
  *    anything, only to choose where to send a visitor.
  */
 
-/** What a status page on a customer's domain may load: the page's data and the owner's logo. */
-const CUSTOMER_DOMAIN_ALLOWED = [/^\/api\/status\/[a-z2-7]{12}$/, /^\/api\/logo\/[A-Za-z0-9_-]{22}$/, /^\/_next\//];
+/**
+ * What a status page on a customer's domain may load: the page's data, its RSS feed and email sign-up, the owner's
+ * logo, and the links in subscription emails (which point at the domain the visitor knows).
+ */
+const CUSTOMER_DOMAIN_ALLOWED = [
+  /^\/api\/status\/[a-z2-7]{12}(\/(subscribe|feed))?$/,
+  /^\/api\/logo\/[A-Za-z0-9_-]{22}$/,
+  /^\/api\/subscriptions\/[A-Za-z0-9._-]{8,200}$/,
+  /^\/_next\//,
+];
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;

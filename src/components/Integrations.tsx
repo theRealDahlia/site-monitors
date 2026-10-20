@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import AlertEmails from "@/components/AlertEmails";
+import EscalationSettings from "@/components/EscalationSettings";
+import PhoneAlerts from "@/components/PhoneAlerts";
 import { ago } from "@/components/monitor-ui";
 import Toggle from "@/components/Toggle";
 import type { ChannelView } from "@/lib/channels";
@@ -255,6 +257,8 @@ export default function Integrations() {
       <div className="mt-6">
         <AlertEmails />
       </div>
+      <PhoneAlerts />
+      <EscalationSettings />
 
       {!data ? (
         loadError ? (

@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandMark } from "@/components/branding-context";
+import { STATE_LABEL, StateBadge } from "@/components/StatusNotices";
+import type { NoticeView, publicNotices } from "@/lib/status-notices";
 import type { publicStatus } from "@/lib/status-page";
 import { type Branding, applyTheme, resetTheme } from "@/lib/theme";
 
-type Status = ReturnType<typeof publicStatus> & { branding: Branding };
+type Status = ReturnType<typeof publicStatus> & { branding: Branding; notices: ReturnType<typeof publicNotices>; updates: { email: boolean } };
 type Load = { kind: "loading" } | { kind: "missing" } | { kind: "error" } | { kind: "ok"; data: Status };
 
 function ago(ms: number | null): string {
@@ -31,6 +33,102 @@ function duration(from: number, to: number): string {
 const fmtDate = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 const fmtTime = (ms: number) => new Date(ms).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const show = (v: number | null) => (v === null ? "—" : `${v}%`);
+
+/** "Get updates": an email sign-up (when the owner's plan has it) and the RSS feed. */
+function GetUpdates({ slug, email }: { slug: string; email: boolean }) {
+  const [address, setAddress] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const feed = `/api/status/${slug}/feed`;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy || !address.trim()) return;
+    setBusy(true);
+    setResult(null);
+    try {
+      const res = await fetch(`/api/status/${slug}/subscribe`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: address }) });
+      const body = await res.json();
+      setResult(res.ok ? { ok: true, text: body.message } : { ok: false, text: body.error ?? "Something went wrong." });
+      if (res.ok) setAddress("");
+    } catch {
+      setResult({ ok: false, text: "Couldn't reach the server. Try again." });
+    }
+    setBusy(false);
+  }
+
+  return (
+    <section aria-labelledby="updates-heading" className="mt-10 rounded-xl border border-border bg-surface px-5 py-4">
+      <h2 id="updates-heading" className="text-sm font-medium">
+        Get updates
+      </h2>
+      {email && (
+        <form onSubmit={submit} className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <label htmlFor="subscribe-email" className="sr-only">
+            Email address
+          </label>
+          <input
+            id="subscribe-email"
+            type="email"
+            autoComplete="email"
+            required
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="you@example.com"
+            disabled={busy}
+            className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/30"
+          />
+          <button type="submit" disabled={busy || !address.trim()} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50">
+            {busy ? "Sending…" : "Email me updates"}
+          </button>
+        </form>
+      )}
+      {result && (
+        <p role={result.ok ? "status" : "alert"} className={`mt-2 text-sm ${result.ok ? "text-ok" : "text-bad"}`}>
+          {result.text}
+        </p>
+      )}
+      <p className={`${email ? "mt-3" : "mt-1"} text-sm text-muted`}>
+        {email ? "Or follow it with an " : "Follow incidents and maintenance with the "}
+        <a href={feed} className="text-accent underline underline-offset-2">
+          RSS feed
+        </a>
+        .
+      </p>
+    </section>
+  );
+}
+
+/** An incident or maintenance the owner has posted, with its timeline of updates (newest first). */
+function Notice({ n, emphasis }: { n: NoticeView; emphasis?: boolean }) {
+  const tone =
+    n.kind === "maintenance" ? "border-accent/40 bg-accent/5" : n.state === "resolved" ? "border-border bg-surface" : n.impact === "major" ? "border-bad/40 bg-bad-bg" : "border-warn/40 bg-warn-bg";
+  return (
+    <article className={`rounded-xl border px-5 py-4 ${emphasis ? tone : "border-border bg-surface"}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <StateBadge state={n.state} />
+        <h3 className="font-semibold">{n.title}</h3>
+      </div>
+      {n.kind === "maintenance" && n.startsAt && n.endsAt && (
+        <p className="mt-1 text-sm text-muted">
+          {fmtTime(n.startsAt)} to {fmtTime(n.endsAt)}
+        </p>
+      )}
+      {n.updates.length > 0 && (
+        <ol className="mt-3 space-y-3 border-l border-border pl-4">
+          {n.updates.map((u) => (
+            <li key={u.id}>
+              <p className="text-xs text-muted">
+                <span className="font-medium text-foreground">{STATE_LABEL[u.state] ?? u.state}</span> · {fmtTime(u.at)}
+              </p>
+              <p className="mt-0.5 whitespace-pre-line break-words text-sm">{u.message}</p>
+            </li>
+          ))}
+        </ol>
+      )}
+    </article>
+  );
+}
 
 /** One example of each kind of day, for the legend and for reserving room for the message. */
 const SAMPLES: (number | null)[] = [100, 97, 80, null];
@@ -219,12 +317,21 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
   }
 
   const d = load.data;
+  const active = d.notices.active;
+  // What the owner has said outranks "all good" from the checks: if they've reported an incident, the page says so.
+  const majorIncident = active.some((n) => n.kind === "incident" && n.impact === "major");
+  const incident = active.some((n) => n.kind === "incident");
+  const maintenance = active.some((n) => n.kind === "maintenance");
   const banner =
-    d.status === "operational"
-      ? { text: "All systems operational", classes: "bg-ok-bg text-ok" }
-      : d.status === "down"
-        ? { text: "Down", classes: "bg-bad-bg text-bad" }
-        : { text: "Checking…", classes: "border border-border bg-surface text-muted" };
+    d.status === "down" || majorIncident
+      ? { text: d.status === "down" ? "Down" : "Major outage", classes: "bg-bad-bg text-bad" }
+      : incident
+        ? { text: "Some systems are affected", classes: "bg-warn-bg text-warn" }
+        : maintenance
+          ? { text: "Under maintenance", classes: "bg-accent/10 text-accent" }
+          : d.status === "operational"
+            ? { text: "All systems operational", classes: "bg-ok-bg text-ok" }
+            : { text: "Checking…", classes: "border border-border bg-surface text-muted" };
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
@@ -239,8 +346,29 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
       <div role="status" className={`mt-6 rounded-xl px-5 py-4 ${banner.classes}`}>
         <p className="text-lg font-semibold">{banner.text}</p>
         {d.status === "down" && d.downSince && <p className="mt-0.5 text-sm">Down since {fmtTime(d.downSince)} ({ago(d.downSince)})</p>}
-        {d.status === "operational" && d.responseMs !== null && <p className="mt-0.5 text-sm">Responding in {d.responseMs} ms</p>}
+        {d.status === "operational" && d.responseMs !== null && !incident && <p className="mt-0.5 text-sm">Responding in {d.responseMs} ms</p>}
       </div>
+
+      {active.length > 0 && (
+        <section aria-label="Current incidents and maintenance" className="mt-4 space-y-3">
+          {active.map((n) => (
+            <Notice key={n.id} n={n} emphasis />
+          ))}
+        </section>
+      )}
+
+      {d.notices.upcoming.length > 0 && (
+        <section aria-labelledby="upcoming-heading" className="mt-8">
+          <h2 id="upcoming-heading" className="text-sm font-medium text-muted">
+            Scheduled maintenance
+          </h2>
+          <div className="mt-3 space-y-3">
+            {d.notices.upcoming.map((n) => (
+              <Notice key={n.id} n={n} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section aria-labelledby="uptime-heading" className="mt-8">
         <h2 id="uptime-heading" className="text-sm font-medium text-muted">
@@ -262,12 +390,25 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
         <DailyBars days={d.days} />
       </section>
 
+      {d.notices.past.length > 0 && (
+        <section aria-labelledby="history-heading" className="mt-10">
+          <h2 id="history-heading" className="text-sm font-medium text-muted">
+            Past incidents and maintenance
+          </h2>
+          <div className="mt-3 space-y-3">
+            {d.notices.past.map((n) => (
+              <Notice key={n.id} n={n} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <section aria-labelledby="incidents-heading" className="mt-10">
         <h2 id="incidents-heading" className="text-sm font-medium text-muted">
-          Past incidents
+          Outages detected by our checks
         </h2>
         {d.incidents.length === 0 ? (
-          <p className="mt-3 rounded-xl border border-border bg-surface px-5 py-4 text-sm text-muted">No incidents in the last 30 days.</p>
+          <p className="mt-3 rounded-xl border border-border bg-surface px-5 py-4 text-sm text-muted">No outages in the last 30 days.</p>
         ) : (
           <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-surface">
             {d.incidents.map((i) => (
@@ -281,6 +422,8 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
           </ul>
         )}
       </section>
+
+      <GetUpdates slug={slug} email={d.updates.email} />
 
       <p className="mt-8 text-xs text-muted">Last checked {ago(d.lastCheckedAt)}. This page refreshes by itself.</p>
       {footer}

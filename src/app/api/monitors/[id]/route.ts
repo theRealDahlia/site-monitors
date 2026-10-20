@@ -1,14 +1,14 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
-import { CheckError, parseHostname } from "@/lib/hostname";
+import { CheckError } from "@/lib/hostname";
+import { parseMonitorRequest, sameTarget } from "@/lib/monitor-kinds";
 import { entitlementsFor } from "@/lib/entitlements";
 import { ALL_CHECKS, runChecks } from "@/lib/monitor-runner";
 import { sendEditNotice, sendRemovalNotice } from "@/lib/watch-email";
 import { monitorView } from "@/lib/monitor-view";
 import { type MonitorRow, deleteMonitor, getMonitor, retargetMonitor } from "@/lib/monitors-db";
 import { rateLimit } from "@/lib/rate-limit";
-import { resolvePublicAddress } from "@/lib/ssl-check";
 
-/** Edit a watched site: point the monitor at a different hostname and re-run all of its checks. */
+/** Edit a monitor: point it at a different site, address, port or timetable, and re-run its checks. Its kind stays the same. */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/monitors/[id]">) {
   if (!sameOrigin(request)) return Response.json({ error: "Request blocked." }, { status: 403 });
   const user = currentUser(request);
@@ -21,20 +21,21 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/monitors/[
   const monitor = Number.isInteger(id) ? getMonitor(id, user.id) : undefined;
   if (!monitor) return Response.json({ error: "Monitor not found." }, { status: 404 });
 
-  let body: { host?: unknown };
+  let body: Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
     return Response.json({ error: "Invalid request." }, { status: 400 });
   }
+  if (!body || typeof body !== "object") return Response.json({ error: "Invalid request." }, { status: 400 });
 
   try {
-    const host = parseHostname(typeof body.host === "string" ? body.host : "", { ignorePort: true });
-    if (host === monitor.host) return Response.json({ monitor: monitorView(monitor, entitlementsFor(user.plan)), changed: false });
-    await resolvePublicAddress(host); // catches typos and private addresses before anything is changed
+    const parsed = await parseMonitorRequest(monitor.kind, body);
+    if (sameTarget(monitor, parsed)) return Response.json({ monitor: monitorView(monitor, entitlementsFor(user.plan)), changed: false });
+    const host = parsed.host;
 
-    const result = retargetMonitor(id, user.id, host, Date.now());
-    if (result === "duplicate") return Response.json({ error: `You're already watching ${host}.` }, { status: 409 });
+    const result = retargetMonitor(id, user.id, host, Date.now(), parsed.config);
+    if (result === "duplicate") return Response.json({ error: `You already have a monitor for ${host}.` }, { status: 409 });
     if (result === "missing") return Response.json({ error: "Monitor not found." }, { status: 404 });
 
     // Fresh uptime, SSL and domain checks for the new site, so nothing from the old one lingers.
@@ -44,7 +45,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/monitors/[
     let notified = false;
     const notify = async (row: MonitorRow) => {
       notified = true;
-      await sendEditNotice({ monitor: row, oldHost: monitor.host, uptimeEveryMs: entitlementsFor(user.plan).uptimeEveryMs, plan: user.plan });
+      await sendEditNotice({ monitor: row, before: monitor, uptimeEveryMs: entitlementsFor(user.plan).uptimeEveryMs, plan: user.plan });
     };
     for (let attempt = 0; attempt < 4; attempt++) {
       if (await runChecks(id, ALL_CHECKS, { afterChecks: notify })) break;
@@ -56,7 +57,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/monitors/[
   } catch (err) {
     if (err instanceof CheckError) return Response.json({ error: err.message }, { status: err.httpStatus });
     console.error("edit monitor failed", err);
-    return Response.json({ error: "Something went wrong editing that site." }, { status: 500 });
+    return Response.json({ error: "Something went wrong editing that monitor." }, { status: 500 });
   }
 }
 

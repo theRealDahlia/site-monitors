@@ -213,6 +213,12 @@ export function lookupVerifiedDomain(host: string): ServedDomain | null {
   return row ? { domain: row.domain, userId: row.userId, monitorId: row.monitorId, slug: row.slug, statusPublic: row.pub === 1, ownerPlan: row.ownerPlan } : null;
 }
 
+/** The verified domain a monitor's status page is shown on, if any. */
+export function lookupDomainFor(monitorId: number): string | null {
+  const row = db().prepare("SELECT domain FROM custom_domains WHERE monitor_id = ? AND verified_at IS NOT NULL").get(monitorId) as { domain: string } | undefined;
+  return row?.domain ?? null;
+}
+
 // ---------- staying owned ----------
 
 /**

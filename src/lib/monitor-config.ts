@@ -17,9 +17,17 @@ export const DOMAIN_UNSUPPORTED_EVERY = 7 * DAY;
 export const AI_EVERY = DAY;
 export const AI_RECHECK = HOUR;
 export const AI_RETRY = 3 * HOUR;
+// The health scan (DNS, email setup, security headers) runs daily; its broken-link part weekly.
+export const SCAN_EVERY = DAY;
+export const SCAN_RETRY = 3 * HOUR;
+export const LINKS_EVERY = 7 * DAY;
 
-/** "5 minutes", "6 hours", "1 hour". */
+/** "5 minutes", "6 hours", "1 hour", "1 day". */
 export function everyText(ms: number): string {
+  if (ms >= DAY && ms % DAY === 0) {
+    const d = ms / DAY;
+    return `${d} ${d === 1 ? "day" : "days"}`;
+  }
   if (ms % HOUR === 0) {
     const h = ms / HOUR;
     return `${h} ${h === 1 ? "hour" : "hours"}`;
