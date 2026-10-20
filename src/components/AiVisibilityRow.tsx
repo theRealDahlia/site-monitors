@@ -138,7 +138,16 @@ function RoleRows({ role, result }: { role: BotRole; result: AiResult }) {
  * One row on a site's card: whether AI search tools can read the site. By default the full detail is a click away;
  * `compact` (the Overview) shows only the status and links to the AI visibility tab for the rest.
  */
-export default function AiVisibilityRow({ ai, compact = false }: { ai: NonNullable<Monitor["ai"]>; compact?: boolean }) {
+export default function AiVisibilityRow({
+  ai,
+  compact = false,
+  detailsHref = "/dashboard/ai-visibility",
+}: {
+  ai: NonNullable<Monitor["ai"]>;
+  compact?: boolean;
+  /** Where "See details" goes, in compact mode. */
+  detailsHref?: string;
+}) {
   const result = ai.result;
   const status: AiStatus | "pending" = result ? result.status : ai.status === "pending" ? "pending" : (ai.status as AiStatus);
   const headline = HEADLINE[status] ?? HEADLINE.pending;
@@ -158,7 +167,7 @@ export default function AiVisibilityRow({ ai, compact = false }: { ai: NonNullab
         <p className={`font-medium ${TEXT[headline.tone]}`}>{headline.text}</p>
         {summary && <div className="mt-0.5 break-words text-muted">{summary}</div>}
         {compact && result && (
-          <Link href="/dashboard/ai-visibility" className="mt-1 inline-block text-xs text-accent underline underline-offset-2 hover:opacity-80">
+          <Link href={detailsHref} className="mt-1 inline-block text-xs text-accent underline underline-offset-2 hover:opacity-80">
             See details
           </Link>
         )}

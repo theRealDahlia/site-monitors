@@ -5,7 +5,7 @@ const LINK = "text-accent underline underline-offset-2 hover:opacity-80";
 
 /**
  * Where a guide link should go inside the app. Guides live under /dashboard/guides there, and the
- * sign-up page has no use for someone who's already signed in, so it points at Manage sites instead.
+ * sign-up page has no use for someone who's already signed in, so it points at the Sites page instead.
  * (Links to the public checkers aren't written for the app version at all; see forMode in guides.ts.)
  */
 function appHref(href: string): string {

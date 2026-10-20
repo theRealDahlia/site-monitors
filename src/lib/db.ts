@@ -192,6 +192,8 @@ const SCHEMA = `
     logo_id    TEXT UNIQUE,
     -- White label (Pro): leave "Run by site-monitors.net" off the account's status pages.
     hide_credit INTEGER NOT NULL DEFAULT 0,
+    -- The company or brand name shown next to the logo.
+    brand_name TEXT,
     updated_at INTEGER NOT NULL
   );
 
@@ -235,6 +237,7 @@ function migrate(conn: DatabaseSync) {
   if (!has("users", "is_admin")) conn.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
   if (!has("monitors", "status_public")) conn.exec("ALTER TABLE monitors ADD COLUMN status_public INTEGER NOT NULL DEFAULT 0");
   if (!has("branding", "hide_credit")) conn.exec("ALTER TABLE branding ADD COLUMN hide_credit INTEGER NOT NULL DEFAULT 0");
+  if (!has("branding", "brand_name")) conn.exec("ALTER TABLE branding ADD COLUMN brand_name TEXT");
   if (!has("monitors", "status_slug")) conn.exec("ALTER TABLE monitors ADD COLUMN status_slug TEXT");
   if (!has("monitors", "ai_status")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_status TEXT NOT NULL DEFAULT 'pending'");
   if (!has("monitors", "ai_result")) conn.exec("ALTER TABLE monitors ADD COLUMN ai_result TEXT");

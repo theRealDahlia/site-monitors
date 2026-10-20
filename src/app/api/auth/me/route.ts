@@ -1,5 +1,5 @@
 import { currentUser, endSession } from "@/lib/auth";
-import { getBranding } from "@/lib/branding";
+import { brandingFor } from "@/lib/branding";
 import { SESSION_COOKIE } from "@/lib/cookie-names";
 import { ENTITLEMENTS, PLAN_IDS } from "@/lib/entitlements";
 
@@ -18,9 +18,10 @@ export async function GET(request: Request) {
             plan: user.plan,
             planName: ENTITLEMENTS[user.plan].name,
             whiteLabel: ENTITLEMENTS[user.plan].whiteLabel,
+            canBrand: ENTITLEMENTS[user.plan].branding,
             isAdmin: user.isAdmin,
             // The account's look, so the app can show it straight away.
-            branding: getBranding(user.id),
+            branding: brandingFor(user.id, user.plan),
             // Only an admin is told the list, for the plan switcher.
             plans: user.isAdmin ? PLAN_IDS.map((id) => ({ id, name: ENTITLEMENTS[id].name })) : undefined,
           }

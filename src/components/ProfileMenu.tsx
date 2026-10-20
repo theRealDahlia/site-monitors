@@ -70,7 +70,7 @@ export default function ProfileMenu({ email, plan, isAdmin, plans }: { email: st
             Dashboard
           </Link>
           <Link href="/dashboard/sites" role="menuitem" onClick={() => setOpen(false)} className={item}>
-            Manage sites
+            Sites
           </Link>
           <Link href="/dashboard/notifications" role="menuitem" onClick={() => setOpen(false)} className={item}>
             Notifications

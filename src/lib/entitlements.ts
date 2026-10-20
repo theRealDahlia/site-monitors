@@ -14,6 +14,8 @@ export interface Entitlements {
   integrations: boolean;
   /** A public status page for each site. */
   statusPages: boolean;
+  /** The Appearance page: the account's own logo, name, light or dark, and accent colour. */
+  branding: boolean;
   /**
    * How many more addresses, besides the account's own, can get alert emails. Agency, when it's added,
    * gets 20.
@@ -36,10 +38,10 @@ export interface Entitlements {
 }
 
 export const ENTITLEMENTS = {
-  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false },
-  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false },
+  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false },
+  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false },
   // Pro is everything in Starter with room for more, plus AI-visibility checks and white-label status pages.
-  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true },
+  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true },
 } as const satisfies Record<string, Entitlements>;
 
 /** Every plan there is. Adding a plan to ENTITLEMENTS adds it here, to the types and to the admin plan switcher. */

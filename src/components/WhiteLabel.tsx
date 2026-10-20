@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useBranding } from "@/components/branding-context";
 import CustomDomainPanel from "@/components/CustomDomainPanel";
-import { useMonitors } from "@/components/monitor-ui";
+import { sitePath, useMonitors } from "@/components/monitor-ui";
 import Toggle from "@/components/Toggle";
 
 /** The White label tab (Pro): your own domain for each status page, and no Site Monitors credit on them. */
@@ -61,7 +61,7 @@ export default function WhiteLabel() {
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
             <li>Show a status page at your own address, like status.yourcompany.com, with a secure certificate we set up for you</li>
             <li>Leave &ldquo;Run by site-monitors.net&rdquo; off your status pages (other plans show it under your logo)</li>
-            <li>Your logo and colours, from the Appearance tab, on every page</li>
+            <li>Your logo, name and colours, from the Appearance tab, on every page</li>
           </ul>
           <Link href="/dashboard/plans" className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">
             See the plans
@@ -92,21 +92,25 @@ export default function WhiteLabel() {
             <h2 id="domains-heading" className="font-semibold">
               Status page domains
             </h2>
-            <p className="mt-0.5 text-sm text-muted">Each site&apos;s status page can have its own address. Your logo and colours are set on the Appearance tab.</p>
+            <p className="mt-0.5 text-sm text-muted">Each site&apos;s status page can have its own address. Your logo, name and colours are set on the Appearance tab.</p>
 
             {withPage.length === 0 ? (
               <p className="mt-4 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">
-                None of your sites has a public status page yet. Turn one on under{" "}
+                None of your sites has a public status page yet. Open a site from{" "}
                 <Link href="/dashboard/sites" className="text-accent underline underline-offset-2">
-                  Manage sites
-                </Link>
-                , then come back to give it your own domain.
+                  Sites
+                </Link>{" "}
+                and turn its status page on, then come back to give it your own domain.
               </p>
             ) : (
               <ul className="mt-4 space-y-4">
                 {withPage.map((m) => (
                   <li key={m.id} className="rounded-xl border border-border bg-surface p-5">
-                    <h3 className="break-all text-lg font-semibold">{m.host}</h3>
+                    <h3 className="break-all text-lg font-semibold">
+                      <Link href={sitePath(m.id)} className="hover:text-accent">
+                        {m.host}
+                      </Link>
+                    </h3>
                     <p className="text-xs text-muted">/status/{m.statusPage.slug}</p>
                     <CustomDomainPanel monitorId={m.id} />
                   </li>
@@ -115,9 +119,9 @@ export default function WhiteLabel() {
             )}
             {withPage.length > 0 && without > 0 && (
               <p className="mt-4 text-sm text-muted">
-                {without} of your sites {without === 1 ? "has" : "have"} no public status page. Turn it on under{" "}
+                {without} of your sites {without === 1 ? "has" : "have"} no public status page. You can turn it on from the site&apos;s page under{" "}
                 <Link href="/dashboard/sites" className="text-accent underline underline-offset-2">
-                  Manage sites
+                  Sites
                 </Link>
                 .
               </p>

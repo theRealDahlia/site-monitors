@@ -1,9 +1,10 @@
 "use client";
 
-import { type EventItem, ago, useMonitors } from "@/components/monitor-ui";
+import Link from "next/link";
+import { type EventItem, ago, sitePath, useMonitors } from "@/components/monitor-ui";
 
 // What each kind of notification is called, and how serious it looks.
-const KINDS: Record<string, { label: string; tone: string }> = {
+export const KINDS: Record<string, { label: string; tone: string }> = {
   created: { label: "Site added", tone: "bg-ok-bg text-ok" },
   edited: { label: "Site edited", tone: "bg-accent/15 text-accent" },
   removed: { label: "Site removed", tone: "border border-border text-muted" },
@@ -17,7 +18,7 @@ const KINDS: Record<string, { label: string; tone: string }> = {
 };
 const FALLBACK = { label: "Notice", tone: "border border-border text-muted" };
 
-function Item({ e, email }: { e: EventItem; email: string }) {
+function Item({ e, email, siteId }: { e: EventItem; email: string; siteId: number | undefined }) {
   const kind = KINDS[e.kind] ?? FALLBACK;
   const when = new Date(e.at);
   return (
@@ -26,7 +27,13 @@ function Item({ e, email }: { e: EventItem; email: string }) {
         <div className="min-w-0">
           <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${kind.tone}`}>{kind.label}</span>
           <p className="mt-2 break-words font-medium">{e.message}</p>
-          <p className="mt-1 break-all text-sm text-muted">{e.host}</p>
+          {siteId ? (
+            <Link href={sitePath(siteId)} className="mt-1 block break-all text-sm text-muted underline-offset-2 hover:text-accent hover:underline">
+              {e.host}
+            </Link>
+          ) : (
+            <p className="mt-1 break-all text-sm text-muted">{e.host}</p>
+          )}
           {e.details && (
             <p className="mt-3 whitespace-pre-line break-words rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-muted">
               {e.details}
@@ -60,6 +67,8 @@ export default function Notifications() {
     );
   }
 
+  const hostId = new Map(data.monitors.map((m) => [m.host, m.id]));
+
   return (
     <div>
       <h1 className="text-3xl font-semibold tracking-tight">Notifications</h1>
@@ -88,7 +97,7 @@ export default function Notifications() {
           <>
             <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
               {data.events.map((e) => (
-                <Item key={e.id} e={e} email={data.email} />
+                <Item key={e.id} e={e} email={data.email} siteId={hostId.get(e.host)} />
               ))}
             </ul>
             <p className="mt-3 text-xs text-muted">

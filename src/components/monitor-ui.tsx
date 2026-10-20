@@ -134,3 +134,30 @@ export function useNotice() {
 
   return [notice, setNotice] as const;
 }
+
+/** "Check now" for one site: runs every check, then reloads. A wait or failure shows as a short-lived notice. */
+export function useCheckNow(reload: () => Promise<void>) {
+  const [checking, setChecking] = useState<number | null>(null);
+  const [notice, setNotice] = useNotice();
+
+  async function checkNow(id: number) {
+    setChecking(id);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/monitors/${id}/check`, { method: "POST" });
+      if (res.ok) await reload();
+      else setNotice((await res.json()).error ?? "Couldn't run the check.");
+    } catch {
+      setNotice("Couldn't reach the server. Try again.");
+    }
+    setChecking(null);
+  }
+
+  return { checking, notice, checkNow };
+}
+
+/** When any of a site's checks last ran. */
+export const lastChecked = (m: Monitor) => Math.max(m.uptime.checkedAt ?? 0, m.ssl.checkedAt ?? 0, m.domain.checkedAt ?? 0, m.ai?.checkedAt ?? 0) || null;
+
+/** The address of a site's own page in the app. */
+export const sitePath = (id: number) => `/dashboard/sites/${id}`;

@@ -55,7 +55,7 @@ export async function sendWatchConfirmation(opts: {
       `We'll email you if the site goes down or something is about to expire, and again when it's back up.\n\n` +
       `See its status: ${appUrl()}/dashboard\n` +
       `Added on ${added} (UTC).\n\n` +
-      `If you didn't add this site, log in and remove it from the Manage sites tab.`,
+      `If you didn't add this site, log in and remove it from the Sites tab.`,
   });
   addEvent({ userId: opts.userId, monitorId: opts.monitorId, host: opts.host, kind: "created", message: `Started watching ${opts.host}`, emailed: sent > 0 });
 }
@@ -93,7 +93,7 @@ export async function sendEditNotice(opts: {
         `From now on we'll check uptime every ${everyText(uptimeEveryMs)}, the SSL certificate every ${everyText(SSL_EVERY)} ` +
         `and the domain registration every ${everyText(DOMAIN_EVERY)}, and email you if anything needs attention.\n\n` +
         `See its status: ${appUrl()}/dashboard\n\n` +
-        `If you didn't make this change, log in and review your sites on the Manage sites tab.`,
+        `If you didn't make this change, log in and review your sites on the Sites tab.`,
     });
     emailed = sent > 0;
   } catch (err) {

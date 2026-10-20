@@ -4,7 +4,7 @@
 // Inline formatting inside any text: [link text](/internal-path or https://address), `code`, **bold**.
 // The same articles are shown to visitors (/guides) and inside the app for logged-in users
 // (/dashboard/guides). Wording that only fits one place goes in {public}...{/public} or {app}...{/app}.
-// Inside the app, links to /guides become /dashboard/guides and /signup becomes the Manage sites page.
+// Inside the app, links to /guides become /dashboard/guides and /signup becomes the Sites page.
 // Facts that can go out of date (certificate lifetime dates, registry rules) say when they were checked.
 
 export type Block =
@@ -48,7 +48,7 @@ export const GUIDES: Guide[] = [
       { type: "h2", text: "1. Confirm the certificate has expired" },
       {
         type: "p",
-        text: "{public}Run the site through the [free SSL checker](/ssl-checker). It shows the expiry date, who issued the certificate, and whether the certificate chain and hostname are set up correctly.{/public}{app}Find the site on your [Overview](/dashboard) and click **Check now**. The SSL line shows when the certificate expires and who issued it. If you don't watch the site yet, add it on [Manage sites](/dashboard/sites).{/app} If the expiry date is in the past, that's your problem.",
+        text: "{public}Run the site through the [free SSL checker](/ssl-checker). It shows the expiry date, who issued the certificate, and whether the certificate chain and hostname are set up correctly.{/public}{app}Open the site from [Sites](/dashboard/sites) and click **Check now**. The SSL line shows when the certificate expires and who issued it. If you don't watch the site yet, add it on the same page.{/app} If the expiry date is in the past, that's your problem.",
       },
       {
         type: "p",
@@ -119,7 +119,7 @@ export const GUIDES: Guide[] = [
       { type: "h2", text: "The quickest way: {public}a domain expiry checker{/public}{app}your dashboard{/app}" },
       {
         type: "p",
-        text: "{public}Enter the domain into the [free domain expiry checker](/domain-checker). It reads the registration directly from the registry and shows the expiry date, the registrar, the registration date and any status codes.{/public}{app}Find the site on your [Overview](/dashboard), or add it on [Manage sites](/dashboard/sites). The Domain line shows the expiry date and the registrar, read directly from the registry.{/app} It works for most domains. Some it can't see; more on that below.",
+        text: "{public}Enter the domain into the [free domain expiry checker](/domain-checker). It reads the registration directly from the registry and shows the expiry date, the registrar, the registration date and any status codes.{/public}{app}Open the site from [Sites](/dashboard/sites), or add it there. The Domain line shows the expiry date and the registrar, read directly from the registry.{/app} It works for most domains. Some it can't see; more on that below.",
       },
       { type: "h2", text: "From the command line" },
       {
@@ -250,7 +250,7 @@ export const GUIDES: Guide[] = [
       },
       {
         type: "p",
-        text: "{public}[Site Monitors](/signup) watches the certificates and domains of every site you add, emails you before they expire, and flags problems like hostname mismatches and broken chains. It's free for up to 5 sites. You can check any site right now with the [free SSL checker](/ssl-checker).{/public}{app}Site Monitors watches the certificates and domains of every site you add, emails you before they expire, and flags problems like hostname mismatches and broken chains. Add or review your sites on [Manage sites](/dashboard/sites).{/app}",
+        text: "{public}[Site Monitors](/signup) watches the certificates and domains of every site you add, emails you before they expire, and flags problems like hostname mismatches and broken chains. It's free for up to 5 sites. You can check any site right now with the [free SSL checker](/ssl-checker).{/public}{app}Site Monitors watches the certificates and domains of every site you add, emails you before they expire, and flags problems like hostname mismatches and broken chains. Add or review your sites on [Sites](/dashboard/sites).{/app}",
       },
       {
         type: "note",

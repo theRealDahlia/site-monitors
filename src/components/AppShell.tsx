@@ -13,6 +13,8 @@ interface User {
   planName: string;
   /** The plan includes white label (status pages on your own domain, no Site Monitors credit). */
   whiteLabel: boolean;
+  /** The plan includes the Appearance page (Starter and up). */
+  canBrand: boolean;
   isAdmin: boolean;
   plans?: { id: string; name: string }[];
   branding: Branding;
@@ -51,21 +53,35 @@ function Icon({ name, className = "h-5 w-5" }: { name: keyof typeof ICONS; class
   );
 }
 
+// Grouped so the pages about your sites sit apart from account settings and help.
 const NAV = [
-  { href: "/dashboard", label: "Overview", icon: "overview" },
-  { href: "/dashboard/sites", label: "Manage sites", icon: "sites" },
-  { href: "/dashboard/notifications", label: "Notifications", icon: "notifications" },
-  { href: "/dashboard/integrations", label: "Integrations", icon: "integrations" },
-  { href: "/dashboard/ai-visibility", label: "AI visibility", icon: "ai" },
-  { href: "/dashboard/white-label", label: "White label", icon: "whiteLabel" },
-  { href: "/dashboard/appearance", label: "Appearance", icon: "appearance" },
-  { href: "/dashboard/guides", label: "Guides", icon: "guides" },
-  { href: "/dashboard/plans", label: "Plans", icon: "plans" },
+  {
+    heading: null,
+    items: [
+      { href: "/dashboard", label: "Overview", icon: "overview" },
+      { href: "/dashboard/sites", label: "Sites", icon: "sites" },
+      { href: "/dashboard/notifications", label: "Notifications", icon: "notifications" },
+      { href: "/dashboard/ai-visibility", label: "AI visibility", icon: "ai" },
+    ],
+  },
+  {
+    heading: "Settings",
+    items: [
+      { href: "/dashboard/integrations", label: "Integrations", icon: "integrations" },
+      { href: "/dashboard/white-label", label: "White label", icon: "whiteLabel" },
+      { href: "/dashboard/appearance", label: "Appearance", icon: "appearance" },
+      { href: "/dashboard/plans", label: "Plans", icon: "plans" },
+    ],
+  },
+  {
+    heading: "Help",
+    items: [{ href: "/dashboard/guides", label: "Guides", icon: "guides" }],
+  },
 ] as const;
 
-/** The logo spot. A logo links to Overview. The "Run by" credit has its own link, so it isn't wrapped in another. */
+/** The logo spot. A logo or name links to Overview. The "Run by" credit has its own link, so it isn't wrapped in another. */
 function BrandHome({ branding, size, className, onNavigate }: { branding: Branding | null; size?: "sm" | "md"; className?: string; onNavigate?: () => void }) {
-  if (branding && !branding.logoUrl) {
+  if (branding && !branding.logoUrl && !branding.name) {
     return (
       <div className={className}>
         <BrandMark branding={branding} size={size} />
@@ -91,30 +107,36 @@ function Sidebar({ user, branding, onNavigate }: { user: User | null; branding: 
 
   return (
     <div className="flex h-full flex-col">
-      <BrandHome branding={branding} onNavigate={onNavigate} className="block px-5 py-5 pr-12" />
+      {/* In the phone menu, room is left on the right for its close button. */}
+      <BrandHome branding={branding} onNavigate={onNavigate} className={`block px-5 py-5 ${onNavigate ? "pr-12" : ""}`} />
 
       <nav aria-label="App" className="flex-1 overflow-y-auto px-3">
-        <ul className="space-y-0.5">
-          {NAV.map((item) => {
-            // An article inside Guides keeps the Guides tab lit. Overview is only itself, as every page is under /dashboard.
-            const active = item.href === "/dashboard" ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    active ? "bg-accent/10 text-accent" : "text-muted hover:bg-foreground/5 hover:text-foreground"
-                  }`}
-                >
-                  <Icon name={item.icon} />
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        {NAV.map((group, i) => (
+          <div key={group.heading ?? "main"} className={i ? "mt-5" : ""}>
+            {group.heading && <p className="px-3 pb-1.5 text-xs font-medium uppercase tracking-wide text-muted/80">{group.heading}</p>}
+            <ul className="space-y-0.5">
+              {group.items.map((item) => {
+                // A site's own page keeps Sites lit, and an article keeps Guides lit. Overview is only itself, as every page is under /dashboard.
+                const active = item.href === "/dashboard" ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={onNavigate}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                        active ? "bg-accent/10 text-accent" : "text-muted hover:bg-foreground/5 hover:text-foreground"
+                      }`}
+                    >
+                      <Icon name={item.icon} />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
       </nav>
 
       <div className="space-y-3 border-t border-border p-4">
@@ -189,7 +211,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     applyTheme(b, true);
   }, []);
   const whiteLabel = !!user?.whiteLabel;
-  const brandingValue = useMemo(() => ({ branding, setBranding, whiteLabel }), [branding, setBranding, whiteLabel]);
+  const canBrand = !!user?.canBrand;
+  const brandingValue = useMemo(() => ({ branding, setBranding, whiteLabel, canBrand }), [branding, setBranding, whiteLabel, canBrand]);
 
   // While the menu is open: Escape closes it, focus moves into it, and the page behind doesn't scroll.
   useEffect(() => {

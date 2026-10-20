@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { BrandMark, useBranding } from "@/components/branding-context";
-import { ACCENTS, type Branding, type ThemeMode, accentVars } from "@/lib/theme";
+import { ACCENTS, BRAND_NAME_MAX, type Branding, type ThemeMode, accentVars } from "@/lib/theme";
 
 const MODES: { id: ThemeMode; label: string }[] = [
   { id: "system", label: "Match device" },
@@ -14,9 +15,30 @@ const BUTTON = "rounded-lg border border-border px-4 py-2 text-sm hover:border-a
 
 type Status = { ok: boolean; text: string } | null;
 
-/** The Appearance page: the account's own logo, light or dark, and accent colour. Every plan has it. */
+/** What the Free plan sees instead: what the page would let them do, and where to get it. */
+function Upsell() {
+  return (
+    <section className="mt-6 rounded-xl border border-border bg-surface p-5">
+      <h2 className="font-semibold">Part of the Starter plan</h2>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
+        <li>Your logo and company name at the top of the menu and on your public status pages</li>
+        <li>Light or dark mode, and an accent colour of your choice</li>
+        <li>Your clients see your brand, not ours</li>
+      </ul>
+      <Link href="/dashboard/plans" className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">
+        See the plans
+      </Link>
+    </section>
+  );
+}
+
+/** The Appearance page: the account's own logo, name, light or dark, and accent colour. Starter and up. */
 export default function Appearance() {
-  const { branding, setBranding } = useBranding();
+  const { branding, setBranding, canBrand } = useBranding();
+  // The name as it's being typed; null when it isn't being edited, so the saved name shows.
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const [nameBusy, setNameBusy] = useState(false);
+  const [nameStatus, setNameStatus] = useState<Status>(null);
   const [logoStatus, setLogoStatus] = useState<Status>(null);
   const [themeStatus, setThemeStatus] = useState<Status>(null);
   const [uploading, setUploading] = useState(false);
@@ -34,6 +56,45 @@ export default function Appearance() {
   }, []);
 
   if (!branding) return <p className="text-muted">Loading…</p>;
+
+  if (!canBrand) {
+    return (
+      <div>
+        <h1 className="flex flex-wrap items-center gap-3 text-3xl font-semibold tracking-tight">
+          Appearance
+          <span className="rounded-full border border-border px-2.5 py-0.5 text-sm font-medium text-muted">Starter</span>
+        </h1>
+        <p className="mt-2 text-muted">Make your dashboard, and the public status pages you share with clients, look like your company.</p>
+        <Upsell />
+      </div>
+    );
+  }
+
+  const nameValue = nameDraft ?? branding.name ?? "";
+  const nameChanged = nameDraft !== null && nameDraft.trim() !== (branding.name ?? "");
+
+  async function saveName(e: React.FormEvent) {
+    e.preventDefault();
+    if (!branding || nameBusy || !nameChanged) return;
+    setNameBusy(true);
+    setNameStatus(null);
+    try {
+      const res = await fetch("/api/branding", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: branding.mode, accent: branding.accent, name: nameValue }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Couldn't save.");
+      saved.current = body;
+      setBranding(body);
+      setNameDraft(null);
+      setNameStatus({ ok: true, text: body.name ? "Name saved." : "Name removed." });
+    } catch (err) {
+      setNameStatus({ ok: false, text: err instanceof Error && err.message !== "Failed to fetch" ? err.message : "Couldn't reach the server. Try again." });
+    }
+    setNameBusy(false);
+  }
 
   /** Shows the change straight away, then saves it. A colour picker fires many changes while dragging, so saving waits for a pause. */
   function changeTheme(next: Pick<Branding, "mode" | "accent">, wait = 0) {
@@ -100,10 +161,10 @@ export default function Appearance() {
 
       <section className="mt-6 rounded-xl border border-border bg-surface p-5" aria-labelledby="logo-heading">
         <h2 id="logo-heading" className="font-semibold">
-          Logo
+          Logo and name
         </h2>
         <p className="mt-0.5 text-sm text-muted">
-          Shown at the top of the menu and on your status pages. Without one, the menu shows &ldquo;Run by site-monitors.net&rdquo;.
+          Shown at the top of the menu and on your status pages. Without either, the menu shows &ldquo;Run by site-monitors.net&rdquo;.
         </p>
         <div className="mt-4 flex min-h-20 items-center rounded-lg border border-dashed border-border bg-background px-5 py-4">
           <BrandMark branding={branding} />
@@ -124,12 +185,43 @@ export default function Appearance() {
             </button>
           )}
         </div>
-        <p className="mt-2 text-xs text-muted">PNG, JPEG or WebP, up to {MAX_KB} KB. A wide logo on a transparent background works best.</p>
+        <p className="mt-2 text-xs text-muted">PNG, JPEG or WebP, up to {MAX_KB} KB. A square or wide logo on a transparent background works best.</p>
         {logoStatus && (
           <p role={logoStatus.ok ? "status" : "alert"} className={`mt-2 text-sm ${logoStatus.ok ? "text-ok" : "text-bad"}`}>
             {logoStatus.text}
           </p>
         )}
+
+        <form onSubmit={saveName} className="mt-5 border-t border-border pt-5">
+          <label htmlFor="brand-name" className="block text-sm font-medium">
+            Company or brand name
+          </label>
+          <p className="text-xs text-muted">Shown next to your logo. Leave it empty to show the logo on its own.</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+            <input
+              id="brand-name"
+              value={nameValue}
+              onChange={(e) => {
+                setNameDraft(e.target.value);
+                setNameStatus(null);
+              }}
+              onKeyDown={(e) => e.key === "Escape" && setNameDraft(null)}
+              maxLength={BRAND_NAME_MAX}
+              placeholder="Acme Web Studio"
+              autoComplete="organization"
+              disabled={nameBusy}
+              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60"
+            />
+            <button type="submit" disabled={nameBusy || !nameChanged} className={BUTTON}>
+              {nameBusy ? "Saving…" : "Save name"}
+            </button>
+          </div>
+          {nameStatus && (
+            <p role={nameStatus.ok ? "status" : "alert"} className={`mt-2 text-sm ${nameStatus.ok ? "text-ok" : "text-bad"}`}>
+              {nameStatus.text}
+            </p>
+          )}
+        </form>
       </section>
 
       <section className="mt-4 rounded-xl border border-border bg-surface p-5" aria-labelledby="theme-heading">

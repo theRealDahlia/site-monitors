@@ -1,4 +1,4 @@
-import { getBranding } from "@/lib/branding";
+import { brandingFor } from "@/lib/branding";
 import { entitlementsFor } from "@/lib/entitlements";
 import { getPublicMonitor } from "@/lib/monitors-db";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
@@ -16,11 +16,10 @@ export async function GET(request: Request, ctx: RouteContext<"/api/status/[slug
   if (!monitor || !entitlementsFor(monitor.owner_plan).statusPages) {
     return Response.json({ error: "Status page not found." }, { status: 404 });
   }
-  // The owner's own logo and colours, so the page their clients see looks like theirs. Leaving our credit off is a
-  // Pro feature, so it's only reported for accounts that still have it.
-  const branding = getBranding(monitor.user_id);
+  // The owner's own logo, name and colours (on plans with branding), so the page their clients see looks like theirs.
+  // Leaving our credit off is a Pro feature; brandingFor() only reports it for accounts that still have it.
   return Response.json(
-    { ...publicStatus(monitor), branding: { ...branding, hideCredit: branding.hideCredit && entitlementsFor(monitor.owner_plan).whiteLabel } },
+    { ...publicStatus(monitor), branding: brandingFor(monitor.user_id, monitor.owner_plan) },
     { headers: { "Cache-Control": "public, max-age=15" } },
   );
 }

@@ -1,8 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { db } from "./db";
+import { entitlementsFor } from "./entitlements";
 import { type Branding, DEFAULT_BRANDING, type ThemeMode, isAccent, isThemeMode } from "./theme";
 
-// Each account's look, and the logo it can upload. Every plan has this.
+// Each account's look: logo, name, light or dark and accent colour. Plans with `branding` (Starter and up) have this.
 
 export const MAX_LOGO_BYTES = 300 * 1024;
 export const LOGO_ID_PATTERN = /^[A-Za-z0-9_-]{22}$/;
@@ -14,20 +15,43 @@ interface Row {
   accent: string;
   logo_id: string | null;
   hide_credit: number;
+  brand_name: string | null;
 }
 
 const logoUrl = (id: string | null) => (id ? `/api/logo/${id}` : null);
 
 export function getBranding(userId: number): Branding {
-  const row = db().prepare("SELECT theme_mode, accent, logo_id, hide_credit FROM branding WHERE user_id = ?").get(userId) as Row | undefined;
+  const row = db().prepare("SELECT theme_mode, accent, logo_id, hide_credit, brand_name FROM branding WHERE user_id = ?").get(userId) as Row | undefined;
   if (!row) return DEFAULT_BRANDING;
   // Anything unexpected in the database falls back to the default rather than reaching a page.
   return {
     mode: isThemeMode(row.theme_mode) ? row.theme_mode : DEFAULT_BRANDING.mode,
     accent: isAccent(row.accent) ? row.accent : DEFAULT_BRANDING.accent,
     logoUrl: logoUrl(row.logo_id),
+    name: row.brand_name,
     hideCredit: row.hide_credit === 1,
   };
+}
+
+/**
+ * The look an account's pages are shown with. A plan without branding gets the default look, whatever was saved
+ * before (it's kept, and comes back if they upgrade). Leaving our credit off also needs a plan with white label.
+ */
+export function brandingFor(userId: number, plan: string | null | undefined): Branding {
+  const ent = entitlementsFor(plan);
+  if (!ent.branding) return DEFAULT_BRANDING;
+  const b = getBranding(userId);
+  return { ...b, hideCredit: b.hideCredit && ent.whiteLabel };
+}
+
+/** Saves the company or brand name shown next to the logo (already cleaned by cleanBrandName). */
+export function setBrandName(userId: number, name: string | null): void {
+  db()
+    .prepare(
+      `INSERT INTO branding (user_id, brand_name, updated_at) VALUES (?, ?, ?)
+       ON CONFLICT(user_id) DO UPDATE SET brand_name = excluded.brand_name, updated_at = excluded.updated_at`,
+    )
+    .run(userId, name, Date.now());
 }
 
 /** Saves the "leave our credit off my status pages" setting. Whether the plan allows it is for the caller to decide. */

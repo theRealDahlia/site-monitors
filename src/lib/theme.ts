@@ -22,11 +22,27 @@ export interface Branding {
   /** A ready-made accent's id, or a custom colour as #rrggbb. */
   accent: string;
   logoUrl: string | null;
+  /** The company or brand name shown next to the logo, or null for none. */
+  name: string | null;
   /** Leave "Run by site-monitors.net" off this account's status pages. Only counts on plans with white label. */
   hideCredit: boolean;
 }
 
-export const DEFAULT_BRANDING: Branding = { mode: "system", accent: "teal", logoUrl: null, hideCredit: false };
+export const DEFAULT_BRANDING: Branding = { mode: "system", accent: "teal", logoUrl: null, name: null, hideCredit: false };
+
+export const BRAND_NAME_MAX = 60;
+
+/**
+ * A brand name as it should be saved: spaces tidied, and null when empty. Undefined means it isn't acceptable
+ * (too long, or not text). Control and invisible formatting characters are dropped, since they can disguise text.
+ */
+export function cleanBrandName(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  if (typeof value !== "string") return undefined;
+  const name = value.replace(/[\p{Cc}\p{Cf}]/gu, "").replace(/\s+/g, " ").trim();
+  if (!name) return null;
+  return name.length > BRAND_NAME_MAX ? undefined : name;
+}
 
 const HEX = /^#[0-9a-f]{6}$/;
 

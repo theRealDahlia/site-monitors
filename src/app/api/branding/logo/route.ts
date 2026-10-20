@@ -1,5 +1,6 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
-import { MAX_LOGO_BYTES, getBranding, removeLogo, saveLogo, sniffImage } from "@/lib/branding";
+import { MAX_LOGO_BYTES, brandingFor, removeLogo, saveLogo, sniffImage } from "@/lib/branding";
+import { entitlementsFor } from "@/lib/entitlements";
 import { rateLimit } from "@/lib/rate-limit";
 
 const TOO_BIG = `That file is too big. Use an image under ${MAX_LOGO_BYTES / 1024} KB.`;
@@ -9,6 +10,9 @@ export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: "Request blocked." }, { status: 403 });
   const user = currentUser(request);
   if (!user) return Response.json({ error: "Log in first." }, { status: 401 });
+  if (!entitlementsFor(user.plan).branding) {
+    return Response.json({ error: "Your own logo, name and colours are part of the Starter plan.", code: "plan_required" }, { status: 403 });
+  }
   if (!rateLimit(`logo-upload:${user.id}`, 20, 60 * 60 * 1000)) {
     return Response.json({ error: "Too many uploads. Try again later." }, { status: 429 });
   }
@@ -29,14 +33,14 @@ export async function POST(request: Request) {
   const type = sniffImage(bytes);
   if (!type) return Response.json({ error: "Use a PNG, JPEG or WebP image." }, { status: 400 });
   saveLogo(user.id, bytes, type);
-  return Response.json(getBranding(user.id), { status: 201 });
+  return Response.json(brandingFor(user.id, user.plan), { status: 201 });
 }
 
-/** Goes back to no logo of their own. */
+/** Goes back to no logo of their own. Allowed on every plan, so a downgraded account can still clear it. */
 export async function DELETE(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: "Request blocked." }, { status: 403 });
   const user = currentUser(request);
   if (!user) return Response.json({ error: "Log in first." }, { status: 401 });
   removeLogo(user.id);
-  return Response.json(getBranding(user.id));
+  return Response.json(brandingFor(user.id, user.plan));
 }

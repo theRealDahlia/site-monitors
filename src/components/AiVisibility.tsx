@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect } from "react";
 import AiVisibilityRow from "@/components/AiVisibilityRow";
-import { type Monitor, useMonitors, useNotice } from "@/components/monitor-ui";
+import { type Monitor, sitePath, useCheckNow, useMonitors } from "@/components/monitor-ui";
 
 const BUTTON = "rounded-lg border border-border px-3 py-1.5 text-sm hover:border-accent hover:text-accent disabled:opacity-50";
 
@@ -24,21 +24,18 @@ function AiBadge({ ai }: { ai: NonNullable<Monitor["ai"]> }) {
 /** The AI visibility tab (Pro): can AI search tools reach and read each of your sites? */
 export default function AiVisibility() {
   const { data, loadError, reload } = useMonitors("/dashboard/ai-visibility");
-  const [checking, setChecking] = useState<number | null>(null);
-  const [notice, setNotice] = useNotice();
-
-  async function checkNow(m: Monitor) {
-    setChecking(m.id);
-    setNotice(null);
-    try {
-      const res = await fetch(`/api/monitors/${m.id}/check`, { method: "POST" });
-      if (res.ok) await reload();
-      else setNotice((await res.json()).error ?? "Couldn't run the check.");
-    } catch {
-      setNotice("Couldn't reach the server. Try again.");
-    }
-    setChecking(null);
-  }
+  const { checking, notice, checkNow } = useCheckNow(reload);
+  // Arriving from a site's page (#site-12): once the list has loaded, open that site's details and bring it into view.
+  // Done on the page itself, as the address can change after this tab first renders (a link from another page).
+  const loaded = !!data;
+  useEffect(() => {
+    if (!loaded) return;
+    const hash = window.location.hash.slice(1);
+    const card = /^site-\d+$/.test(hash) ? document.getElementById(hash) : null;
+    if (!card) return;
+    card.querySelector("details")?.setAttribute("open", "");
+    requestAnimationFrame(() => card.scrollIntoView({ block: "start" }));
+  }, [loaded]);
 
   if (!data) {
     return loadError ? (
@@ -91,14 +88,18 @@ export default function AiVisibility() {
           ) : (
             <ul className="mt-6 space-y-4">
               {data.monitors.map((m) => (
-                <li key={m.id} className="rounded-xl border border-border bg-surface p-5">
+                <li key={m.id} id={`site-${m.id}`} className="scroll-mt-6 rounded-xl border border-border bg-surface p-5">
                   <div className="flex items-start justify-between gap-3">
-                    <h2 className="min-w-0 break-all text-lg font-semibold">{m.host}</h2>
+                    <h2 className="min-w-0 break-all text-lg font-semibold">
+                      <Link href={sitePath(m.id)} className="hover:text-accent">
+                        {m.host}
+                      </Link>
+                    </h2>
                     {m.ai && <AiBadge ai={m.ai} />}
                   </div>
                   <dl className="mt-3 border-t border-border">{m.ai && <AiVisibilityRow ai={m.ai} />}</dl>
                   <div className="mt-1 flex justify-end border-t border-border pt-3">
-                    <button onClick={() => checkNow(m)} disabled={checking !== null} className={BUTTON}>
+                    <button onClick={() => checkNow(m.id)} disabled={checking !== null} className={BUTTON}>
                       {checking === m.id ? "Checking…" : "Check now"}
                     </button>
                   </div>
