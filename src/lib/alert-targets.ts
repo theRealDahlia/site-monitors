@@ -1,22 +1,21 @@
 import { listRecipients } from "./alert-emails";
 import { listChannels } from "./channels";
 import { db } from "./db";
-import { phoneTargets } from "./phones";
 
 // Every place an alert can go, named the same way everywhere: "account" (the account's own address),
-// "email:<id>" (an added address), "channel:<id>" (Slack or Discord) and "phone:<id>" (SMS or a call, see phones.ts).
+// "email:<id>" (an added address) and "channel:<id>" (Slack or Discord).
 // A monitor can send its alerts to only some of them, and the escalation rule names who to tell next.
 
 export interface Target {
   id: string;
-  kind: "email" | "slack" | "discord" | "sms" | "call";
+  kind: "email" | "slack" | "discord";
   label: string;
   /** Switched on, and confirmed where that's needed. A target that isn't gets nothing, wherever it's chosen. */
   active: boolean;
 }
 
 export const MAX_TARGETS = 30;
-const TARGET_RE = /^(account|(email|channel|phone):\d+)$/;
+const TARGET_RE = /^(account|(email|channel):\d+)$/;
 
 export function listTargets(userId: number): Target[] {
   const r = listRecipients(userId);
@@ -26,7 +25,6 @@ export function listTargets(userId: number): Target[] {
     for (const e of r.extras) out.push({ id: `email:${e.id}`, kind: "email", label: e.email, active: e.enabled && e.confirmed });
   }
   for (const c of listChannels(userId)) out.push({ id: `channel:${c.id}`, kind: c.kind, label: c.name, active: c.enabled });
-  out.push(...phoneTargets(userId));
   return out;
 }
 

@@ -306,32 +306,9 @@ const SCHEMA = `
     updated_at INTEGER NOT NULL
   );
 
-  -- Phone numbers for outage alerts by text message or call (Pro). A number only gets alerts once its owner has typed
-  -- in the code we texted to it, so this can't be used to message strangers.
-  CREATE TABLE IF NOT EXISTS phones (
-    id            INTEGER PRIMARY KEY,
-    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    number        TEXT    NOT NULL,
-    label         TEXT    NOT NULL,
-    -- 'sms', 'call' or 'both'
-    mode          TEXT    NOT NULL DEFAULT 'sms',
-    verified_at   INTEGER,
-    code_hash     TEXT,
-    code_expires  INTEGER,
-    code_attempts INTEGER NOT NULL DEFAULT 0,
-    code_sent_at  INTEGER,
-    created_at    INTEGER NOT NULL,
-    UNIQUE (user_id, number)
-  );
-
-  -- Texts and calls sent per account per calendar month (UTC), for the plan's monthly limit.
-  CREATE TABLE IF NOT EXISTS phone_usage (
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    month   TEXT    NOT NULL,
-    sms     INTEGER NOT NULL DEFAULT 0,
-    calls   INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (user_id, month)
-  );
+  -- Text and call alerts were removed.
+  DROP TABLE IF EXISTS phone_usage;
+  DROP TABLE IF EXISTS phones;
 
   -- Monthly reports for clients (Pro): which monitors, the uptime target, and who gets it.
   CREATE TABLE IF NOT EXISTS reports (

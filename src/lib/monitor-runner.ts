@@ -24,7 +24,6 @@ import { alertsSilenced } from "./status-notices";
 import { notifySubscribers } from "./status-subscribers";
 import { listTargets, readTargets } from "./alert-targets";
 import { ackLink, activePolicy } from "./escalation";
-import { alertPhones } from "./phones";
 import {
   AI_EVERY,
   AI_RECHECK,
@@ -372,17 +371,6 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
       await sendAlertToChannels(m.user_id, m.owner_plan, { subject: alert.subject, body: alert.body, kind: alert.kind }, only).catch((err) =>
         console.error(`channel delivery for ${m.host} failed`, err),
       );
-      // Phones only hear about outages: each text or call costs money, and counts against the month's limit.
-      if (alert.kind === "down" || alert.kind === "recovered") {
-        const phones = await alertPhones(m.user_id, m.owner_plan, only, {
-          text: alert.kind === "down" ? `${alert.subject}. ${m.up_error ?? ""}`.trim() + (policy && downSince ? ` Acknowledge: ${ackLink(m.id, downSince)}` : "") : alert.subject,
-          say: alert.kind === "down" ? `Site Monitors alert. ${m.host} is down.` : `Site Monitors. ${m.host} is back up.`,
-        });
-        if (phones.skipped) {
-          const last = logged[logged.length - 1];
-          if (last) last.message += ` (${phones.skipped} text or call skipped: this month's limit is reached)`;
-        }
-      }
       // A delivered outage alert starts the clock for escalation; being back up ends it.
       if (alert.kind === "down") Object.assign(update, { down_alerted_at: now, ack_at: null, escalated_at: null } satisfies MonitorUpdate);
       if (alert.kind === "recovered") Object.assign(update, { down_alerted_at: null, ack_at: null, escalated_at: null } satisfies MonitorUpdate);

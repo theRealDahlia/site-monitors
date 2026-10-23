@@ -44,9 +44,6 @@ export interface Entitlements {
   alertRouting: boolean;
   /** Telling someone else when an outage alert isn't acknowledged in time. */
   escalation: boolean;
-  /** Outage alerts by text message and phone call, up to this many of each a month (0 means not included). */
-  smsPerMonth: number;
-  callsPerMonth: number;
   /** Monthly uptime reports emailed to clients. */
   reports: boolean;
   /** How many other people can be invited to work in the account (0 means teams aren't included). */
@@ -62,10 +59,10 @@ export interface Entitlements {
 }
 
 export const ENTITLEMENTS = {
-  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, monitorKinds: ["site", "http"], branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: false, escalation: false, smsPerMonth: 0, callsPerMonth: 0, reports: false, teamSeats: 0, apiAccess: false, historyDays: 30, healthScans: false, brokenLinks: false },
-  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: true, escalation: false, smsPerMonth: 0, callsPerMonth: 0, reports: false, teamSeats: 0, apiAccess: false, historyDays: 90, healthScans: true, brokenLinks: false },
+  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, monitorKinds: ["site", "http"], branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: false, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 30, healthScans: false, brokenLinks: false },
+  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: true, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 90, healthScans: true, brokenLinks: false },
   // Pro is everything in Starter with room for more, plus AI-visibility checks and white-label status pages.
-  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, smsPerMonth: 100, callsPerMonth: 20, reports: true, teamSeats: 3, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true },
+  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 3, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true },
 } as const satisfies Record<string, Entitlements>;
 
 /** Every plan there is. Adding a plan to ENTITLEMENTS adds it here, to the types and to the admin plan switcher. */

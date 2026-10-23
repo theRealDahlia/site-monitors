@@ -5,7 +5,6 @@ import { db } from "./db";
 import { ackLink, dueEscalations } from "./escalation";
 import { everyText } from "./monitor-config";
 import { addEvent, getMonitorWithOwner } from "./monitors-db";
-import { alertPhones } from "./phones";
 
 /**
  * Tells the people in each account's escalation rule about outages nobody has acknowledged in time. Called by the
@@ -33,10 +32,6 @@ export async function runEscalations(now = Date.now()): Promise<number> {
       console.error(`escalation email for ${m.host} failed`, err);
     }
     await sendAlertToChannels(m.user_id, m.owner_plan, { subject, body, kind: "down" }, only).catch((err) => console.error(`escalation to channels for ${m.host} failed`, err));
-    await alertPhones(m.user_id, m.owner_plan, only, {
-      text: `${subject}. Nobody has acknowledged it. Acknowledge: ${ackLink(m.id, m.down_since)}`,
-      say: `Site Monitors escalation. ${m.host} is still down, and nobody has acknowledged it.`,
-    });
     addEvent({ userId: m.user_id, monitorId: m.id, host: m.host, kind: "escalated", message: `${subject}: nobody acknowledged it in ${everyText(due.after_ms)}`, emailed: emailed > 0 });
     count++;
   }

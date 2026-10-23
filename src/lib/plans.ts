@@ -45,11 +45,10 @@ export const PLANS: Plan[] = [
   {
     name: "Pro",
     price: 29,
-    summary: "100 monitors, text and call alerts, client reports, white label, a team",
+    summary: "100 monitors, escalation, client reports, white label, a team",
     features: [
       "Up to 100 monitors",
       "Everything in Starter",
-      "Text message and phone call alerts (100 texts and 20 calls a month)",
       "Escalation when nobody acknowledges an outage",
       "Email updates for your status pages' visitors",
       "Monthly uptime reports for your clients",
@@ -86,7 +85,6 @@ export const COMPARISON: { feature: string; values: (string | boolean)[] }[] = [
   { feature: "Extra alert email addresses", values: ["5", "5", "10", "20"] },
   { feature: "Slack and Discord alerts", values: [false, true, true, true] },
   { feature: "Choose who gets each monitor's alerts", values: [false, true, true, true] },
-  { feature: "Text message and phone call alerts", values: [false, false, true, true] },
   { feature: "Escalation and acknowledging outages", values: [false, false, true, true] },
   { feature: "Public status page", values: [false, true, true, true] },
   { feature: "Incident updates, maintenance and RSS on status pages", values: [false, true, true, true] },

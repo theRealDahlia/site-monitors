@@ -2,12 +2,12 @@
 
 export interface Target {
   id: string;
-  kind: "email" | "slack" | "discord" | "sms" | "call";
+  kind: "email" | "slack" | "discord";
   label: string;
   active: boolean;
 }
 
-const KIND_LABEL: Record<Target["kind"], string> = { email: "Email", slack: "Slack", discord: "Discord", sms: "Text message", call: "Phone call" };
+const KIND_LABEL: Record<Target["kind"], string> = { email: "Email", slack: "Slack", discord: "Discord" };
 
 /** Checkboxes for choosing alert destinations, grouped by kind. Destinations that are off say so. */
 export default function TargetPicker({
