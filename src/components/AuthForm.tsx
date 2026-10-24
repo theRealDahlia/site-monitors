@@ -230,6 +230,17 @@ function SignupForm() {
         <button type="submit" disabled={loading} className={PRIMARY}>
           {loading ? "Sending code…" : "Send confirmation code"}
         </button>
+        <p className="text-center text-xs text-muted">
+          By creating an account you agree to our{" "}
+          <Link href="/terms" className="underline underline-offset-2">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          .
+        </p>
         <SwitchLink mode="signup" />
       </form>
     );
