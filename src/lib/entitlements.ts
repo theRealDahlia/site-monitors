@@ -2,8 +2,8 @@ import { MIN } from "./monitor-config";
 import type { MonitorKind } from "./monitor-kinds";
 
 // What each plan is allowed to do. The pricing page lists the same things for people; this is the
-// version the server actually enforces. Payment isn't built yet, so an account's plan is set by an
-// admin (see scripts/set-plan.mjs), and nobody can upgrade themselves.
+// version the server actually enforces. An account's plan follows its Stripe subscription (see billing.ts), and an
+// admin can still set one by hand (see scripts/set-plan.mjs), for example to give someone a plan free.
 
 export interface Entitlements {
   name: string;

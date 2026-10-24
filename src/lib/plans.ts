@@ -1,6 +1,6 @@
 // The single source of truth for plans. The home page and the pricing page both read this, so they
-// can't disagree. Only the free plan exists today: the others are plans we intend to offer, and
-// nothing here can be bought yet.
+// can't disagree. Free, Starter and Pro can be had today; Agency is a plan we intend to offer and
+// can't be bought yet.
 
 export interface Plan {
   name: string;
@@ -40,7 +40,7 @@ export const PLANS: Plan[] = [
       "Your own logo, name and colours",
       "90 days of history",
     ],
-    available: false,
+    available: true,
   },
   {
     name: "Pro",
@@ -57,7 +57,7 @@ export const PLANS: Plan[] = [
       "AI-visibility checks and a weekly broken-link check",
       "12 months of history and an API",
     ],
-    available: false,
+    available: true,
   },
   {
     name: "Agency",

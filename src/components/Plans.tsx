@@ -10,26 +10,79 @@ interface Data {
   monitors: unknown[];
 }
 
+interface Billing {
+  configured: boolean;
+  canManage: boolean;
+  hasSubscription: boolean;
+  hasCustomer: boolean;
+}
+
 /** The in-app Plans page: which plan you're on, how much of it you're using, and the other plans. */
 export default function Plans({ children }: { children?: React.ReactNode }) {
   const router = useRouter();
   const [data, setData] = useState<Data | null>(null);
+  const [billing, setBilling] = useState<Billing | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [payError, setPayError] = useState<string | null>(null);
+  // "success" or "cancelled" when Stripe has just sent the person back here.
+  const [returned, setReturned] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/monitors", { cache: "no-store" })
-      .then(async (res) => {
-        if (cancelled) return;
-        if (res.status === 401) return router.replace("/login?next=%2Fdashboard%2Fplans");
-        if (!res.ok) return setLoadError(true);
-        setData(await res.json());
-      })
-      .catch(() => !cancelled && setLoadError(true));
+    const back = new URLSearchParams(window.location.search).get("billing");
+    const load = () =>
+      Promise.all([fetch("/api/monitors", { cache: "no-store" }), fetch("/api/billing", { cache: "no-store" })])
+        .then(async ([plan, bill]) => {
+          if (cancelled) return null;
+          if (plan.status === 401) return void router.replace("/login?next=%2Fdashboard%2Fplans");
+          if (!plan.ok) return void setLoadError(true);
+          const next: Data = await plan.json();
+          setReturned(back);
+          setData(next);
+          if (bill.ok) setBilling(await bill.json());
+          return next;
+        })
+        .catch(() => void (!cancelled && setLoadError(true)));
+
+    if (back === "success") {
+      // The plan changes when Stripe's message reaches us, which can be a few seconds after the payment page closes.
+      (async () => {
+        for (let i = 0; i < 8 && !cancelled; i++) {
+          const next = await load();
+          if (next && next.plan.id !== "free") break;
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      })();
+    } else {
+      load();
+    }
     return () => {
       cancelled = true;
     };
   }, [router]);
+
+  /** Sends the browser to Stripe: its payment page for a plan, or its billing portal for someone who already pays. */
+  async function go(action: "checkout" | "portal", plan?: string) {
+    setBusy(plan ?? action);
+    setPayError(null);
+    try {
+      const res = await fetch(`/api/billing/${action}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.url) {
+        window.location.assign(body.url);
+        return;
+      }
+      setPayError(body.error ?? "Something went wrong. Please try again.");
+    } catch {
+      setPayError("Couldn't reach the server. Check your connection and try again.");
+    }
+    setBusy(null);
+  }
+
+  const canBuy = billing?.canManage && billing.configured;
+  // Plans are listed cheapest first, so one before the current plan is a step down.
+  const currentIndex = PLANS.findIndex((p) => p.name === data?.plan.name);
 
   return (
     <div>
@@ -42,12 +95,41 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
         </p>
       )}
 
+      {returned === "success" && (
+        <p role="status" className="mt-6 rounded-lg bg-ok-bg px-4 py-3 text-sm text-ok">
+          Thanks! Your payment went through. Your new plan switches on within a few seconds.
+        </p>
+      )}
+      {returned === "cancelled" && (
+        <p role="status" className="mt-6 rounded-lg border border-border px-4 py-3 text-sm text-muted">
+          You didn&apos;t finish paying, so nothing changed and you haven&apos;t been charged.
+        </p>
+      )}
+      {payError && (
+        <p role="alert" className="mt-6 rounded-lg bg-warn-bg px-4 py-3 text-sm text-warn">
+          {payError}
+        </p>
+      )}
+      {billing && !billing.canManage && (
+        <p className="mt-6 rounded-lg border border-border px-4 py-3 text-sm text-muted">Only the account owner can change the plan.</p>
+      )}
+
       {data && (
         <section className="mt-6 rounded-xl border border-accent bg-surface p-5" aria-labelledby="current-plan">
           <p className="text-sm text-muted">Your plan</p>
           <h2 id="current-plan" className="mt-1 text-2xl font-semibold tracking-tight">
             {data.plan.name}
           </h2>
+          {billing?.canManage && billing.hasCustomer && (
+            <button
+              type="button"
+              onClick={() => go("portal")}
+              disabled={busy !== null}
+              className="mt-3 rounded-lg border border-border px-3 py-1.5 text-sm font-medium transition-colors hover:bg-border/40 disabled:opacity-60"
+            >
+              {busy === "portal" ? "Opening billing…" : "Manage billing"}
+            </button>
+          )}
           <div className="mt-4">
             <div className="flex justify-between text-sm">
               <span className="text-muted">Sites watched</span>
@@ -92,10 +174,28 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
                 <div className="mt-5">
                   {current ? (
                     <p className="rounded-lg border border-accent/40 px-4 py-2.5 text-center text-sm text-accent">Your current plan</p>
-                  ) : (
-                    // Switching plans arrives with billing. Until then nobody can change their own plan.
+                  ) : !p.available ? (
                     <button type="button" disabled className="w-full cursor-not-allowed rounded-lg border border-border px-4 py-2.5 text-sm text-muted">
                       Coming soon
+                    </button>
+                  ) : p.price === 0 ? (
+                    // Going back to Free means cancelling, which Stripe's portal does.
+                    <button
+                      type="button"
+                      onClick={() => go("portal")}
+                      disabled={!canBuy || !billing?.hasSubscription || busy !== null}
+                      className="w-full rounded-lg border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-border/40 disabled:cursor-not-allowed disabled:text-muted disabled:hover:bg-transparent"
+                    >
+                      Cancel subscription
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => (billing?.hasSubscription ? go("portal") : go("checkout", p.name.toLowerCase()))}
+                      disabled={!canBuy || busy !== null}
+                      className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {busy === p.name.toLowerCase() ? "Opening payment…" : PLANS.indexOf(p) < currentIndex ? `Switch to ${p.name}` : billing?.hasSubscription ? `Switch to ${p.name}` : `Upgrade to ${p.name}`}
                     </button>
                   )}
                 </div>
@@ -104,7 +204,7 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
           })}
         </div>
         <p className="mt-3 text-sm text-muted">
-          Prices are in US dollars. Switching plans will be available here soon. What the paid plans include and cost may change before then.
+          Prices are in US dollars, billed monthly by card through Stripe. Change plan, update your card or cancel any time from Manage billing.
         </p>
       </section>
 

@@ -399,6 +399,9 @@ function migrate(conn: DatabaseSync) {
     (conn.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column);
   if (!has("users", "plan")) conn.exec("ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'");
   if (!has("users", "is_admin")) conn.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+  // Billing (see billing.ts). The Stripe customer is made on the first checkout; the subscription is whatever Stripe last told us about.
+  if (!has("users", "stripe_customer_id")) conn.exec("ALTER TABLE users ADD COLUMN stripe_customer_id TEXT");
+  if (!has("users", "stripe_subscription_id")) conn.exec("ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT");
   if (!has("monitors", "status_public")) conn.exec("ALTER TABLE monitors ADD COLUMN status_public INTEGER NOT NULL DEFAULT 0");
   if (!has("branding", "hide_credit")) conn.exec("ALTER TABLE branding ADD COLUMN hide_credit INTEGER NOT NULL DEFAULT 0");
   if (!has("branding", "brand_name")) conn.exec("ALTER TABLE branding ADD COLUMN brand_name TEXT");

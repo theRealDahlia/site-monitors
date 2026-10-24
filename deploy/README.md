@@ -33,7 +33,7 @@ sh /opt/site-monitors/deploy/update.sh
 
 ## Setting an account's plan
 
-There's no billing yet. To give an account a paid plan, run this on the server from `/opt/site-monitors`:
+Paid plans are bought through Stripe (set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_STARTER` and `STRIPE_PRICE_PRO` in `.env.local`, and point a Stripe webhook at `/api/billing/webhook`). To give an account a plan by hand, for example for free, run this on the server from `/opt/site-monitors`:
 
 ```sh
 node scripts/set-plan.mjs someone@example.com starter   # 25 sites, 1-minute checks, Slack and Discord, status pages

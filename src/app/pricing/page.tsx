@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: "Pricing",
   alternates: { canonical: "/pricing" },
   description:
-    "Watch up to 5 sites for free, with uptime, SSL certificate and domain expiry checks and email alerts. Paid plans for more sites are planned.",
+    "Watch up to 5 sites for free, with uptime, SSL certificate and domain expiry checks and email alerts. Starter and Pro give you more sites, 1-minute checks and status pages.",
 };
 
 const FAQ = [
@@ -31,12 +31,12 @@ const FAQ = [
     a: "No. Without an account you get 4 checks a day across the SSL and domain checkers. With an account you add sites to your dashboard instead, and we check them for you around the clock.",
   },
   {
-    q: "When will the paid plans be available?",
-    a: "We don't have a date yet. They're listed so you can see where we're heading, but they can't be bought today, and their features and prices may change before they launch.",
+    q: "How do I pay, and can I cancel?",
+    a: "Starter and Pro are monthly subscriptions paid by card through Stripe. You can change plan, update your card, download invoices or cancel from your Plans page whenever you like. Agency is planned but can't be bought yet.",
   },
   {
     q: "What happens if I want more than 5 sites?",
-    a: "You'll need to remove a site before adding another. A paid plan with a higher limit is planned.",
+    a: "You'll need to remove a site before adding another. Starter (25 sites) and Pro (100 sites) have higher limits.",
   },
 ];
 
@@ -47,10 +47,10 @@ export default function PricingPage() {
       <SignedInRedirect to="/dashboard/plans" />
       <main>
         <section className="mx-auto max-w-5xl px-4 pb-6 pt-14 sm:px-6 sm:pt-20">
-          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">Free to start, with more planned.</h1>
+          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">Free to start, with room to grow.</h1>
           <p className="mt-5 max-w-2xl text-lg text-muted">
             Watch up to 5 sites for free, with uptime, SSL certificate and domain expiry checks and email alerts. The paid
-            plans below are planned for people who watch more sites.
+            plans below are for people who watch more sites.
           </p>
         </section>
 
@@ -90,7 +90,7 @@ export default function PricingPage() {
                 </ul>
                 <div className="mt-6">
                   {p.available ? (
-                    <PlanCta />
+                    <PlanCta plan={p.price > 0 ? p.name.toLowerCase() : undefined} />
                   ) : (
                     <button
                       type="button"
@@ -105,8 +105,7 @@ export default function PricingPage() {
             ))}
           </div>
           <p className="mt-4 text-sm text-muted">
-            Prices are in US dollars. The paid plans can&apos;t be bought yet, and what they include and cost may change before
-            they launch.
+            Prices are in US dollars, billed monthly through Stripe. Cancel any time. Agency is planned and can&apos;t be bought yet.
           </p>
         </section>
 
