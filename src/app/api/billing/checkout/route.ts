@@ -28,6 +28,7 @@ export async function POST(request: Request) {
       customer: await ensureCustomer(user.id, user.email),
       client_reference_id: String(user.id),
       line_items: [{ price, quantity: 1 }],
+      allow_promotion_codes: true, // shows an "Add promotion code" box on Stripe's payment page
       success_url: `${origin}/dashboard/plans?billing=success`,
       cancel_url: `${origin}/dashboard/plans?billing=cancelled`,
     });
