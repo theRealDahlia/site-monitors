@@ -37,6 +37,7 @@ const ICONS = {
   reports: "M7 3h7l5 5v13H7V3Zm7 0v5h5M10 17v-3m3 3v-6m3 6v-4",
   api: "M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16",
   team: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 10c0-3.3 3.1-6 7-6s7 2.7 7 6M17 3.5a4 4 0 0 1 0 7M22 21c0-2.6-1.8-4.8-4.5-5.6",
+  account: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9c0-3.9 3.6-7 8-7s8 3.1 8 7",
   menu: "M4 6h16M4 12h16M4 18h16",
   close: "M6 6l12 12M18 6 6 18",
 } as const;
@@ -79,6 +80,7 @@ const NAV = [
       { href: "/dashboard/appearance", label: "Appearance", icon: "appearance" },
       { href: "/dashboard/api", label: "API & export", icon: "api" },
       { href: "/dashboard/plans", label: "Plans", icon: "plans" },
+      { href: "/dashboard/account", label: "Account", icon: "account" },
     ],
   },
   {

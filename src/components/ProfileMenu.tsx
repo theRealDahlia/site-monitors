@@ -75,6 +75,9 @@ export default function ProfileMenu({ email, plan, isAdmin, plans }: { email: st
           <Link href="/dashboard/notifications" role="menuitem" onClick={() => setOpen(false)} className={item}>
             Notifications
           </Link>
+          <Link href="/dashboard/account" role="menuitem" onClick={() => setOpen(false)} className={item}>
+            Account
+          </Link>
           <button type="button" role="menuitem" onClick={logout} className={item}>
             Log out
           </button>

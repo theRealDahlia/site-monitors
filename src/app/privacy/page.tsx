@@ -100,8 +100,9 @@ export default function PrivacyPage() {
           <li>You can download your data from your account at any time.</li>
           <li>You can edit or remove sites, alert addresses, integrations and API keys yourself.</li>
           <li>You can change or cancel your plan from Manage billing on the Plans page.</li>
+          <li>You can delete your account yourself from the Account page. That cancels any paid subscription and permanently deletes your data.</li>
           <li>
-            To see, correct or delete the information we hold about you, or to close your account, email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> from the address on the account.
+            To see or correct the information we hold about you, or if you can&apos;t use the Account page, email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> from the address on the account.
             If we emailed you because someone else added you as an alert recipient or status page subscriber, you can also use the unsubscribe link in that email.
           </li>
         </ul>
