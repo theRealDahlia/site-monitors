@@ -137,6 +137,7 @@ const SCHEMA = `
     scan_due_at     INTEGER NOT NULL DEFAULT 0,
     dns_baseline    TEXT,
     links_alerted   TEXT,
+    security_alerted TEXT,
 
     UNIQUE (user_id, host)
   );
@@ -443,6 +444,7 @@ function migrate(conn: DatabaseSync) {
     ["scan_due_at", "INTEGER NOT NULL DEFAULT 0"],
     ["dns_baseline", "TEXT"],
     ["links_alerted", "TEXT"],
+    ["security_alerted", "TEXT"],
   ]) {
     if (!has("monitors", column)) conn.exec(`ALTER TABLE monitors ADD COLUMN ${column} ${type}`);
   }

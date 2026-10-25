@@ -71,6 +71,7 @@ export interface MonitorRow {
   scan_due_at: number;
   dns_baseline: string | null;
   links_alerted: string | null;
+  security_alerted: string | null;
 }
 
 export type MonitorUpdate = Partial<
@@ -85,7 +86,7 @@ const UPDATABLE = new Set<string>([
   "dom_alert_bucket", "last_manual_check_at",
   "ai_status", "ai_result", "ai_checked_at", "ai_due_at", "ai_alerted_sig", "ai_pending_sig",
   "hb_last_ping", "down_alerted_at", "ack_at", "escalated_at",
-  "scan_result", "scan_checked_at", "scan_due_at", "dns_baseline", "links_alerted",
+  "scan_result", "scan_checked_at", "scan_due_at", "dns_baseline", "links_alerted", "security_alerted",
 ]);
 
 export function listMonitors(userId: number): MonitorRow[] {
@@ -152,7 +153,7 @@ export function retargetMonitor(id: number, userId: number, host: string, now: n
            dom_status = 'pending', dom_name = NULL, dom_expires_at = NULL, dom_days = NULL, dom_registrar = NULL,
            dom_note = NULL, dom_checked_at = NULL, dom_due_at = ?, dom_alert_bucket = NULL,
            ai_status = 'pending', ai_result = NULL, ai_checked_at = NULL, ai_due_at = ?, ai_alerted_sig = NULL, ai_pending_sig = NULL,
-           scan_result = NULL, scan_checked_at = NULL, scan_due_at = ?, dns_baseline = NULL, links_alerted = NULL,
+           scan_result = NULL, scan_checked_at = NULL, scan_due_at = ?, dns_baseline = NULL, links_alerted = NULL, security_alerted = NULL,
            last_manual_check_at = NULL
          WHERE id = ? AND user_id = ? AND kind = ?`,
       )

@@ -1,5 +1,5 @@
 import { runAiVisibilityWithin } from "./ai-visibility";
-import { type Alert, brokenLinksAlert, dnsChangedAlert, evaluateAi, evaluateDomain, evaluateSsl, evaluateUptime } from "./alerts";
+import { type Alert, brokenLinksAlert, dnsChangedAlert, evaluateAi, evaluateDomain, evaluateSsl, evaluateUptime, securityIssuesAlert, securityResolvedAlert } from "./alerts";
 import { type DnsSnapshot, type ScanResult, dnsChanges, runScan } from "./health-scan";
 import { checkDomain } from "./domain-check";
 import { CheckError } from "./hostname";
@@ -301,6 +301,21 @@ async function runLocked(monitorId: number, requested: Which | "due", options: R
         const changes = before ? dnsChanges(before, v.dns) : [];
         update.dns_baseline = JSON.stringify(v.dns);
         if (changes.length) pending.push({ alert: dnsChangedAlert(m.host, changes), revert: { dns_baseline: m.dns_baseline } });
+      }
+      // Security: report problems we haven't reported before (by finding, so a changed header or record is news but the
+      // same open issue isn't repeated every day). Once they're all fixed, the slate is wiped. A scan that couldn't
+      // load the homepage or look up DNS has no findings for that part, so it never counts as "fixed".
+      const found = [...(v.email?.findings ?? []), ...(v.headers?.findings ?? [])].filter((f): f is typeof f & { tone: "problem" | "notice" } => f.tone === "problem" || f.tone === "notice");
+      const complete = !!v.email && !!v.headers;
+      if (found.length || complete) {
+        const knownIssues = new Set<string>(m.security_alerted ? (JSON.parse(m.security_alerted) as string[]) : []);
+        const freshIssues = found.filter((f) => !knownIssues.has(f.id));
+        // Keep what was reported if part of the scan failed, so it isn't reported again when it comes back.
+        const stillOpen = complete ? found.map((f) => f.id) : [...knownIssues, ...freshIssues.map((f) => f.id)];
+        update.security_alerted = stillOpen.length ? JSON.stringify([...new Set(stillOpen)]) : null;
+        if (freshIssues.length) pending.push({ alert: securityIssuesAlert(m.host, freshIssues), revert: { security_alerted: m.security_alerted } });
+        // Everything we reported is gone, and the whole scan ran: say so.
+        else if (complete && found.length === 0 && knownIssues.size) pending.push({ alert: securityResolvedAlert(m.host), revert: { security_alerted: m.security_alerted } });
       }
       // Links: report broken links we haven't reported before. Once they're all fixed, the slate is wiped.
       if (v.links) {

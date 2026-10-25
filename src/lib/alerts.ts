@@ -8,7 +8,7 @@ export const DOMAIN_THRESHOLDS = [60, 30, 14, 7, 1];
 /** A site is only reported down after this many failed checks in a row, so one blip emails nobody. */
 export const DOWN_AFTER_FAILURES = 2;
 
-export type AlertKind = "ssl_expiry" | "ssl_problem" | "domain_expiry" | "down" | "recovered" | "ai_problem" | "ai_recovered" | "dns_changed" | "links_broken";
+export type AlertKind = "ssl_expiry" | "ssl_problem" | "domain_expiry" | "down" | "recovered" | "ai_problem" | "ai_recovered" | "dns_changed" | "links_broken" | "security_issues" | "security_resolved";
 
 export interface Alert {
   kind: AlertKind;
@@ -293,5 +293,27 @@ export function brokenLinksAlert(host: string, broken: { url: string; status: nu
     kind: "links_broken",
     subject: `${plural(broken.length, "broken link")} on ${host}`,
     body: `We found links on ${host}'s homepage that don't work:\n\n${list}${broken.length > 15 ? `\n...and ${broken.length - 15} more` : ""}` + footer(),
+  };
+}
+
+/** Security problems the health scan found (email setup, security headers) that we haven't already reported. "Fix" ones come first. */
+export function securityIssuesAlert(host: string, issues: { tone: "problem" | "notice"; title: string; detail: string }[]): Alert {
+  const severe = issues.filter((i) => i.tone === "problem");
+  const moderate = issues.filter((i) => i.tone === "notice");
+  const lines = (items: typeof issues) => items.map((i) => `- ${i.title}: ${i.detail}`).join("\n");
+  const sections = [severe.length && `Needs fixing:\n${lines(severe)}`, moderate.length && `Worth improving:\n${lines(moderate)}`].filter(Boolean).join("\n\n");
+  return {
+    kind: "security_issues",
+    subject: `${plural(issues.length, "security issue")} found on ${host}${severe.length ? ` (${severe.length} to fix)` : ""}`,
+    body: `The latest health scan of ${host} found:\n\n${sections}\n\nThe full list is on the site's page in your dashboard.` + footer(),
+  };
+}
+
+/** The scan that follows a security report came back with nothing to fix or improve. */
+export function securityResolvedAlert(host: string): Alert {
+  return {
+    kind: "security_resolved",
+    subject: `The security issues on ${host} are fixed`,
+    body: `The latest health scan of ${host} found no security issues. The email setup and security headers we check are all in good shape.` + footer(),
   };
 }

@@ -18,6 +18,8 @@ export const KINDS: Record<string, { label: string; tone: string }> = {
   escalated: { label: "Escalated", tone: "bg-bad-bg text-bad" },
   dns_changed: { label: "DNS changed", tone: "bg-warn-bg text-warn" },
   links_broken: { label: "Broken links", tone: "bg-warn-bg text-warn" },
+  security_issues: { label: "Security issues", tone: "bg-bad-bg text-bad" },
+  security_resolved: { label: "Security fixed", tone: "bg-ok-bg text-ok" },
   acknowledged: { label: "Acknowledged", tone: "bg-accent/15 text-accent" },
 };
 const FALLBACK = { label: "Notice", tone: "border border-border text-muted" };
