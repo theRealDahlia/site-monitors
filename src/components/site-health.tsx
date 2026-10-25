@@ -1,6 +1,7 @@
 "use client";
 
 import { type Monitor, ago, day, daysText } from "@/components/monitor-ui";
+import type { Finding } from "@/lib/health-scan";
 
 // How a site's checks read, shared by the Sites list (one short word per check) and a site's own page (the full rows).
 
@@ -197,6 +198,27 @@ export function aiBrief(ai: NonNullable<Monitor["ai"]>): Brief {
   return AI_BRIEF[ai.result?.status ?? ai.status] ?? AI_BRIEF.pending;
 }
 
+/** The health scan's security findings (email setup and security headers) that need action: "problem" is severe (red), "notice" is moderate (yellow). */
+export function securityIssues(m: Monitor): { bad: Finding[]; warn: Finding[] } {
+  const r = m.kind === "site" ? m.scan?.result : null;
+  const all = [...(r?.email?.findings ?? []), ...(r?.headers?.findings ?? [])];
+  return { bad: all.filter((f) => f.tone === "problem"), warn: all.filter((f) => f.tone === "notice") };
+}
+
+/** A site's overall status, or "warning" or "problem" if its most severe security issue is worse than that. */
+export function siteStatus(m: Monitor): Monitor["overall"] {
+  if (m.overall === "down" || m.overall === "problem") return m.overall;
+  const sec = securityIssues(m);
+  if (sec.bad.length) return "problem";
+  return sec.warn.length ? "warning" : m.overall;
+}
+
+/** The colour of a site's status dot. */
+export const siteTone = (m: Monitor): Tone => ({ ok: "ok", warning: "warn", problem: "bad", down: "bad", pending: "muted" } as const)[siteStatus(m)];
+
+/** "No HSTS", or "No HSTS and 2 more". */
+const issueText = (items: Finding[]) => `${items[0].title}${items.length > 1 ? ` and ${items.length - 1} more` : ""}`;
+
 /**
  * Why a site needs a look, in one line each, most serious first. Empty when everything is fine. Used by the Overview's
  * "Needs attention" list, so a problem is described the same way wherever it's summed up.
@@ -214,8 +236,11 @@ export function attentionReasons(m: Monitor): Brief[] {
   if (m.ssl.status === "expired") out.push({ tone: "bad", text: "SSL certificate has expired" });
   if (m.domain.status === "expired") out.push({ tone: "bad", text: "Domain registration has expired" });
   if (m.ai?.result?.status === "problem") out.push({ tone: "bad", text: "AI search tools are blocked or can't read it" });
+  const sec = securityIssues(m);
+  if (sec.bad.length) out.push({ tone: "bad", text: `Security: ${issueText(sec.bad)}` });
   if (m.ssl.status === "expiring") out.push({ tone: "warn", text: `SSL certificate expires in ${m.ssl.days} days` });
   if (m.domain.status === "expiring") out.push({ tone: "warn", text: `Domain expires in ${m.domain.days} days` });
+  if (sec.warn.length) out.push({ tone: "warn", text: `Security: ${issueText(sec.warn)}` });
   return out;
 }
 

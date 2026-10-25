@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { monitorView, OverallStatus } from "@/lib/monitor-view";
 
 export type Monitor = ReturnType<typeof monitorView>;
@@ -109,6 +109,22 @@ export function useMonitors(returnTo: string) {
   }, [apply]);
 
   return { data, loadError, reload };
+}
+
+/** How long a confirmation like "Removed example.com." stays on screen. */
+export const CONFIRMATION_MS = 20_000;
+
+/** Clears `value` (by calling `clear`) once it has been showing for `ms`. Pass null to keep it up. A new value restarts the clock. */
+export function useAutoClear(value: unknown, clear: () => void, ms: number | null = CONFIRMATION_MS) {
+  const clearRef = useRef(clear);
+  useEffect(() => {
+    clearRef.current = clear;
+  });
+  useEffect(() => {
+    if (!value || ms === null) return;
+    const t = setTimeout(() => clearRef.current(), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
 }
 
 /**

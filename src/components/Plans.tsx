@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useAutoClear } from "@/components/monitor-ui";
 import type { Quote } from "@/lib/plan-change";
 import { PLANS } from "@/lib/plans";
 
@@ -34,6 +35,7 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
   // A change between paid plans waiting for the person to agree to the amounts, and how the last one went.
   const [change, setChange] = useState<Quote | null>(null);
   const [changed, setChanged] = useState<string | null>(null);
+  useAutoClear(changed, () => setChanged(null));
   const [reloadKey, setReloadKey] = useState(0);
   const changePanel = useRef<HTMLElement>(null);
 

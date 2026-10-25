@@ -11,9 +11,9 @@ import MonitorAlerts from "@/components/MonitorAlerts";
 import MonitorHistory from "@/components/MonitorHistory";
 import HealthScan from "@/components/HealthScan";
 import { useBranding } from "@/components/branding-context";
-import { type Monitor, StatusBadge, ago, day, lastChecked, useCheckNow, useMonitors } from "@/components/monitor-ui";
+import { type Monitor, StatusBadge, ago, day, lastChecked, useAutoClear, useCheckNow, useMonitors } from "@/components/monitor-ui";
 import { EMPTY_FIELDS, type Kind, KindFields, type MonitorFields, fieldsBody, fieldsReady } from "@/components/AddMonitor";
-import { DomainRow, HeartbeatRows, PageRows, PortRow, SslRow, UptimeRow } from "@/components/site-health";
+import { DomainRow, HeartbeatRows, PageRows, PortRow, SslRow, UptimeRow, siteStatus } from "@/components/site-health";
 
 const SMALL_BUTTON = "rounded-lg border border-border px-3 py-1.5 text-sm hover:border-accent hover:text-accent disabled:opacity-50";
 const CARD = "rounded-xl border border-border bg-surface p-5";
@@ -210,6 +210,7 @@ function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<v
   const [busy, setBusy] = useState<Busy | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  useAutoClear(notice, () => setNotice(null));
 
   async function save(fields: Record<string, unknown>) {
     setBusy("saving");
@@ -343,7 +344,7 @@ export default function SiteDetail() {
             {m.kind !== "heartbeat" && <> · last checked {ago(lastChecked(m))}</>}
           </p>
         </div>
-        <StatusBadge status={m.overall} />
+        <StatusBadge status={siteStatus(m)} />
       </div>
 
       {(notice || loadError) && (

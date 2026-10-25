@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import AlertEmails from "@/components/AlertEmails";
 import EscalationSettings from "@/components/EscalationSettings";
-import { ago } from "@/components/monitor-ui";
+import { CONFIRMATION_MS, ago, useAutoClear } from "@/components/monitor-ui";
 import Toggle from "@/components/Toggle";
 import type { ChannelView } from "@/lib/channels";
 
@@ -214,6 +214,8 @@ export default function Integrations() {
   const [data, setData] = useState<Data | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  // A success fades away; a problem stays until it's dealt with.
+  useAutoClear(notice, () => setNotice(null), notice?.ok ? CONFIRMATION_MS : null);
 
   useEffect(() => {
     let cancelled = false;
