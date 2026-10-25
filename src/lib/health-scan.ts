@@ -203,7 +203,9 @@ export function gradeHeaders(headers: Record<string, string | string[] | undefin
     if (ok) score++;
     else if (!(h.id === "hsts" && value)) findings.push({ id: `${h.id}-missing`, tone: h.id === "hsts" || h.id === "xfo" ? "problem" : "notice", title: `No ${h.title}`, detail: h.why });
   }
-  const grade = (["F", "D", "C", "B", "A", "A"] as const)[score];
+  // Only all five headers earn an A. Missing one that's marked "Fix" (HSTS, clickjacking protection) holds the grade at C, so the grade never looks fine next to a red finding.
+  let grade = (["F", "D", "D", "C", "B", "A"] as const)[score];
+  if (findings.some((f) => f.tone === "problem") && (grade === "A" || grade === "B")) grade = "C";
   if (findings.length === 0) findings.push({ id: "headers-ok", tone: "good", title: "All the usual security headers are set", detail: "HSTS, a content security policy, nosniff, clickjacking protection and a referrer policy." });
   return { grade, present, findings };
 }
