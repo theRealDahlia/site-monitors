@@ -17,7 +17,7 @@ export function priceIdFor(plan: PaidPlanId): string | undefined {
   return process.env[PRICE_ENV[plan]]?.trim() || undefined;
 }
 
-function planForPrice(priceId: string | undefined): PaidPlanId | null {
+export function planForPrice(priceId: string | undefined): PaidPlanId | null {
   if (!priceId) return null;
   return (Object.keys(PRICE_ENV) as PaidPlanId[]).find((plan) => priceIdFor(plan) === priceId) ?? null;
 }

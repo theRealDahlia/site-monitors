@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { Quote } from "@/lib/plan-change";
 import { PLANS } from "@/lib/plans";
 
 interface Data {
@@ -9,6 +10,9 @@ interface Data {
   limit: number;
   monitors: unknown[];
 }
+
+const money = (cents: number, currency: string) => (cents / 100).toLocaleString("en-US", { style: "currency", currency: currency.toUpperCase() });
+const planName = (id: string) => PLANS.find((p) => p.name.toLowerCase() === id)?.name ?? id;
 
 interface Billing {
   configured: boolean;
@@ -27,6 +31,11 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
   const [payError, setPayError] = useState<string | null>(null);
   // "success" or "cancelled" when Stripe has just sent the person back here.
   const [returned, setReturned] = useState<string | null>(null);
+  // A change between paid plans waiting for the person to agree to the amounts, and how the last one went.
+  const [change, setChange] = useState<Quote | null>(null);
+  const [changed, setChanged] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const changePanel = useRef<HTMLElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +69,11 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, reloadKey]);
+
+  useEffect(() => {
+    if (change) changePanel.current?.focus();
+  }, [change]);
 
   /** Sends the browser to Stripe: its payment page for a plan, or its billing portal for someone who already pays. */
   async function go(action: "checkout" | "portal", plan?: string) {
@@ -74,6 +87,54 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
         return;
       }
       setPayError(body.error ?? "Something went wrong. Please try again.");
+    } catch {
+      setPayError("Couldn't reach the server. Check your connection and try again.");
+    }
+    setBusy(null);
+  }
+
+  /** Asks what moving to another paid plan would cost and refund, so the person can agree to it before anything happens. */
+  async function startChange(plan: string) {
+    setBusy(plan);
+    setPayError(null);
+    setChanged(null);
+    try {
+      const res = await fetch("/api/billing/change", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ plan }) });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.quote) setChange(body.quote);
+      else setPayError(body.error ?? "Something went wrong. Please try again.");
+    } catch {
+      setPayError("Couldn't reach the server. Check your connection and try again.");
+    }
+    setBusy(null);
+  }
+
+  async function confirmChange() {
+    if (!change) return;
+    setBusy("confirm");
+    setPayError(null);
+    try {
+      const res = await fetch("/api/billing/change", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: change.toPlan, confirm: true, expect: { refundCents: change.refundCents, chargeCents: change.chargeCents } }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setChanged(
+          body.refundProblem
+            ? `You're now on ${planName(change.toPlan)}. We couldn't send your refund automatically, so we'll sort it out and email you.`
+            : body.refundedCents > 0
+              ? `You're now on ${planName(change.toPlan)}. ${money(body.refundedCents, change.currency)} is on its way back to your card.`
+              : `You're now on ${planName(change.toPlan)}.`,
+        );
+        setChange(null);
+        setReloadKey((k) => k + 1);
+      } else {
+        // The amounts moved (a day ticked over): show the new ones to agree to.
+        if (body.quote) setChange(body.quote);
+        setPayError(body.error ?? "Something went wrong. Please try again.");
+      }
     } catch {
       setPayError("Couldn't reach the server. Check your connection and try again.");
     }
@@ -104,6 +165,48 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
         <p role="status" className="mt-6 rounded-lg border border-border px-4 py-3 text-sm text-muted">
           You didn&apos;t finish paying, so nothing changed and you haven&apos;t been charged.
         </p>
+      )}
+      {changed && (
+        <p role="status" className="mt-6 rounded-lg bg-ok-bg px-4 py-3 text-sm text-ok">
+          {changed}
+        </p>
+      )}
+      {change && (
+        <section ref={changePanel} tabIndex={-1} aria-labelledby="change-heading" className="mt-6 rounded-xl border border-accent bg-surface p-5 outline-none">
+          <h2 id="change-heading" className="font-semibold">
+            Switch from {planName(change.fromPlan)} to {planName(change.toPlan)} now
+          </h2>
+          <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm">
+            {change.refundCents > 0 && (
+              <li>
+                We refund <span className="font-medium">{money(change.refundCents, change.currency)}</span> to your card for the {change.daysRemaining} unused{" "}
+                {change.daysRemaining === 1 ? "day" : "days"} of {planName(change.fromPlan)} (of {change.daysTotal}).
+              </li>
+            )}
+            <li>
+              We charge <span className="font-medium">{money(change.chargeCents, change.currency)}</span> today for {planName(change.toPlan)}.
+            </li>
+            <li>Your new plan starts straight away, and your monthly billing date becomes today.</li>
+          </ul>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={confirmChange}
+              disabled={busy !== null}
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {busy === "confirm" ? "Changing plan…" : `Switch to ${planName(change.toPlan)}`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setChange(null)}
+              disabled={busy !== null}
+              className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-border/40 disabled:opacity-50"
+            >
+              Keep {planName(change.fromPlan)}
+            </button>
+          </div>
+        </section>
       )}
       {payError && (
         <p role="alert" className="mt-6 rounded-lg bg-warn-bg px-4 py-3 text-sm text-warn">
@@ -191,11 +294,11 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
                   ) : (
                     <button
                       type="button"
-                      onClick={() => (billing?.hasSubscription ? go("portal") : go("checkout", p.name.toLowerCase()))}
+                      onClick={() => (billing?.hasSubscription ? startChange(p.name.toLowerCase()) : go("checkout", p.name.toLowerCase()))}
                       disabled={!canBuy || busy !== null}
                       className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {busy === p.name.toLowerCase() ? "Opening payment…" : PLANS.indexOf(p) < currentIndex ? `Switch to ${p.name}` : billing?.hasSubscription ? `Switch to ${p.name}` : `Upgrade to ${p.name}`}
+                      {busy === p.name.toLowerCase() ? (billing?.hasSubscription ? "Checking…" : "Opening payment…") : PLANS.indexOf(p) < currentIndex ? `Switch to ${p.name}` : billing?.hasSubscription ? `Switch to ${p.name}` : `Upgrade to ${p.name}`}
                     </button>
                   )}
                 </div>

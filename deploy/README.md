@@ -33,7 +33,9 @@ sh /opt/site-monitors/deploy/update.sh
 
 ## Setting an account's plan
 
-Paid plans are bought through Stripe (set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_STARTER` and `STRIPE_PRICE_PRO` in `.env.local`, and point a Stripe webhook at `/api/billing/webhook`). To give an account a plan by hand, for example for free, run this on the server from `/opt/site-monitors`:
+Paid plans are bought through Stripe (set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_STARTER` and `STRIPE_PRICE_PRO` in `.env.local`, and point a Stripe webhook at `/api/billing/webhook`). Moving between paid plans is done by the app (`/api/billing/change`): it switches at once, charges the new plan in full, refunds the unused whole days of the old one to the card, and starts a new monthly period today. So turn **off** "Customers can switch plans" in the Stripe Customer portal settings, or people could change plan there with Stripe's own rules. The Stripe key also needs write access to Subscriptions and Refunds, and read access to Invoices, PaymentIntents, Charges and Prices.
+
+To give an account a plan by hand, for example for free, run this on the server from `/opt/site-monitors`:
 
 ```sh
 node scripts/set-plan.mjs someone@example.com starter   # 25 sites, 1-minute checks, Slack and Discord, status pages
