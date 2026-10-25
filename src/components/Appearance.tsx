@@ -32,7 +32,7 @@ function Upsell() {
   );
 }
 
-/** The Appearance page: the account's own logo, name, light or dark, and accent colour. Starter and up. */
+/** The Appearance settings, shown on the Account page: the account's own logo, name, light or dark, and accent colour. Starter and up. */
 export default function Appearance() {
   const { branding, setBranding, canBrand } = useBranding();
   // The name as it's being typed; null when it isn't being edited, so the saved name shows.
@@ -59,12 +59,12 @@ export default function Appearance() {
 
   if (!canBrand) {
     return (
-      <div>
-        <h1 className="flex flex-wrap items-center gap-3 text-3xl font-semibold tracking-tight">
+      <div className="mt-6">
+        <h2 className="flex flex-wrap items-center gap-3 text-xl font-semibold tracking-tight">
           Appearance
           <span className="rounded-full border border-border px-2.5 py-0.5 text-sm font-medium text-muted">Starter</span>
-        </h1>
-        <p className="mt-2 text-muted">Make your dashboard, and the public status pages you share with clients, look like your company.</p>
+        </h2>
+        <p className="mt-1 text-sm text-muted">Make your dashboard, and the public status pages you share with clients, look like your company.</p>
         <Upsell />
       </div>
     );
@@ -155,14 +155,14 @@ export default function Appearance() {
   const customValue = custom ? branding.accent : accentVars(branding.accent)["--brand-light"];
 
   return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Appearance</h1>
-      <p className="mt-2 text-muted">Make your dashboard, and the public status pages you share with clients, look like your company.</p>
+    <div className="mt-6">
+      <h2 className="text-xl font-semibold tracking-tight">Appearance</h2>
+      <p className="mt-1 text-sm text-muted">Make your dashboard, and the public status pages you share with clients, look like your company.</p>
 
       <section className="mt-6 rounded-xl border border-border bg-surface p-5" aria-labelledby="logo-heading">
-        <h2 id="logo-heading" className="font-semibold">
+        <h3 id="logo-heading" className="font-semibold">
           Logo and name
-        </h2>
+        </h3>
         <p className="mt-0.5 text-sm text-muted">
           Shown at the top of the menu and on your status pages. Without either, the menu shows &ldquo;Run by site-monitors.net&rdquo;.
         </p>
@@ -226,9 +226,9 @@ export default function Appearance() {
 
       <section className="mt-4 rounded-xl border border-border bg-surface p-5" aria-labelledby="theme-heading">
         <div className="flex items-baseline justify-between gap-3">
-          <h2 id="theme-heading" className="font-semibold">
+          <h3 id="theme-heading" className="font-semibold">
             Theme
-          </h2>
+          </h3>
           {themeStatus && (
             <p role={themeStatus.ok ? "status" : "alert"} className={`text-sm ${themeStatus.ok ? "text-ok" : "text-bad"}`}>
               {themeStatus.text}
@@ -286,7 +286,6 @@ export default function Appearance() {
           )}
         </fieldset>
       </section>
-
     </div>
   );
 }

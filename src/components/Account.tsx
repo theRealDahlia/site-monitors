@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import Appearance from "@/components/Appearance";
 
 interface Data {
   email: string;
@@ -11,7 +12,7 @@ interface Data {
   teamMembers: number;
 }
 
-/** The Account page: who you are, and a way to delete the account for good. */
+/** The Account page: who you are, how the app looks, and a way to delete the account for good. */
 export default function Account() {
   const [data, setData] = useState<Data | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -75,7 +76,7 @@ export default function Account() {
   return (
     <div>
       <h1 className="text-3xl font-semibold tracking-tight">Account</h1>
-      <p className="mt-2 text-muted">Your sign-in details and account settings.</p>
+      <p className="mt-2 text-muted">Your sign-in details, how the app looks, and account settings.</p>
 
       <section className="mt-6 rounded-xl border border-border bg-surface p-5" aria-labelledby="account-details">
         <h2 id="account-details" className="font-semibold">
@@ -98,6 +99,8 @@ export default function Account() {
           )}
         </dl>
       </section>
+
+      <Appearance />
 
       <section className="mt-6 rounded-xl border border-bad/40 bg-surface p-5" aria-labelledby="delete-account">
         <h2 id="delete-account" className="font-semibold text-bad">

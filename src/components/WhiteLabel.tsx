@@ -61,7 +61,7 @@ export default function WhiteLabel() {
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">
             <li>Show a status page at your own address, like status.yourcompany.com, with a secure certificate we set up for you</li>
             <li>Leave &ldquo;Run by site-monitors.net&rdquo; off your status pages (other plans show it under your logo)</li>
-            <li>Your logo, name and colours, from the Appearance tab, on every page</li>
+            <li>Your logo, name and colours, from Appearance on the Account page, on every page</li>
           </ul>
           <Link href="/dashboard/plans" className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">
             See the plans
@@ -92,7 +92,7 @@ export default function WhiteLabel() {
             <h2 id="domains-heading" className="font-semibold">
               Status page domains
             </h2>
-            <p className="mt-0.5 text-sm text-muted">Each site&apos;s status page can have its own address. Your logo, name and colours are set on the Appearance tab.</p>
+            <p className="mt-0.5 text-sm text-muted">Each site&apos;s status page can have its own address. Your logo, name and colours are set under Appearance on the Account page.</p>
 
             {withPage.length === 0 ? (
               <p className="mt-4 rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted">

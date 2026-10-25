@@ -5,6 +5,8 @@ export interface Mail {
   to: string;
   subject: string;
   text: string;
+  /** Where a reply should go, when that isn't the sender address. */
+  replyTo?: string;
 }
 
 /**
@@ -20,7 +22,7 @@ export async function sendMail(mail: Mail): Promise<void> {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from, to: mail.to, subject: mail.subject, text: mail.text }),
+      body: JSON.stringify({ from, to: mail.to, subject: mail.subject, text: mail.text, ...(mail.replyTo && { reply_to: mail.replyTo }) }),
       signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) throw new Error(`Email provider returned HTTP ${res.status}`);
@@ -31,7 +33,7 @@ export async function sendMail(mail: Mail): Promise<void> {
     throw new Error("Email isn't configured: set RESEND_API_KEY and MAIL_FROM.");
   }
 
-  const block = `\n---- email (not sent: no RESEND_API_KEY) ----\nTo: ${mail.to}\nSubject: ${mail.subject}\n\n${mail.text}\n----\n`;
+  const block = `\n---- email (not sent: no RESEND_API_KEY) ----\nTo: ${mail.to}\n${mail.replyTo ? `Reply-To: ${mail.replyTo}\n` : ""}Subject: ${mail.subject}\n\n${mail.text}\n----\n`;
   console.log(block);
   const file = path.join(process.cwd(), "data", "outbox.log");
   await mkdir(path.dirname(file), { recursive: true });

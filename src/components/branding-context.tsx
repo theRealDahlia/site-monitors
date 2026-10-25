@@ -4,13 +4,13 @@ import { createContext, useContext } from "react";
 import { LANDING_FROM_APP } from "@/lib/landing";
 import { type Branding, DEFAULT_BRANDING } from "@/lib/theme";
 
-/** The signed-in account's look, shared by the app shell and the Appearance page so a change shows everywhere at once. */
+/** The signed-in account's look, shared by the app shell and the Appearance settings on the Account page so a change shows everywhere at once. */
 export const BrandingContext = createContext<{
   branding: Branding | null;
   setBranding: (b: Branding) => void;
   /** The plan includes white label. */
   whiteLabel: boolean;
-  /** The plan includes the Appearance page (Starter and up). */
+  /** The plan includes the Appearance settings on the Account page (Starter and up). */
   canBrand: boolean;
 }>({
   branding: null,

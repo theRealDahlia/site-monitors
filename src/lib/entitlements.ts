@@ -17,7 +17,7 @@ export interface Entitlements {
   statusPages: boolean;
   /** Which kinds of monitor the account can add (see monitor-kinds.ts). All of them count towards maxMonitors. */
   monitorKinds: readonly MonitorKind[];
-  /** The Appearance page: the account's own logo, name, light or dark, and accent colour. */
+  /** The Appearance settings on the Account page: the account's own logo, name, light or dark, and accent colour. */
   branding: boolean;
   /**
    * How many more addresses, besides the account's own, can get alert emails. Agency, when it's added,

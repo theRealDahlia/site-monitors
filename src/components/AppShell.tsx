@@ -13,7 +13,7 @@ interface User {
   planName: string;
   /** The plan includes white label (status pages on your own domain, no Site Monitors credit). */
   whiteLabel: boolean;
-  /** The plan includes the Appearance page (Starter and up). */
+  /** The plan includes the Appearance settings on the Account page (Starter and up). */
   canBrand: boolean;
   /** Set when they're working in a team owner's account rather than their own. */
   team: { ownerEmail: string } | null;
@@ -31,13 +31,12 @@ const ICONS = {
   plans: "M3 7h18v10H3zM3 11h18M7 15h3",
   ai: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Zm7 12 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z",
   whiteLabel: "M3 12V4h8l10 10-8 8L3 12Zm5-4h.01",
-  appearance:
-    "M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.8-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4ZM7.5 12h.01M10 8h.01M14 8h.01",
   guides: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Zm0 14a2 2 0 0 1 2-2h13M9 7h6",
   reports: "M7 3h7l5 5v13H7V3Zm7 0v5h5M10 17v-3m3 3v-6m3 6v-4",
   api: "M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16",
   team: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 10c0-3.3 3.1-6 7-6s7 2.7 7 6M17 3.5a4 4 0 0 1 0 7M22 21c0-2.6-1.8-4.8-4.5-5.6",
   account: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9c0-3.9 3.6-7 8-7s8 3.1 8 7",
+  contact: "M3 5h18v14H3V5Zm0 1 9 7 9-7",
   menu: "M4 6h16M4 12h16M4 18h16",
   close: "M6 6l12 12M18 6 6 18",
 } as const;
@@ -77,7 +76,6 @@ const NAV = [
       { href: "/dashboard/integrations", label: "Integrations", icon: "integrations" },
       { href: "/dashboard/team", label: "Team", icon: "team" },
       { href: "/dashboard/white-label", label: "White label", icon: "whiteLabel" },
-      { href: "/dashboard/appearance", label: "Appearance", icon: "appearance" },
       { href: "/dashboard/api", label: "API & export", icon: "api" },
       { href: "/dashboard/plans", label: "Plans", icon: "plans" },
       { href: "/dashboard/account", label: "Account", icon: "account" },
@@ -85,7 +83,10 @@ const NAV = [
   },
   {
     heading: "Help",
-    items: [{ href: "/dashboard/guides", label: "Guides", icon: "guides" }],
+    items: [
+      { href: "/dashboard/guides", label: "Guides", icon: "guides" },
+      { href: "/dashboard/contact", label: "Contact us", icon: "contact" },
+    ],
   },
 ] as const;
 
