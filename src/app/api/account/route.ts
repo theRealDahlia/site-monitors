@@ -5,6 +5,13 @@ import { BRAND, SUPPORT_EMAIL } from "@/lib/brand";
 import { countInWindow, record } from "@/lib/rate-limit";
 
 const WINDOW_MS = 15 * 60 * 1000;
+
+/** The line about money in the confirmation email: what's coming back to the card, or that we'll sort it out. */
+function refundLine(refund: { refundedCents: number; refundProblem: boolean; currency: string }): string {
+  if (refund.refundProblem) return `\n\nWe couldn't send the refund for your unused subscription days automatically. We'll sort it out and email you.`;
+  if (refund.refundedCents > 0) return `\n\n${(refund.refundedCents / 100).toLocaleString("en-US", { style: "currency", currency: refund.currency.toUpperCase() })} for the unused days of your plan is being refunded to your card.`;
+  return "";
+}
 const MAX_FAILS = 5;
 
 /** What the Account page shows. Always about the signed-in person's own account, even when they're working in a team's. */
@@ -42,8 +49,9 @@ export async function DELETE(request: Request) {
   }
 
   const email = user.actor.email;
+  let refund: Awaited<ReturnType<typeof deleteAccount>>;
   try {
-    await deleteAccount(user.actor.id);
+    refund = await deleteAccount(user.actor.id);
   } catch (error) {
     console.error("Account deletion failed:", error);
     return Response.json({ error: "Couldn't delete your account, and nothing was deleted. Please try again, or email us for help." }, { status: 500 });
@@ -53,7 +61,7 @@ export async function DELETE(request: Request) {
   await sendMail({
     to: email,
     subject: `Your ${BRAND} account has been deleted`,
-    text: `Your ${BRAND} account for ${email} and its data have been deleted, and any paid subscription has been cancelled.\n\nIf this wasn't you, or you have questions, reply to ${SUPPORT_EMAIL}.`,
+    text: `Your ${BRAND} account for ${email} and its data have been deleted, and any paid subscription has been cancelled.${refundLine(refund)}\n\nIf this wasn't you, or you have questions, reply to ${SUPPORT_EMAIL}.`,
   }).catch(() => {});
 
   return Response.json({ ok: true }, { headers: { "Set-Cookie": endSession(request), "Cache-Control": "no-store" } });

@@ -47,11 +47,13 @@ export default function TermsPage() {
           <li>Paid plans are monthly subscriptions, charged in US dollars to your card through Stripe. The price is the one shown when you subscribe.</li>
           <li>Your subscription renews automatically each month until you cancel. You&apos;re charged at the start of each billing period.</li>
           <li>
-            You can change plan, update your card, view invoices or cancel at any time from Manage billing on the Plans page. Cancelling stops future charges, and your plan stays active until the
-            end of the period you&apos;ve paid for, then your account moves to Free.
+            You can change plan, update your card and view invoices from Manage billing, and cancel from the Plans page, at any time. Cancelling takes effect at once: your account moves to Free, you&apos;re not charged again,
+            and we refund the unused whole days of the period you&apos;ve paid for (what you paid, divided by the days in the period, for each full day left). Deleting your account cancels your plan the same way.
           </li>
-          <li>Payments are non-refundable, including for part of a month, unless the law says otherwise or we decide to make an exception. If something went wrong, write to us.</li>
-          <li>If you change plan part-way through a period, Stripe adjusts the charge for the time left.</li>
+          <li>Payments aren&apos;t refundable except as described on this page (unused days when you cancel, change plan or delete your account), where the law requires it, or where we decide to make an exception. If something went wrong, write to us.</li>
+          <li>
+            Changing between paid plans takes effect at once. The new plan is charged in full, your monthly billing date becomes the day you change, and the unused whole days of the old plan are refunded to your card.
+          </li>
           <li>If a payment fails we&apos;ll retry it, and your plan may move to Free if it can&apos;t be collected.</li>
           <li>We may change prices. We&apos;ll tell you at least 30 days before a new price applies to you, and you can cancel before it does.</li>
           <li>If you move to a smaller plan, we keep your sites and settings, but you may be unable to add more or use features the new plan doesn&apos;t include until you&apos;re within its limits.</li>

@@ -1,7 +1,8 @@
-import { billingConfigured, billingFor, stripe } from "./billing";
+import { billingConfigured, billingFor } from "./billing";
 import { listChannels, removeChannel } from "./channels";
 import { db } from "./db";
 import { removeRemoteWebhook } from "./oauth";
+import { cancelWithRefund } from "./plan-change";
 
 // Closing an account. Everything an account owns (sites, history, alert addresses, integrations, branding, status pages,
 // team seats, API keys) hangs off the user row with ON DELETE CASCADE, so deleting that row removes all of it. What it
@@ -19,20 +20,24 @@ export function passwordHashFor(userId: number): string | null {
   return row?.password_hash ?? null;
 }
 
+/** What happened to money when an account was deleted, for the confirmation email. */
+export interface DeletionResult {
+  refundedCents: number;
+  /** The subscription was cancelled but its refund couldn't be sent automatically. */
+  refundProblem: boolean;
+  currency: string;
+}
+
 /**
- * Cancels the subscription, disconnects Discord webhooks we made, then deletes the account and everything in it.
- * The subscription is cancelled first and a failure stops everything, so nobody is left paying for an account that's gone.
+ * Cancels the subscription (refunding its unused days, the same as cancelling from the Plans page), disconnects Discord
+ * webhooks we made, then deletes the account and everything in it. The subscription is cancelled first and a failure stops
+ * everything, so nobody is left paying for an account that's gone.
  */
-export async function deleteAccount(userId: number): Promise<void> {
-  const { subscriptionId } = billingFor(userId);
-  if (subscriptionId) {
+export async function deleteAccount(userId: number): Promise<DeletionResult> {
+  let result: DeletionResult = { refundedCents: 0, refundProblem: false, currency: "usd" };
+  if (billingFor(userId).subscriptionId) {
     if (!billingConfigured()) throw new Error("Can't cancel the subscription: Stripe isn't configured.");
-    try {
-      await stripe().subscriptions.cancel(subscriptionId);
-    } catch (error) {
-      // Already gone on Stripe's side is fine; anything else must stop the deletion.
-      if ((error as { code?: string }).code !== "resource_missing") throw error;
-    }
+    result = (await cancelWithRefund(userId)) ?? result;
   }
 
   for (const channel of listChannels(userId)) {
@@ -42,4 +47,5 @@ export async function deleteAccount(userId: number): Promise<void> {
   }
 
   db().prepare("DELETE FROM users WHERE id = ?").run(userId);
+  return result;
 }

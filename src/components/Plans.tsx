@@ -174,7 +174,7 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
       {change && (
         <section ref={changePanel} tabIndex={-1} aria-labelledby="change-heading" className="mt-6 rounded-xl border border-accent bg-surface p-5 outline-none">
           <h2 id="change-heading" className="font-semibold">
-            Switch from {planName(change.fromPlan)} to {planName(change.toPlan)} now
+            {change.toPlan === "free" ? `Cancel ${planName(change.fromPlan)} and switch to Free now` : `Switch from ${planName(change.fromPlan)} to ${planName(change.toPlan)} now`}
           </h2>
           <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm">
             {change.refundCents > 0 && (
@@ -183,10 +183,19 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
                 {change.daysRemaining === 1 ? "day" : "days"} of {planName(change.fromPlan)} (of {change.daysTotal}).
               </li>
             )}
-            <li>
-              We charge <span className="font-medium">{money(change.chargeCents, change.currency)}</span> today for {planName(change.toPlan)}.
-            </li>
-            <li>Your new plan starts straight away, and your monthly billing date becomes today.</li>
+            {change.toPlan === "free" ? (
+              <>
+                <li>You won&apos;t be charged again.</li>
+                <li>Your account moves to the Free plan straight away, and anything above its limits stops working until you&apos;re within them.</li>
+              </>
+            ) : (
+              <>
+                <li>
+                  We charge <span className="font-medium">{money(change.chargeCents, change.currency)}</span> today for {planName(change.toPlan)}.
+                </li>
+                <li>Your new plan starts straight away, and your monthly billing date becomes today.</li>
+              </>
+            )}
           </ul>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button
@@ -195,7 +204,7 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
               disabled={busy !== null}
               className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {busy === "confirm" ? "Changing plan…" : `Switch to ${planName(change.toPlan)}`}
+              {busy === "confirm" ? (change.toPlan === "free" ? "Cancelling…" : "Changing plan…") : change.toPlan === "free" ? "Cancel and switch to Free" : `Switch to ${planName(change.toPlan)}`}
             </button>
             <button
               type="button"
@@ -282,14 +291,14 @@ export default function Plans({ children }: { children?: React.ReactNode }) {
                       Coming soon
                     </button>
                   ) : p.price === 0 ? (
-                    // Going back to Free means cancelling, which Stripe's portal does.
+                    // Going back to Free means cancelling now, with the unused days refunded (see /api/billing/change).
                     <button
                       type="button"
-                      onClick={() => go("portal")}
+                      onClick={() => startChange("free")}
                       disabled={!canBuy || !billing?.hasSubscription || busy !== null}
                       className="w-full rounded-lg border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-border/40 disabled:cursor-not-allowed disabled:text-muted disabled:hover:bg-transparent"
                     >
-                      Cancel subscription
+                      {busy === "free" ? "Checking…" : "Cancel subscription"}
                     </button>
                   ) : (
                     <button

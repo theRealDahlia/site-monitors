@@ -124,7 +124,7 @@ export default function Account() {
               <li>
                 All your sites, check history, alerts, reports, status pages, integrations, API keys and branding are deleted{data.role === "owner" ? "" : " from your own account"}.
               </li>
-              {data.hasSubscription && <li>Your paid subscription is cancelled right away. Any unused time isn&apos;t refunded.</li>}
+              {data.hasSubscription && <li>Your paid subscription is cancelled right away, and the unused days are refunded to your card.</li>}
               {data.teamMembers > 0 && (
                 <li>
                   {data.teamMembers === 1 ? "The 1 person" : `The ${data.teamMembers} people`} on your team lose access to this account. Their own logins stay.
