@@ -23,7 +23,14 @@ interface Data {
 const FIELD = "w-full min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60";
 const SMALL = "rounded-lg border border-border px-3 py-1.5 text-sm hover:border-accent hover:text-accent disabled:opacity-50";
 const PRIMARY = "rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50";
-const TARGETS = [99, 99.5, 99.9, 99.95, 99.99];
+
+/** What someone typed as an uptime target ("99.9" or "99.9%") as a number, or null if it isn't one between 1 and 100. */
+function parseTarget(text: string): number | null {
+  const t = text.trim().replace(/%$/, "").trim();
+  if (!/^\d{1,3}(\.\d+)?$/.test(t)) return null;
+  const n = Number(t);
+  return n >= 1 && n <= 100 ? n : null;
+}
 
 async function call(url: string, method: string, body?: unknown): Promise<{ ok: boolean; data: Record<string, unknown> }> {
   try {
@@ -38,17 +45,21 @@ async function call(url: string, method: string, body?: unknown): Promise<{ ok: 
 function ReportForm({ monitors, initial, onSave, onCancel, busy }: { monitors: Data["monitors"]; initial?: Report; onSave: (body: Record<string, unknown>) => void; onCancel?: () => void; busy: boolean }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [chosen, setChosen] = useState<Set<number>>(new Set(initial?.monitorIds ?? []));
-  const [target, setTarget] = useState(initial?.slaTarget ?? 99.9);
+  const [target, setTarget] = useState(String(initial?.slaTarget ?? 99.9));
+  const [targetTouched, setTargetTouched] = useState(false);
+  const targetValue = parseTarget(target);
+  const targetBad = targetTouched && targetValue === null;
   const pre = initial ? `r${initial.id}` : "new";
   return (
     <form
       className="space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave({ name, monitorIds: [...chosen], slaTarget: target });
+        if (targetValue === null) return setTargetTouched(true);
+        onSave({ name, monitorIds: [...chosen], slaTarget: targetValue });
       }}
     >
-      <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
+      <div className="grid items-start gap-3 sm:grid-cols-[1fr_10rem]">
         <div>
           <label htmlFor={`${pre}-name`} className="mb-1 block text-sm font-medium">
             Client or report name
@@ -59,13 +70,27 @@ function ReportForm({ monitors, initial, onSave, onCancel, busy }: { monitors: D
           <label htmlFor={`${pre}-target`} className="mb-1 block text-sm font-medium">
             Uptime target
           </label>
-          <select id={`${pre}-target`} value={target} onChange={(e) => setTarget(Number(e.target.value))} className={FIELD} disabled={busy}>
-            {TARGETS.map((t) => (
-              <option key={t} value={t}>
-                {t}%
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              id={`${pre}-target`}
+              inputMode="decimal"
+              autoComplete="off"
+              maxLength={7}
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              onBlur={() => setTargetTouched(true)}
+              aria-invalid={targetBad}
+              aria-describedby={`${pre}-target-hint`}
+              className={`${FIELD} pr-8 ${targetBad ? "border-bad focus:border-bad focus:ring-bad/30" : ""}`}
+              disabled={busy}
+            />
+            <span aria-hidden className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+              %
+            </span>
+          </div>
+          <p id={`${pre}-target-hint`} className={`mt-1 text-xs ${targetBad ? "text-bad" : "text-muted"}`}>
+            {targetBad ? "Enter a number from 1 to 100." : "From 1 to 100, like 99.9"}
+          </p>
         </div>
       </div>
       <fieldset>
@@ -98,7 +123,7 @@ function ReportForm({ monitors, initial, onSave, onCancel, busy }: { monitors: D
         )}
       </fieldset>
       <div className="flex gap-2">
-        <button type="submit" className={PRIMARY} disabled={busy || !name.trim() || chosen.size === 0}>
+        <button type="submit" className={PRIMARY} disabled={busy || !name.trim() || chosen.size === 0 || targetValue === null}>
           {busy ? "Saving…" : initial ? "Save" : "Create report"}
         </button>
         {onCancel && (

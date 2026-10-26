@@ -93,7 +93,7 @@ function parseSettings(userId: number, input: Record<string, unknown>): Result<{
   const monitorIds = Array.isArray(input.monitorIds) ? [...new Set(input.monitorIds.map(Number))].filter((x) => mine.has(x)) : [];
   if (monitorIds.length === 0) return fail("Choose at least one monitor for the report.");
   const slaTarget = Number(input.slaTarget);
-  if (!Number.isFinite(slaTarget) || slaTarget < 90 || slaTarget > 100) return fail("Choose an uptime target between 90% and 100%.");
+  if (!Number.isFinite(slaTarget) || slaTarget < 1 || slaTarget > 100) return fail("Choose an uptime target between 1% and 100%.");
   return { ok: true, value: { name, monitorIds, slaTarget: Math.round(slaTarget * 1000) / 1000 } };
 }
 
