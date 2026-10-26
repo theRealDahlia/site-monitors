@@ -1,6 +1,7 @@
 import { acknowledge, readAckToken } from "@/lib/escalation";
 import { esc, linkPage as page } from "@/lib/link-page";
-import { addEvent, getMonitorWithOwner } from "@/lib/monitors-db";
+import { getMonitorWithOwner } from "@/lib/monitors-db";
+import { sendAckNotice } from "@/lib/watch-email";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 
 // The "acknowledge" link in an outage alert. Opening it shows a button; pressing it acknowledges (see link-page.ts).
@@ -26,6 +27,6 @@ export async function POST(request: Request, ctx: RouteContext<"/api/ack/[token]
   if (!t || !m) return invalid();
   const r = acknowledge(m.id, t.downSince);
   if (r === "over") return page("Outage over", `<h1>This outage is over</h1><p>${esc(m.host)} is back up, so there's nothing to acknowledge.</p>`);
-  if (r === "acknowledged") addEvent({ userId: m.user_id, monitorId: m.id, host: m.host, kind: "acknowledged", message: `Outage on ${m.host} acknowledged from the alert email`, emailed: false });
+  if (r === "acknowledged") await sendAckNotice({ monitor: m, plan: m.owner_plan, by: null });
   return page("Acknowledged", `<h1>Acknowledged</h1><p>The outage on ${esc(m.host)} is marked as being dealt with. Nobody else will be alerted about it. We'll still email when it's back up.</p>`);
 }

@@ -189,3 +189,30 @@ export async function sendRemovalNotice(opts: { monitor: MonitorRow; plan: strin
   }
   return emailed;
 }
+
+/**
+ * Tells everyone who gets the account's alerts that someone has taken an outage on: by email, Slack and Discord, and
+ * in Notifications. `by` is who did it (an email address), or null when it was done from the link in an alert email.
+ */
+export async function sendAckNotice(opts: { monitor: MonitorRow; plan: string; by: string | null }): Promise<void> {
+  const { monitor: m } = opts;
+  const who = opts.by ?? "Someone, from the link in an alert email,";
+  const subject = `Outage on ${m.host} acknowledged`;
+  const body =
+    `${who} acknowledged the outage on ${m.host}${m.down_since ? ` that started ${new Date(m.down_since).toUTCString()}` : ""}. ` +
+    `It's being dealt with, so nobody else will be alerted about it. We'll email again when ${m.host} is back up.`;
+  tellChannels(m.user_id, opts.plan, { kind: "acknowledged", subject, body });
+
+  let emailed = false;
+  try {
+    const sent = await emailRecipients(m.user_id, { subject, text: `${body}\n\nSee its status: ${appUrl()}/dashboard` });
+    emailed = sent > 0;
+  } catch (err) {
+    console.error(`acknowledge notice for ${m.host} failed`, err);
+  }
+  try {
+    addEvent({ userId: m.user_id, monitorId: m.id, host: m.host, kind: "acknowledged", message: `Outage on ${m.host} acknowledged${opts.by ? ` by ${opts.by}` : " from the alert email"}`, emailed });
+  } catch {
+    // The monitor was deleted in the meantime; there's nothing to attach a notification to.
+  }
+}

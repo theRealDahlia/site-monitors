@@ -39,7 +39,7 @@ export function maskWebhook(kind: ChannelKind, url: string): string {
 // ---------- message formatting ----------
 
 /** Alerts, plus the things that happen to a site: added, edited, removed. */
-export type MessageKind = AlertKind | "test" | "created" | "edited" | "removed";
+export type MessageKind = AlertKind | "test" | "created" | "edited" | "removed" | "acknowledged";
 
 const COLORS: Record<MessageKind, number> = {
   down: 0xb91c1c,
@@ -57,6 +57,7 @@ const COLORS: Record<MessageKind, number> = {
   created: 0x0f766e,
   edited: 0x0f766e,
   removed: 0x57534e,
+  acknowledged: 0x1d4ed8,
 };
 
 const MAX_BODY = 1800;
