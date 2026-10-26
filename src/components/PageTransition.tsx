@@ -1,18 +1,13 @@
-"use client";
-
-import { usePathname } from "next/navigation";
 import { ViewTransition } from "react";
 
 /**
- * Fades a page in as the one before it fades out, whenever the address changes. `scope` picks which part of the
- * address counts: the whole site uses the path, except that the app's pages share one key, so moving around inside
- * the app doesn't redraw its menu (the app's own content area has a second one of these for that).
+ * The fade between pages (the animation is in globals.css). Used by the templates, which Next gives a new key on every
+ * navigation, so the old page counts as leaving and the new one as arriving. Wrapping it in a layout instead doesn't
+ * work: a layout stays mounted across navigations, so nothing ever enters or exits there.
  */
-export default function PageTransition({ children, scope = "page" }: { children: React.ReactNode; scope?: "site" | "page" }) {
-  const pathname = usePathname() ?? "";
-  const key = scope === "site" && pathname.startsWith("/dashboard") ? "/dashboard" : pathname;
+export default function PageTransition({ children, enter = true }: { children: React.ReactNode; enter?: boolean }) {
   return (
-    <ViewTransition key={key} enter="page-enter" exit="page-exit" default="none">
+    <ViewTransition enter={enter ? "page-enter" : "none"} exit="page-exit" default="none">
       {children}
     </ViewTransition>
   );

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import PageTransition from "@/components/PageTransition";
 import { BRAND } from "@/lib/brand";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
@@ -38,9 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       // THEME_BOOT_SCRIPT), so those attributes are expected to differ from the server's copy.
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <PageTransition scope="site">{children}</PageTransition>
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

@@ -112,27 +112,45 @@ body::before {
   }
 }
 
-/* Moving between pages: the old page fades out as the new one fades in and rises a little (see PageTransition). */
+/* Moving between pages: the old page fades out completely first, and only then does the new one fade in and rise a
+   little, so the two never show at once (see PageTransition). */
 ::view-transition-old(.page-exit) {
-  animation: 140ms ease-in both page-out;
+  animation: 160ms ease-in both page-out;
 }
 ::view-transition-new(.page-enter) {
-  animation: 240ms ease-out 60ms both page-in;
+  animation: 320ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both page-in;
 }
 @keyframes page-out {
   to {
     opacity: 0;
+    transform: translateY(-6px);
   }
 }
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(10px);
+  }
+}
+
+/* An app page arrives when its content appears, which for most pages is just after "Loading…". Each page's content is
+   a <div>; the loading line is a <p>, which only fades in once the old page has gone, so the two never overlap. */
+.app-page > div {
+  animation: 320ms cubic-bezier(0.16, 1, 0.3, 1) 160ms both page-in;
+}
+.app-page > p {
+  animation: 200ms ease-out 160ms both fade-in;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(.page-exit),
-  ::view-transition-new(.page-enter) {
+  ::view-transition-new(.page-enter),
+  .app-page > div,
+  .app-page > p {
     animation: none;
   }
 }
