@@ -134,7 +134,7 @@ export default function CustomDomainPanel({ monitorId, base: given }: { monitorI
             }}
           >
             <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="status.yourcompany.com" aria-label="Your domain" maxLength={253} className={INPUT} disabled={busy !== null} />
-            <button type="submit" disabled={busy !== null || !input.trim()} className={SMALL_BUTTON}>
+            <button type="submit" disabled={busy !== null || !input.trim()} className="rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50">
               {busy === "set" ? "Saving…" : "Set up"}
             </button>
           </form>

@@ -13,6 +13,7 @@ type Client = ReturnType<typeof clientView>;
 const FIELD = "w-full min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60";
 const SMALL = "rounded-lg border border-border px-3 py-1.5 text-sm hover:border-accent hover:text-accent disabled:opacity-50";
 const PRIMARY = "rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50";
+const FILLED = "rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50";
 const MAX_KB = 300;
 
 async function call(url: string, init: RequestInit): Promise<{ ok: boolean; body: Record<string, unknown> }> {
@@ -106,7 +107,7 @@ function ClientCard({ client, onChange, onDeleted, canEdit }: { client: Client; 
             </label>
             <input id={`name-${client.id}`} value={name} onChange={(e) => setName(e.target.value)} maxLength={60} disabled={!canEdit || busy !== null} className={FIELD} />
           </div>
-          <button type="submit" disabled={!canEdit || busy !== null || !name.trim() || name.trim() === client.name} className={SMALL}>
+          <button type="submit" disabled={!canEdit || busy !== null || !name.trim() || name.trim() === client.name} className={FILLED}>
             {busy === "name" ? "Saving…" : "Rename"}
           </button>
         </form>
@@ -165,7 +166,7 @@ function ClientCard({ client, onChange, onDeleted, canEdit }: { client: Client; 
             type="button"
             onClick={() => run("look", base, json("PATCH", { look: { name: brandName.trim() || null, accent } }), "Look saved.")}
             disabled={!canEdit || busy !== null || !lookChanged}
-            className={`${SMALL} mt-3`}
+            className={`${FILLED} mt-3`}
           >
             {busy === "look" ? "Saving…" : "Save look"}
           </button>

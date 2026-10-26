@@ -273,7 +273,7 @@ function ReportCard({ r, data, reload }: { r: Report; data: Data; reload: () => 
                   Email address
                 </label>
                 <input id={`r${r.id}-email`} type="email" placeholder="client@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className={FIELD} disabled={busy !== null} />
-                <button type="submit" className={`${SMALL} shrink-0`} disabled={busy !== null || !email.trim()}>
+                <button type="submit" className="shrink-0 rounded-lg bg-accent px-4 py-1.5 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50" disabled={busy !== null || !email.trim()}>
                   {busy === "add" ? "Sending…" : "Add"}
                 </button>
               </form>

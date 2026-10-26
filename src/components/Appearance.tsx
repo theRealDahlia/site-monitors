@@ -212,7 +212,7 @@ export default function Appearance() {
               disabled={nameBusy}
               className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none placeholder:text-muted/70 focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60"
             />
-            <button type="submit" disabled={nameBusy || !nameChanged} className={BUTTON}>
+            <button type="submit" disabled={nameBusy || !nameChanged} className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90 disabled:opacity-50">
               {nameBusy ? "Saving…" : "Save name"}
             </button>
           </div>
