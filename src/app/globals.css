@@ -112,6 +112,31 @@ body::before {
   }
 }
 
+/* Moving between pages: the old page fades out as the new one fades in and rises a little (see PageTransition). */
+::view-transition-old(.page-exit) {
+  animation: 140ms ease-in both page-out;
+}
+::view-transition-new(.page-enter) {
+  animation: 240ms ease-out 60ms both page-in;
+}
+@keyframes page-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(.page-exit),
+  ::view-transition-new(.page-enter) {
+    animation: none;
+  }
+}
+
 /* Reports are saved as PDFs from the browser: no glow on paper. */
 @media print {
   body::before {

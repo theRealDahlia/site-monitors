@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import PageTransition from "@/components/PageTransition";
 import PlanSwitcher from "@/components/PlanSwitcher";
 import { BrandMark, BrandingContext } from "@/components/branding-context";
 import { type Branding, applyTheme, resetTheme } from "@/lib/theme";
@@ -283,7 +284,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </header>
 
           <main className="w-full flex-1 px-4 py-8 sm:px-8 lg:py-10">
-            <div className="mx-auto max-w-4xl">{children}</div>
+            <div className="mx-auto max-w-4xl">
+              <PageTransition>{children}</PageTransition>
+            </div>
           </main>
         </div>
 
