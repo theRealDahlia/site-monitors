@@ -59,15 +59,22 @@ export interface Entitlements {
   clients: boolean;
   /** Importing sites from a list, and changing many monitors at once. */
   bulkTools: boolean;
+  /** API requests allowed per key per minute (0 when the plan has no API). */
+  apiPerMinute: number;
+  /** How many API keys the account can have. */
+  apiKeys: number;
+  /** The most events one API request can return. */
+  apiEventsMax: number;
 }
 
 export const ENTITLEMENTS = {
-  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, monitorKinds: ["site", "http"], branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: false, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 30, healthScans: false, brokenLinks: false, clients: false, bulkTools: false },
-  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: true, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 90, healthScans: true, brokenLinks: false, clients: false, bulkTools: false },
+  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, monitorKinds: ["site", "http"], branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: false, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 30, healthScans: false, brokenLinks: false, clients: false, bulkTools: false, apiPerMinute: 0, apiKeys: 0, apiEventsMax: 0 },
+  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: true, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 90, healthScans: true, brokenLinks: false, clients: false, bulkTools: false, apiPerMinute: 0, apiKeys: 0, apiEventsMax: 0 },
   // Pro is everything in Starter with room for more, plus AI-visibility checks and white-label status pages.
-  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 3, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true, clients: false, bulkTools: false },
-  // Agency is everything in Pro with room for 500 monitors and 20 team seats, plus client groups and bulk tools.
-  agency: { name: "Agency", maxMonitors: 500, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 20, addsPerHour: 600, maxEmailsPerDay: 1000, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 20, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true, clients: true, bulkTools: true },
+  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 3, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true, clients: false, bulkTools: false, apiPerMinute: 120, apiKeys: 5, apiEventsMax: 200 },
+  // Agency is everything in Pro with room for 500 monitors and 20 team seats, plus client groups and bulk tools, two years of
+  // history and a bigger API allowance.
+  agency: { name: "Agency", maxMonitors: 500, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 20, addsPerHour: 600, maxEmailsPerDay: 1000, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 20, apiAccess: true, historyDays: 730, healthScans: true, brokenLinks: true, clients: true, bulkTools: true, apiPerMinute: 600, apiKeys: 20, apiEventsMax: 1000 },
 } as const satisfies Record<string, Entitlements>;
 
 /** Every plan there is. Adding a plan to ENTITLEMENTS adds it here, to the types and to the admin plan switcher. */

@@ -16,7 +16,7 @@ const day = (ms: number) => new Date(ms).toLocaleDateString(undefined, { month: 
 
 /** The "API & export" page: download the account's data (every plan), and API keys (Pro). */
 export default function ApiAndExport() {
-  const [data, setData] = useState<{ allowed: boolean; max: number; keys: Key[] } | null>(null);
+  const [data, setData] = useState<{ allowed: boolean; max: number; perMinute: number; keys: Key[] } | null>(null);
   const [name, setName] = useState("");
   const [fresh, setFresh] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -177,7 +177,7 @@ export default function ApiAndExport() {
             <details className="mt-4 text-sm">
               <summary className="cursor-pointer text-accent underline underline-offset-2">How to use it</summary>
               <div className="mt-2 space-y-2 text-muted">
-                <p>Send the key in the Authorization header. Up to 120 requests a minute.</p>
+                <p>Send the key in the Authorization header. Up to {data.perMinute} requests a minute per key.</p>
                 <pre className="overflow-x-auto rounded-lg border border-border bg-background p-3 font-mono text-xs text-foreground">
                   {`curl -H "Authorization: Bearer sm_..." ${origin}/api/v1/monitors
 curl -H "Authorization: Bearer sm_..." "${origin}/api/v1/monitors/12?days=365"

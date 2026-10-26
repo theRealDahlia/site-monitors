@@ -33,10 +33,10 @@ export default function MonitorHistory({ monitorId }: { monitorId: number }) {
           History
         </h2>
         <p className="text-xs text-muted">
-          {data.historyDays >= 365 ? "The last 12 months." : `The last ${data.historyDays} days. `}
-          {data.historyDays < 365 && (
+          {data.historyDays >= 730 ? "The last 2 years." : data.historyDays >= 365 ? "The last 12 months. " : `The last ${data.historyDays} days. `}
+          {data.historyDays < 730 && (
             <Link href="/dashboard/plans" className="text-accent underline underline-offset-2">
-              12 months on Pro
+              {data.historyDays < 365 ? "12 months on Pro, 2 years on Agency" : "2 years on Agency"}
             </Link>
           )}
         </p>

@@ -65,6 +65,8 @@ export const PLANS: Plan[] = [
     features: [
       "Up to 500 monitors",
       "Everything in Pro",
+      "2 years of history",
+      "A bigger API allowance: 600 requests a minute and 20 keys",
       "Group your sites by client, and filter the Sites page by client",
       "One status page per client covering all their sites, on the client's own domain if you like",
       "Each client's own logo and colours on its status page and reports",
@@ -76,31 +78,57 @@ export const PLANS: Plan[] = [
   },
 ];
 
-/** One row of the comparison table: a feature and what each plan gets, in the same order as PLANS. */
-export const COMPARISON: { feature: string; values: (string | boolean)[] }[] = [
-  { feature: "Monitors", values: ["5", "25", "100", "500"] },
-  { feature: "Uptime check interval", values: ["5 minutes", "1 minute", "1 minute", "1 minute"] },
-  { feature: "Whole sites, and single pages with keyword checks", values: [true, true, true, true] },
-  { feature: "Port and cron job (heartbeat) monitors", values: [false, true, true, true] },
-  { feature: "SSL certificate and domain expiry alerts", values: [true, true, true, true] },
-  { feature: "Email alerts", values: [true, true, true, true] },
-  { feature: "Extra alert email addresses", values: ["5", "5", "10", "20"] },
-  { feature: "Slack and Discord alerts", values: [false, true, true, true] },
-  { feature: "Choose who gets each monitor's alerts", values: [false, true, true, true] },
-  { feature: "Escalation and acknowledging outages", values: [false, false, true, true] },
-  { feature: "Public status page", values: [false, true, true, true] },
-  { feature: "Incident updates, maintenance and RSS on status pages", values: [false, true, true, true] },
-  { feature: "Email updates for status page visitors", values: [false, false, true, true] },
-  { feature: "White-label status page on your own domain", values: [false, false, true, true] },
-  { feature: "Your own logo, name and colours", values: [false, true, true, true] },
-  { feature: "Daily health scan (DNS, email setup, security headers)", values: [false, true, true, true] },
-  { feature: "Weekly broken-link check", values: [false, false, true, true] },
-  { feature: "AI-visibility checks", values: [false, false, true, true] },
-  { feature: "Monthly client reports", values: [false, false, true, true] },
-  { feature: "Team members with their own logins", values: [false, false, "3", "20"] },
-  { feature: "History", values: ["30 days", "90 days", "12 months", "12 months"] },
-  { feature: "Download your data", values: [true, true, true, true] },
-  { feature: "API", values: [false, false, true, true] },
-  { feature: "Clients: group sites, with a status page and look for each", values: [false, false, false, true] },
-  { feature: "Import sites from a list, and bulk changes", values: [false, false, false, true] },
+/** The comparison table: features in groups, each with what every plan gets, in the same order as PLANS. */
+export const COMPARISON: { group: string; rows: { feature: string; values: (string | boolean)[] }[] }[] = [
+  {
+    group: "Monitoring",
+    rows: [
+      { feature: "Monitors", values: ["5", "25", "100", "500"] },
+      { feature: "Uptime check interval", values: ["5 minutes", "1 minute", "1 minute", "1 minute"] },
+      { feature: "Whole sites, and single pages with keyword checks", values: [true, true, true, true] },
+      { feature: "Port and cron job (heartbeat) monitors", values: [false, true, true, true] },
+      { feature: "SSL certificate and domain expiry alerts", values: [true, true, true, true] },
+      { feature: "Daily health scan (DNS, email setup, security headers)", values: [false, true, true, true] },
+      { feature: "Weekly broken-link check", values: [false, false, true, true] },
+      { feature: "AI-visibility checks", values: [false, false, true, true] },
+    ],
+  },
+  {
+    group: "Alerts",
+    rows: [
+      { feature: "Email alerts", values: [true, true, true, true] },
+      { feature: "Extra alert email addresses", values: ["5", "5", "10", "20"] },
+      { feature: "Slack and Discord alerts", values: [false, true, true, true] },
+      { feature: "Choose who gets each monitor's alerts", values: [false, true, true, true] },
+      { feature: "Escalation and acknowledging outages", values: [false, false, true, true] },
+    ],
+  },
+  {
+    group: "Status pages",
+    rows: [
+      { feature: "Public status page", values: [false, true, true, true] },
+      { feature: "Incident updates, maintenance and RSS on status pages", values: [false, true, true, true] },
+      { feature: "Email updates for status page visitors", values: [false, false, true, true] },
+      { feature: "White-label status page on your own domain", values: [false, false, true, true] },
+    ],
+  },
+  {
+    group: "Clients and reports",
+    rows: [
+      { feature: "Your own logo, name and colours", values: [false, true, true, true] },
+      { feature: "Monthly client reports", values: [false, false, true, true] },
+      { feature: "Clients: group sites, with a status page and look for each", values: [false, false, false, true] },
+      { feature: "Import sites from a list, and bulk changes", values: [false, false, false, true] },
+    ],
+  },
+  {
+    group: "Team, data and API",
+    rows: [
+      { feature: "Team members with their own logins", values: [false, false, "3", "20"] },
+      { feature: "History", values: ["30 days", "90 days", "12 months", "2 years"] },
+      { feature: "Download your data", values: [true, true, true, true] },
+      { feature: "API", values: [false, false, true, true] },
+      { feature: "API requests per minute, per key", values: [false, false, "120", "600"] },
+    ],
+  },
 ];

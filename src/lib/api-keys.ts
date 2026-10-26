@@ -6,7 +6,7 @@ import { rateLimit } from "./rate-limit";
 // Keys for the read-only API (Pro). A key is shown once, when it's made; we keep only a hash of it, so a copy of the
 // database can't be used to read anyone's data. A key belongs to the account, whoever on the team made it.
 
-export const MAX_KEYS = 5;
+/** The most keys a free-for-all can hold, whatever the plan (each plan has its own, lower or equal, limit). */
 const NAME_MAX = 60;
 const sha256 = (v: string) => createHash("sha256").update(v).digest("hex");
 
@@ -32,9 +32,9 @@ export function listKeys(userId: number): KeyView[] {
 }
 
 /** Makes a key. The returned `key` is the only time it's ever available. */
-export function createKey(userId: number, nameInput: unknown, now = Date.now()): { ok: true; key: string; view: KeyView } | { ok: false; error: string } {
+export function createKey(userId: number, nameInput: unknown, maxKeys: number, now = Date.now()): { ok: true; key: string; view: KeyView } | { ok: false; error: string } {
   const name = typeof nameInput === "string" ? nameInput.replace(/[\p{Cc}\p{Cf}]/gu, "").trim().slice(0, NAME_MAX) : "";
-  if (listKeys(userId).length >= MAX_KEYS) return { ok: false, error: `You can have up to ${MAX_KEYS} keys. Delete one to make another.` };
+  if (listKeys(userId).length >= maxKeys) return { ok: false, error: `You can have up to ${maxKeys} keys. Delete one to make another.` };
   const key = `sm_${randomBytes(24).toString("base64url")}`;
   const prefix = key.slice(0, 10);
   const id = Number(db().prepare("INSERT INTO api_keys (user_id, name, key_hash, prefix, created_at) VALUES (?, ?, ?, ?, ?)").run(userId, name || "API key", sha256(key), prefix, now).lastInsertRowid);
@@ -59,7 +59,8 @@ export function apiCaller(request: Request, now = Date.now()): ApiCaller {
     .get(sha256(key)) as { id: number; user_id: number; plan: string } | undefined;
   if (!row) return deny(401, "That API key isn't valid.");
   if (!entitlementsFor(row.plan).apiAccess) return deny(403, "The API is part of the Pro plan.");
-  if (!rateLimit(`api:${row.id}`, 120, 60_000)) return { ok: false, response: Response.json({ error: "Too many requests: the limit is 120 a minute." }, { status: 429, headers: { "Retry-After": "60" } }) };
+  const perMinute = entitlementsFor(row.plan).apiPerMinute;
+  if (!rateLimit(`api:${row.id}`, perMinute, 60_000)) return { ok: false, response: Response.json({ error: `Too many requests: the limit is ${perMinute} a minute.` }, { status: 429, headers: { "Retry-After": "60" } }) };
   db().prepare("UPDATE api_keys SET last_used_at = ? WHERE id = ?").run(now, row.id);
   return { ok: true, userId: row.user_id, plan: row.plan };
 }

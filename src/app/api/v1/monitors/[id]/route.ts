@@ -2,7 +2,7 @@ import { apiCaller } from "@/lib/api-keys";
 import { apiHistory, apiMonitor } from "@/lib/api-view";
 import { getMonitor } from "@/lib/monitors-db";
 
-/** GET /api/v1/monitors/:id?days=30: one monitor, with daily uptime for up to the plan's history (365 days on Pro). */
+/** GET /api/v1/monitors/:id?days=30: one monitor, with daily uptime for up to the plan's history (365 days on Pro, 730 on Agency). */
 export async function GET(request: Request, ctx: RouteContext<"/api/v1/monitors/[id]">) {
   const c = apiCaller(request);
   if (!c.ok) return c.response;

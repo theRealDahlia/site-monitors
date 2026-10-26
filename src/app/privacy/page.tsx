@@ -89,7 +89,7 @@ export default function PrivacyPage() {
 
       <Section heading="How long we keep it">
         <p>
-          We keep your account and settings until you delete the account. Check history is kept for as long as your plan includes (30 days on Free, 90 on Starter, 12 months on Pro)
+          We keep your account and settings until you delete the account. Check history is kept for as long as your plan includes (30 days on Free, 90 on Starter, 12 months on Pro, 2 years on Agency)
           and older results are removed. When an account is deleted we remove its data, apart from anything we must keep for tax or legal reasons, such as invoices held by Stripe.
           Backups are overwritten on a regular schedule.
         </p>

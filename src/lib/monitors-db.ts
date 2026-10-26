@@ -389,8 +389,8 @@ export function rollupHistory(now: number): void {
 }
 
 /**
- * Deletes history nobody can see any more. Notifications are kept for `before` on most plans, and for a year on plans
- * with long history; daily uptime and outages for a year (plus a little); hourly totals for three months.
+ * Deletes history nobody can see any more. Notifications are kept for `before` on most plans, and for as long as the plan shows (a year or more) on plans
+ * with long history; daily uptime and outages for as long as the longest plan shows (plus a little); hourly totals for three months.
  */
 export function pruneHistory(before: number, now = Date.now()): void {
   const conn = db();
@@ -402,7 +402,14 @@ export function pruneHistory(before: number, now = Date.now()): void {
     })
     .join(", ");
   conn.prepare(`DELETE FROM monitor_events WHERE created_at < ? AND user_id NOT IN (SELECT id FROM users WHERE plan IN (${longPlans}))`).run(before);
-  const yearAgo = now - 400 * DAY_MS;
+  // The longest any plan shows, plus a little.
+  const longest = Math.max(...Object.values(ENTITLEMENTS).map((e) => e.historyDays));
+  const yearAgo = now - (longest + 35) * DAY_MS;
+  // A plan's notifications are kept for as long as its history is shown.
+  for (const [id, e] of Object.entries(ENTITLEMENTS)) {
+    if (e.historyDays < 365 || !/^[a-z]+$/.test(id)) continue;
+    conn.prepare("DELETE FROM monitor_events WHERE created_at < ? AND user_id IN (SELECT id FROM users WHERE plan = ?)").run(now - (e.historyDays + 35) * DAY_MS, id);
+  }
   conn.prepare("DELETE FROM monitor_events WHERE created_at < ?").run(yearAgo);
   conn.prepare("DELETE FROM uptime_daily WHERE day < ?").run(yearAgo);
   conn.prepare("DELETE FROM monitor_incidents WHERE started_at < ?").run(yearAgo);
