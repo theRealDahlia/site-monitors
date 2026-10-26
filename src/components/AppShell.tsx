@@ -63,22 +63,35 @@ function Icon({ name, className = "h-5 w-5" }: { name: keyof typeof ICONS; class
 const NAV = [
   {
     heading: null,
+    items: [{ href: "/dashboard", label: "Overview", icon: "overview" }],
+  },
+  {
+    heading: "Monitoring",
     items: [
-      { href: "/dashboard", label: "Overview", icon: "overview" },
       { href: "/dashboard/sites", label: "Sites", icon: "sites" },
       { href: "/dashboard/notifications", label: "Notifications", icon: "notifications" },
       { href: "/dashboard/ai-visibility", label: "AI visibility", icon: "ai" },
-      { href: "/dashboard/reports", label: "Reports", icon: "reports" },
     ],
   },
   {
-    heading: "Settings",
+    heading: "Clients",
+    items: [
+      { href: "/dashboard/clients", label: "Clients", icon: "clients" },
+      { href: "/dashboard/reports", label: "Reports", icon: "reports" },
+      { href: "/dashboard/white-label", label: "White label", icon: "whiteLabel" },
+    ],
+  },
+  {
+    heading: "Workspace",
     items: [
       { href: "/dashboard/integrations", label: "Integrations", icon: "integrations" },
-      { href: "/dashboard/clients", label: "Clients", icon: "clients" },
       { href: "/dashboard/team", label: "Team", icon: "team" },
-      { href: "/dashboard/white-label", label: "White label", icon: "whiteLabel" },
       { href: "/dashboard/api", label: "API & export", icon: "api" },
+    ],
+  },
+  {
+    heading: "Account",
+    items: [
       { href: "/dashboard/plans", label: "Plans", icon: "plans" },
       { href: "/dashboard/account", label: "Account", icon: "account" },
     ],
