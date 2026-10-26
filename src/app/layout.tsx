@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { BRAND } from "@/lib/brand";
 import { SITE_URL } from "@/lib/site-url";
+import Analytics from "@/components/Analytics";
+import ErrorReporter from "@/components/ErrorReporter";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,7 +40,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       // THEME_BOOT_SCRIPT), so those attributes are expected to differ from the server's copy.
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <ErrorReporter />
+        {/* The script component reads the address, which on pages with a changing part needs a Suspense boundary. */}
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
+      </body>
     </html>
   );
 }

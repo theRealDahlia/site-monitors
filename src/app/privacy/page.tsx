@@ -55,7 +55,7 @@ export default function PrivacyPage() {
       <Section heading="Cookies">
         <p>
           We use one cookie to keep you signed in. It&apos;s needed for the site to work, lasts up to 30 days, and is removed when you log out. Connecting Slack or Discord briefly sets
-          another cookie to keep that sign-in safe. We don&apos;t use advertising or analytics cookies.
+          another cookie to keep that sign-in safe. We don&apos;t use advertising cookies. If we measure visits to our public pages, we use a privacy-friendly service that sets no cookies and doesn&apos;t track you across sites, and we don&apos;t measure the app itself or anyone&apos;s status page.
         </p>
       </Section>
 

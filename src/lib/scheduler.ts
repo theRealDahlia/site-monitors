@@ -1,3 +1,4 @@
+import { reportError } from "./error-alerts";
 import { runChecks } from "./monitor-runner";
 import { recheckVerifiedDomains } from "./custom-domains";
 import { runEscalations } from "./escalate";
@@ -32,6 +33,7 @@ async function tick() {
           await runChecks(m.id, "due");
         } catch (err) {
           console.error(`monitor ${m.id} (${m.host}) failed`, err);
+          void reportError(err, { source: "scheduler", where: `checking ${m.host}` });
         }
       }
     };
@@ -45,13 +47,17 @@ async function tick() {
       pruneHistory(now - KEEP_HISTORY_MS);
       g.__monitorLastPrune = now;
       // Client reports go out once a month, for the month just finished.
-      await sendMonthlyReports(now).catch((err) => console.error("monthly reports failed", err));
+      await sendMonthlyReports(now).catch((err) => {
+        console.error("monthly reports failed", err);
+        void reportError(err, { source: "scheduler", where: "monthly reports" });
+      });
       // Each verified custom domain is only really looked at about once a day; this just finds the ones that are due.
       const domains = await recheckVerifiedDomains();
       if (domains.released.length) console.log(`[domains] released after their proof record went missing: ${domains.released.join(", ")}`);
     }
   } catch (err) {
     console.error("monitor scheduler tick failed", err);
+    void reportError(err, { source: "scheduler", where: "the check loop" });
   } finally {
     g.__monitorRunning = false;
   }

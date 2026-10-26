@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { applySubscription, stripe } from "@/lib/billing";
+import { reportError } from "@/lib/error-alerts";
 
 /**
  * Stripe's messages about payments. This is the only thing that changes a plan after a purchase, so it first checks
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
   } catch (error) {
     // A 500 makes Stripe send the event again later.
     console.error("Stripe webhook failed:", error);
+    await reportError(error, { source: "payments", where: `Stripe webhook ${event.type}` });
     return new Response("Failed.", { status: 500 });
   }
   return new Response("ok");
