@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { safeNext } from "@/lib/safe-next";
+import { trackEvent } from "@/lib/track";
 
 type Mode = "login" | "signup" | "forgot" | "reset";
 
@@ -199,6 +200,8 @@ function SignupForm() {
         setLoading(false);
         return;
       }
+      // The next step loads a new page, so give the analytics script a moment to send before it does.
+      if (trackEvent("signup")) await new Promise((resolve) => setTimeout(resolve, 250));
       goAfterAuth();
     } catch {
       setError("Couldn't reach the server. Try again.");
