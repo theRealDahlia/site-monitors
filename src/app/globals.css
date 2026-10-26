@@ -16,6 +16,8 @@
   --warn-bg: #fffbeb;
   --bad: #b91c1c;
   --bad-bg: #fef2f2;
+  /* How strong the background glow is. Kept faint in light mode so text stays crisp. */
+  --glow: 20%;
 }
 
 /* Dark follows the device unless an account has picked light or dark (data-theme on <html>). The two
@@ -36,6 +38,7 @@
     --warn-bg: #2a1a03;
     --bad: #f87171;
     --bad-bg: #2a0a0a;
+    --glow: 26%;
   }
 }
 
@@ -54,6 +57,7 @@
   --warn-bg: #2a1a03;
   --bad: #f87171;
   --bad-bg: #2a0a0a;
+  --glow: 26%;
 }
 
 @theme inline {
@@ -78,4 +82,39 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+/* Soft glows behind every page, tinted with the accent, so an account's (or a client's) own colour carries through.
+   Fixed to the window and never in the way of clicks. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40rem 30rem at 12% 0%, color-mix(in oklab, var(--accent) var(--glow), transparent), transparent 70%),
+    radial-gradient(36rem 28rem at 95% 15%, color-mix(in oklab, color-mix(in oklab, var(--accent), #6366f1 45%) var(--glow), transparent), transparent 70%),
+    radial-gradient(44rem 32rem at 70% 105%, color-mix(in oklab, var(--accent) calc(var(--glow) * 0.7), transparent), transparent 70%);
+  filter: blur(20px);
+  animation: glow-drift 40s ease-in-out infinite alternate;
+}
+
+@keyframes glow-drift {
+  to {
+    transform: translate3d(2%, 3%, 0) scale(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before {
+    animation: none;
+  }
+}
+
+/* Reports are saved as PDFs from the browser: no glow on paper. */
+@media print {
+  body::before {
+    display: none;
+  }
 }
