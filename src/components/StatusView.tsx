@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandMark } from "@/components/branding-context";
 import { STATE_LABEL, StateBadge } from "@/components/StatusNotices";
 import type { NoticeView, publicNotices } from "@/lib/status-notices";
+import type { publicClientStatus } from "@/lib/client-status";
 import type { publicStatus } from "@/lib/status-page";
 import { type Branding, applyTheme, resetTheme } from "@/lib/theme";
 
-type Status = ReturnType<typeof publicStatus> & { branding: Branding; notices: ReturnType<typeof publicNotices>; updates: { email: boolean } };
+type SiteStatus = ReturnType<typeof publicStatus> & {
+  branding: Branding;
+  notices: ReturnType<typeof publicNotices>;
+  updates: { email: boolean };
+  /** Set when this is one site of a client's page, opened from its list. */
+  fromClient?: { name: string };
+};
+type ClientStatus = ReturnType<typeof publicClientStatus> & { branding: Branding };
+type Status = SiteStatus | ClientStatus;
 type Load = { kind: "loading" } | { kind: "missing" } | { kind: "error" } | { kind: "ok"; data: Status };
 
 function ago(ms: number | null): string {
@@ -227,6 +236,149 @@ function DailyBars({ days }: { days: { day: number; uptime: number | null }[] })
   );
 }
 
+/** The 30 days as thin daily bars, with no explanations: for pages that show many sites. */
+function MiniBars({ days }: { days: { day: number; uptime: number | null }[] }) {
+  const first = days.findIndex((d) => d.uptime !== null);
+  const shown = first === -1 ? days.slice(-1) : days.slice(first);
+  return (
+    <div className="flex gap-[2px]" role="img" aria-label="Daily uptime for the last 30 days">
+      {shown.map((day) => (
+        <span
+          key={day.day}
+          title={`${fmtDate(day.day)}: ${day.uptime === null ? "no data" : `${day.uptime}% uptime`}`}
+          className={`h-6 min-w-0 flex-1 rounded-sm ${barMeaning(day.uptime).color}`}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** A client's status page: how each of its sites is doing, and what the owner has said about any of them. */
+function ClientPage({ d, footer }: { d: ClientStatus; footer: React.ReactNode }) {
+  const pathname = usePathname();
+  const active = d.notices.active;
+  const majorIncident = active.some((n) => n.kind === "incident" && n.impact === "major");
+  const incident = active.some((n) => n.kind === "incident");
+  const maintenance = active.some((n) => n.kind === "maintenance");
+  const down = d.sites.filter((s) => s.status === "down").length;
+  const banner =
+    down === d.sites.length && down > 0
+      ? { text: "Down", classes: "bg-bad-bg text-bad" }
+      : down > 0 || majorIncident
+        ? { text: down ? `${down} of ${d.sites.length} ${d.sites.length === 1 ? "site is" : "sites are"} down` : "Major outage", classes: "bg-bad-bg text-bad" }
+        : incident
+          ? { text: "Some systems are affected", classes: "bg-warn-bg text-warn" }
+          : maintenance
+            ? { text: "Under maintenance", classes: "bg-accent/10 text-accent" }
+            : d.status === "operational"
+              ? { text: "All systems operational", classes: "bg-ok-bg text-ok" }
+              : { text: "Checking…", classes: "border border-border bg-surface text-muted" };
+  const dot = { operational: "bg-ok", down: "bg-bad", checking: "bg-border" } as const;
+  const word = { operational: "Operational", down: "Down", checking: "Checking" } as const;
+  const named = (n: ClientStatus["notices"]["active"][number]) => ({ ...n, title: `${n.host}: ${n.title}` });
+
+  return (
+    <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+      {(d.branding.logoUrl || d.branding.name) && (
+        <div className="mb-8">
+          <BrandMark branding={d.branding} />
+        </div>
+      )}
+      <h1 className="break-words text-3xl font-semibold tracking-tight">{d.name}</h1>
+      <p className="mt-1 text-sm text-muted">Status page</p>
+
+      <div role="status" className={`mt-6 rounded-xl px-5 py-4 ${banner.classes}`}>
+        <p className="text-lg font-semibold">{banner.text}</p>
+      </div>
+
+      {active.length > 0 && (
+        <section aria-label="Current incidents and maintenance" className="mt-4 space-y-3">
+          {active.map((n) => (
+            <Notice key={n.id} n={named(n)} emphasis />
+          ))}
+        </section>
+      )}
+
+      {d.notices.upcoming.length > 0 && (
+        <section aria-labelledby="upcoming-heading" className="mt-8">
+          <h2 id="upcoming-heading" className="text-sm font-medium text-muted">
+            Scheduled maintenance
+          </h2>
+          <div className="mt-3 space-y-3">
+            {d.notices.upcoming.map((n) => (
+              <Notice key={n.id} n={named(n)} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section aria-labelledby="sites-heading" className="mt-8">
+        <h2 id="sites-heading" className="text-sm font-medium text-muted">
+          Sites
+        </h2>
+        {d.sites.length === 0 ? (
+          <p className="mt-3 rounded-xl border border-border bg-surface px-5 py-4 text-sm text-muted">Nothing is being watched here yet.</p>
+        ) : (
+          <ul className="mt-3 space-y-3">
+            {d.sites.map((s) => (
+              <li key={s.id} className="relative rounded-xl border border-border bg-surface px-5 py-4 transition-colors focus-within:border-accent hover:border-accent">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="min-w-0 break-all font-medium">
+                    {/* The whole card is the link, so a tap anywhere on it opens the site. */}
+                    <Link href={`${pathname}?site=${s.id}`} className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none">
+                      {s.host}
+                    </Link>
+                    <span aria-hidden className="ml-1.5 text-muted">
+                      ›
+                    </span>
+                  </p>
+                  <p className={`flex items-center gap-2 text-sm ${s.status === "down" ? "font-medium text-bad" : "text-muted"}`}>
+                    <span aria-hidden className={`h-2 w-2 rounded-full ${dot[s.status]}`} />
+                    {word[s.status]}
+                    {s.status === "down" && s.downSince ? ` since ${fmtTime(s.downSince)}` : ""}
+                  </p>
+                </div>
+                <dl className="mt-3 grid grid-cols-3 gap-3 text-center text-sm">
+                  {[
+                    ["24 hours", s.uptime.last24h],
+                    ["7 days", s.uptime.last7d],
+                    ["30 days", s.uptime.last30d],
+                  ].map(([label, value]) => (
+                    <div key={label as string}>
+                      <dd className="font-semibold">{show(value as number | null)}</dd>
+                      <dt className="text-xs text-muted">{label as string}</dt>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-3">
+                  <MiniBars days={s.days} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="mt-2 text-xs text-muted">Each bar is one day (UTC), oldest on the left. Select a site for its full history.</p>
+      </section>
+
+      {d.notices.past.length > 0 && (
+        <section aria-labelledby="history-heading" className="mt-10">
+          <h2 id="history-heading" className="text-sm font-medium text-muted">
+            Past incidents and maintenance
+          </h2>
+          <div className="mt-3 space-y-3">
+            {d.notices.past.map((n) => (
+              <Notice key={n.id} n={named(n)} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <p className="mt-8 text-xs text-muted">This page refreshes by itself.</p>
+      {footer}
+    </main>
+  );
+}
+
 /**
  * A public status page. `slug` is given when the page is shown on a customer's own domain (`customDomain`), and
  * otherwise comes from the address (/status/<slug>).
@@ -234,12 +386,15 @@ function DailyBars({ days }: { days: { day: number; uptime: number | null }[] })
 export default function StatusView({ slug: given, customDomain = false }: { slug?: string; customDomain?: boolean }) {
   const params = useParams<{ slug?: string }>();
   const slug = given ?? params?.slug ?? "";
+  // On a client's page, ?site=<id> opens one of its sites in full.
+  const siteId = useSearchParams().get("site");
+  const pathname = usePathname();
   const [load, setLoad] = useState<Load>({ kind: "loading" });
 
   useEffect(() => {
     let cancelled = false;
     const run = () => {
-      fetch(`/api/status/${encodeURIComponent(slug)}`)
+      fetch(`/api/status/${encodeURIComponent(slug)}${siteId ? `?site=${encodeURIComponent(siteId)}` : ""}`)
         .then(async (res): Promise<Load> => {
           if (res.status === 404) return { kind: "missing" };
           if (!res.ok) return { kind: "error" };
@@ -257,7 +412,7 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
       cancelled = true;
       clearInterval(t);
     };
-  }, [slug]);
+  }, [slug, siteId]);
 
   // The owner's light/dark and colour, for as long as this page is open.
   const look = load.kind === "ok" ? load.data.branding : null;
@@ -270,17 +425,25 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
   // White label: on their own domain, or when they've asked us to leave our credit off, nothing says Site Monitors.
   // The server only reports the setting for accounts whose plan includes it.
   const whiteLabel = customDomain || (load.kind === "ok" && load.data.branding.hideCredit);
-  const siteName = load.kind === "ok" ? load.data.host : null;
+  const siteName = load.kind === "ok" ? ("sites" in load.data ? load.data.name : load.data.host) : null;
   const logo = load.kind === "ok" ? load.data.branding.logoUrl : null;
   useEffect(() => {
     if (!whiteLabel || !siteName) return;
     document.title = `${siteName} status`;
-    // The browser tab shouldn't show our icon: the owner's logo if they have one, otherwise nothing.
-    document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]').forEach((l) => l.remove());
-    const icon = document.createElement("link");
-    icon.rel = "icon";
-    icon.href = logo ?? "data:,";
-    document.head.appendChild(icon);
+    // The browser tab shouldn't show our icon: the owner's logo if they have one, otherwise nothing. The icon tags are
+    // Next's own, so they're re-pointed rather than removed (removing them breaks Next when it next updates the head),
+    // and put back when this page goes away.
+    const icons = [...document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"], link[rel="apple-touch-icon"]')];
+    const originals = icons.map((l) => l.getAttribute("href"));
+    for (const l of icons) l.setAttribute("href", logo ?? "data:,");
+    if (icons.length === 0) {
+      const icon = document.createElement("link");
+      icon.rel = "icon";
+      icon.href = logo ?? "data:,";
+      document.head.appendChild(icon);
+      return () => icon.remove();
+    }
+    return () => icons.forEach((l, i) => (originals[i] === null ? l.removeAttribute("href") : l.setAttribute("href", originals[i])));
   }, [whiteLabel, siteName, logo]);
 
   // The credit stays on every page unless white label is on, even when the owner has put their own logo at the top.
@@ -316,6 +479,7 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
     );
   }
 
+  if ("sites" in load.data) return <ClientPage d={load.data} footer={footer} />;
   const d = load.data;
   const active = d.notices.active;
   // What the owner has said outranks "all good" from the checks: if they've reported an incident, the page says so.
@@ -339,6 +503,11 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
         <div className="mb-8">
           <BrandMark branding={d.branding} />
         </div>
+      )}
+      {d.fromClient && (
+        <Link href={pathname} className="mb-3 inline-block text-sm text-accent underline underline-offset-2">
+          ‹ All {d.fromClient.name} sites
+        </Link>
       )}
       <h1 className="break-all text-3xl font-semibold tracking-tight">{d.host}</h1>
       <p className="mt-1 text-sm text-muted">Status page</p>
@@ -423,7 +592,7 @@ export default function StatusView({ slug: given, customDomain = false }: { slug
         )}
       </section>
 
-      <GetUpdates slug={slug} email={d.updates.email} />
+      {!d.fromClient && <GetUpdates slug={slug} email={d.updates.email} />}
 
       <p className="mt-8 text-xs text-muted">Last checked {ago(d.lastCheckedAt)}. This page refreshes by itself.</p>
       {footer}

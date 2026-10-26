@@ -37,6 +37,7 @@ const ICONS = {
   team: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 10c0-3.3 3.1-6 7-6s7 2.7 7 6M17 3.5a4 4 0 0 1 0 7M22 21c0-2.6-1.8-4.8-4.5-5.6",
   account: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-8 9c0-3.9 3.6-7 8-7s8 3.1 8 7",
   contact: "M3 5h18v14H3V5Zm0 1 9 7 9-7",
+  clients: "M3 21V8l6-4v17M9 21V10h12v11M3 21h18M13 14h2m2 0h.01M13 17.5h2m2 0h.01",
   menu: "M4 6h16M4 12h16M4 18h16",
   close: "M6 6l12 12M18 6 6 18",
 } as const;
@@ -74,6 +75,7 @@ const NAV = [
     heading: "Settings",
     items: [
       { href: "/dashboard/integrations", label: "Integrations", icon: "integrations" },
+      { href: "/dashboard/clients", label: "Clients", icon: "clients" },
       { href: "/dashboard/team", label: "Team", icon: "team" },
       { href: "/dashboard/white-label", label: "White label", icon: "whiteLabel" },
       { href: "/dashboard/api", label: "API & export", icon: "api" },

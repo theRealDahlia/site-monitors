@@ -32,7 +32,7 @@ const FAQ = [
   },
   {
     q: "How do I pay, and can I cancel?",
-    a: "Starter and Pro are monthly subscriptions paid by card through Stripe. You can change plan, update your card, download invoices or cancel from your Plans page whenever you like. Changing plan or cancelling takes effect at once, and the unused days are refunded to your card. Agency is planned but can't be bought yet.",
+    a: "Starter, Pro and Agency are monthly subscriptions paid by card through Stripe. You can change plan, update your card, download invoices or cancel from your Plans page whenever you like. Changing plan or cancelling takes effect at once, and the unused days are refunded to your card.",
   },
   {
     q: "What happens if I want more than 5 sites?",
@@ -105,7 +105,7 @@ export default function PricingPage() {
             ))}
           </div>
           <p className="mt-4 text-sm text-muted">
-            Prices are in US dollars, billed monthly through Stripe. Cancel any time. Agency is planned and can&apos;t be bought yet.
+            Prices are in US dollars, billed monthly through Stripe. Cancel any time.
           </p>
         </section>
 

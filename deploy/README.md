@@ -33,13 +33,14 @@ sh /opt/site-monitors/deploy/update.sh
 
 ## Setting an account's plan
 
-Paid plans are bought through Stripe (set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_STARTER` and `STRIPE_PRICE_PRO` in `.env.local`, and point a Stripe webhook at `/api/billing/webhook`). Moving between paid plans is done by the app (`/api/billing/change`): it switches at once, charges the new plan in full, refunds the unused whole days of the old one to the card, and starts a new monthly period today. Cancelling does the same: the subscription ends at once, the account goes to Free, and the unused whole days are refunded. So turn **off** both "Customers can switch plans" and "Customers can cancel subscriptions" in the Stripe Customer portal settings, or people could use Stripe's own rules there instead. The Stripe key also needs write access to Subscriptions and Refunds, and read access to Invoices, PaymentIntents, Charges and Prices.
+Paid plans are bought through Stripe (set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_STARTER`, `STRIPE_PRICE_PRO` and `STRIPE_PRICE_AGENCY` in `.env.local`, and point a Stripe webhook at `/api/billing/webhook`). Moving between paid plans is done by the app (`/api/billing/change`): it switches at once, charges the new plan in full, refunds the unused whole days of the old one to the card, and starts a new monthly period today. Cancelling does the same: the subscription ends at once, the account goes to Free, and the unused whole days are refunded. So turn **off** both "Customers can switch plans" and "Customers can cancel subscriptions" in the Stripe Customer portal settings, or people could use Stripe's own rules there instead. The Stripe key also needs write access to Subscriptions and Refunds, and read access to Invoices, PaymentIntents, Charges and Prices.
 
 To give an account a plan by hand, for example for free, run this on the server from `/opt/site-monitors`:
 
 ```sh
 node scripts/set-plan.mjs someone@example.com starter   # 25 sites, 1-minute checks, Slack and Discord, status pages
 node scripts/set-plan.mjs someone@example.com pro       # 100 sites, and everything in Starter
+node scripts/set-plan.mjs someone@example.com agency    # 500 sites, 20 team seats, clients and bulk tools, and everything in Pro
 node scripts/set-plan.mjs someone@example.com free      # to put them back
 ```
 

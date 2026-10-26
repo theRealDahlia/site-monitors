@@ -8,6 +8,7 @@ interface Report {
   name: string;
   monitorIds: number[];
   slaTarget: number;
+  clientId: number | null;
   enabled: boolean;
   lastSentMonth: string | null;
   recipients: { id: number; email: string; confirmed: boolean }[];
@@ -16,7 +17,8 @@ interface Report {
 interface Data {
   allowed: boolean;
   month: string;
-  monitors: { id: number; host: string; kind: string }[];
+  monitors: { id: number; host: string; kind: string; clientId: number | null }[];
+  clients: { id: number; name: string }[];
   reports: Report[];
 }
 
@@ -42,9 +44,10 @@ async function call(url: string, method: string, body?: unknown): Promise<{ ok: 
 }
 
 /** Name, monitors and target: used to create a report and to change one. */
-function ReportForm({ monitors, initial, onSave, onCancel, busy }: { monitors: Data["monitors"]; initial?: Report; onSave: (body: Record<string, unknown>) => void; onCancel?: () => void; busy: boolean }) {
+function ReportForm({ monitors, clients, initial, onSave, onCancel, busy }: { monitors: Data["monitors"]; clients: Data["clients"]; initial?: Report; onSave: (body: Record<string, unknown>) => void; onCancel?: () => void; busy: boolean }) {
   const [name, setName] = useState(initial?.name ?? "");
   const [chosen, setChosen] = useState<Set<number>>(new Set(initial?.monitorIds ?? []));
+  const [clientId, setClientId] = useState(initial?.clientId ? String(initial.clientId) : "");
   const [target, setTarget] = useState(String(initial?.slaTarget ?? 99.9));
   const [targetTouched, setTargetTouched] = useState(false);
   const targetValue = parseTarget(target);
@@ -56,7 +59,7 @@ function ReportForm({ monitors, initial, onSave, onCancel, busy }: { monitors: D
       onSubmit={(e) => {
         e.preventDefault();
         if (targetValue === null) return setTargetTouched(true);
-        onSave({ name, monitorIds: [...chosen], slaTarget: targetValue });
+        onSave({ name, monitorIds: [...chosen], slaTarget: targetValue, ...(clients.length || initial?.clientId ? { clientId: clientId || null } : {}) });
       }}
     >
       <div className="grid items-start gap-3 sm:grid-cols-[1fr_10rem]">
@@ -93,6 +96,32 @@ function ReportForm({ monitors, initial, onSave, onCancel, busy }: { monitors: D
           </p>
         </div>
       </div>
+      {clients.length > 0 && (
+        <div className="max-w-sm">
+          <label htmlFor={`${pre}-client`} className="mb-1 block text-sm font-medium">
+            Client&apos;s look
+          </label>
+          <select
+            id={`${pre}-client`}
+            value={clientId}
+            onChange={(e) => {
+              setClientId(e.target.value);
+              // A client's report usually covers its sites: tick them if nothing is chosen yet.
+              if (e.target.value && chosen.size === 0) setChosen(new Set(monitors.filter((m) => m.clientId === Number(e.target.value)).map((m) => m.id)));
+            }}
+            className={FIELD}
+            disabled={busy}
+          >
+            <option value="">My own logo and colours</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted">The report carries this client&apos;s logo, name and accent colour, where it has them.</p>
+        </div>
+      )}
       <fieldset>
         <legend className="mb-1 text-sm font-medium">Monitors in the report</legend>
         {monitors.length === 0 ? (
@@ -163,6 +192,7 @@ function ReportCard({ r, data, reload }: { r: Report; data: Data; reload: () => 
       {editing ? (
         <ReportForm
           monitors={data.monitors}
+          clients={data.clients}
           initial={r}
           busy={busy !== null}
           onCancel={() => setEditing(false)}
@@ -320,6 +350,7 @@ export default function Reports() {
                 <h2 className="mb-3 font-semibold">New report</h2>
                 <ReportForm
                   monitors={data.monitors}
+                  clients={data.clients}
                   busy={busy}
                   onCancel={data.reports.length ? () => setCreating(false) : undefined}
                   onSave={async (body) => {

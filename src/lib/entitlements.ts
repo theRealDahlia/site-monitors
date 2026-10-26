@@ -20,8 +20,7 @@ export interface Entitlements {
   /** The Appearance settings on the Account page: the account's own logo, name, light or dark, and accent colour. */
   branding: boolean;
   /**
-   * How many more addresses, besides the account's own, can get alert emails. Agency, when it's added,
-   * gets 20.
+   * How many more addresses, besides the account's own, can get alert emails.
    */
   maxExtraEmails: number;
   /**
@@ -56,13 +55,19 @@ export interface Entitlements {
   healthScans: boolean;
   /** The weekly broken-link check, as part of the health scan. */
   brokenLinks: boolean;
+  /** Client groups: label sites by client, and give each client its own status page, branding and reports. */
+  clients: boolean;
+  /** Importing sites from a list, and changing many monitors at once. */
+  bulkTools: boolean;
 }
 
 export const ENTITLEMENTS = {
-  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, monitorKinds: ["site", "http"], branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: false, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 30, healthScans: false, brokenLinks: false },
-  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: true, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 90, healthScans: true, brokenLinks: false },
+  free: { name: "Free", maxMonitors: 5, uptimeEveryMs: 5 * MIN, integrations: false, statusPages: false, monitorKinds: ["site", "http"], branding: false, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: false, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 30, healthScans: false, brokenLinks: false, clients: false, bulkTools: false },
+  starter: { name: "Starter", maxMonitors: 25, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 5, addsPerHour: 10, maxEmailsPerDay: 40, aiVisibility: false, whiteLabel: false, statusSubscribers: false, alertRouting: true, escalation: false, reports: false, teamSeats: 0, apiAccess: false, historyDays: 90, healthScans: true, brokenLinks: false, clients: false, bulkTools: false },
   // Pro is everything in Starter with room for more, plus AI-visibility checks and white-label status pages.
-  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 3, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true },
+  pro: { name: "Pro", maxMonitors: 100, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 10, addsPerHour: 30, maxEmailsPerDay: 200, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 3, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true, clients: false, bulkTools: false },
+  // Agency is everything in Pro with room for 500 monitors and 20 team seats, plus client groups and bulk tools.
+  agency: { name: "Agency", maxMonitors: 500, uptimeEveryMs: MIN, integrations: true, statusPages: true, monitorKinds: ["site", "http", "tcp", "heartbeat"], branding: true, maxExtraEmails: 20, addsPerHour: 600, maxEmailsPerDay: 1000, aiVisibility: true, whiteLabel: true, statusSubscribers: true, alertRouting: true, escalation: true, reports: true, teamSeats: 20, apiAccess: true, historyDays: 365, healthScans: true, brokenLinks: true, clients: true, bulkTools: true },
 } as const satisfies Record<string, Entitlements>;
 
 /** Every plan there is. Adding a plan to ENTITLEMENTS adds it here, to the types and to the admin plan switcher. */

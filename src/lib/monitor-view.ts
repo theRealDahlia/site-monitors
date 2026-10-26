@@ -52,6 +52,8 @@ export function monitorView(m: MonitorRow, opts: { aiVisibility?: boolean; healt
     id: m.id,
     host: m.host,
     createdAt: m.created_at,
+    /** The client this monitor belongs to (Agency), or null. */
+    clientId: m.client_id,
     overall,
     kind: m.kind,
     /** Who gets this monitor's alerts, or null for everyone. */

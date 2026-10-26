@@ -1,6 +1,5 @@
 // The single source of truth for plans. The home page and the pricing page both read this, so they
-// can't disagree. Free, Starter and Pro can be had today; Agency is a plan we intend to offer and
-// can't be bought yet.
+// can't disagree. All four plans can be had today.
 
 export interface Plan {
   name: string;
@@ -62,15 +61,18 @@ export const PLANS: Plan[] = [
   {
     name: "Agency",
     price: 79,
-    summary: "500 monitors, client workspaces, more team seats",
+    summary: "500 monitors, client groups with their own pages, bulk tools, 20 seats",
     features: [
       "Up to 500 monitors",
       "Everything in Pro",
+      "Group your sites by client, and filter the Sites page by client",
+      "One status page per client covering all their sites, on the client's own domain if you like",
+      "Each client's own logo and colours on its status page and reports",
+      "Import hundreds of sites from a list, and change many monitors at once",
+      "20 team members with their own logins",
       "Alerts to up to 20 more email addresses",
-      "Separate workspaces for each client",
-      "More team seats",
     ],
-    available: false,
+    available: true,
   },
 ];
 
@@ -95,9 +97,10 @@ export const COMPARISON: { feature: string; values: (string | boolean)[] }[] = [
   { feature: "Weekly broken-link check", values: [false, false, true, true] },
   { feature: "AI-visibility checks", values: [false, false, true, true] },
   { feature: "Monthly client reports", values: [false, false, true, true] },
-  { feature: "Team members with their own logins", values: [false, false, "3", "More"] },
+  { feature: "Team members with their own logins", values: [false, false, "3", "20"] },
   { feature: "History", values: ["30 days", "90 days", "12 months", "12 months"] },
   { feature: "Download your data", values: [true, true, true, true] },
   { feature: "API", values: [false, false, true, true] },
-  { feature: "Client workspaces", values: [false, false, false, true] },
+  { feature: "Clients: group sites, with a status page and look for each", values: [false, false, false, true] },
+  { feature: "Import sites from a list, and bulk changes", values: [false, false, false, true] },
 ];

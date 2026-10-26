@@ -104,7 +104,10 @@ export function removeLogo(userId: number): void {
 
 export function getLogo(id: string): { bytes: Uint8Array; type: LogoType } | null {
   if (!LOGO_ID_PATTERN.test(id)) return null;
-  const row = db().prepare("SELECT logo, logo_type FROM branding WHERE logo_id = ?").get(id) as { logo: Uint8Array | null; logo_type: string | null } | undefined;
+  // An account's own logo, or one of its clients' (Agency).
+  const row = (db().prepare("SELECT logo, logo_type FROM branding WHERE logo_id = ?").get(id) ?? db().prepare("SELECT logo, logo_type FROM clients WHERE logo_id = ?").get(id)) as
+    | { logo: Uint8Array | null; logo_type: string | null }
+    | undefined;
   if (!row?.logo) return null;
   // Checked again on the way out, so only a real image of an allowed kind is ever served.
   const type = sniffImage(row.logo);

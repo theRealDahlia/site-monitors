@@ -1,7 +1,7 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
 import { appOrigin, billingConfigured, billingFor, ensureCustomer, isPaidPlan, priceIdFor, stripe } from "@/lib/billing";
 
-/** Starts paying for a plan: `{ plan: "starter" | "pro" }`. The response is the Stripe page to send the browser to. */
+/** Starts paying for a plan: `{ plan: "starter" | "pro" | "agency" }`. The response is the Stripe page to send the browser to. */
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: "Request blocked." }, { status: 403 });
   const user = currentUser(request);

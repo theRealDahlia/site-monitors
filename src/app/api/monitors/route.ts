@@ -1,4 +1,5 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
+import { assignMonitors, clientView, getClient, listClients } from "@/lib/clients";
 import { CheckError } from "@/lib/hostname";
 import { KIND_LABEL, isMonitorKind, parseMonitorRequest } from "@/lib/monitor-kinds";
 import { ALL_CHECKS, runChecks } from "@/lib/monitor-runner";
@@ -17,7 +18,8 @@ export async function GET(request: Request) {
   const plan = entitlementsFor(user.plan);
   return Response.json({
     email: user.email,
-    plan: { id: user.plan, name: plan.name, statusPages: plan.statusPages, integrations: plan.integrations, aiVisibility: plan.aiVisibility, monitorKinds: plan.monitorKinds },
+    plan: { id: user.plan, name: plan.name, statusPages: plan.statusPages, integrations: plan.integrations, aiVisibility: plan.aiVisibility, monitorKinds: plan.monitorKinds, clients: plan.clients, bulkTools: plan.bulkTools },
+    clients: listClients(user.id).map(clientView),
     limit: plan.maxMonitors,
     monitors: listMonitors(user.id).map((m) => monitorView(m, plan)),
     events: recentEvents(user.id, 50).map((e) => ({
@@ -64,8 +66,15 @@ export async function POST(request: Request) {
         { status: 403 },
       );
     }
+    // An optional client (Agency). Checked before anything is saved.
+    let clientId: number | null = null;
+    if (body.clientId !== undefined && body.clientId !== null && body.clientId !== "") {
+      clientId = Number(body.clientId);
+      if (!plan.clients || !Number.isInteger(clientId) || !getClient(clientId, user.id)) return Response.json({ error: "Choose one of your clients." }, { status: 400 });
+    }
     const id = insertMonitor(user.id, host, Date.now(), config);
     if (id === null) return Response.json({ error: `You already have a monitor for ${host}.` }, { status: 409 });
+    if (clientId !== null) assignMonitors(user.id, [id], clientId);
 
     // Confirm by email first, so it arrives before any alert the first checks might raise. A failed
     // send must never undo the monitor: it exists either way, and the dashboard shows it.

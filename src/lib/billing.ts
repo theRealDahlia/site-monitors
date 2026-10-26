@@ -6,7 +6,7 @@ import type { PlanId } from "./entitlements";
 // in applySubscription, which the signed webhook calls, never because a browser says it paid.
 
 /** The plans that can be bought, and the env var holding each one's Stripe price id. Free needs no payment. */
-const PRICE_ENV = { starter: "STRIPE_PRICE_STARTER", pro: "STRIPE_PRICE_PRO" } as const satisfies Partial<Record<PlanId, string>>;
+const PRICE_ENV = { starter: "STRIPE_PRICE_STARTER", pro: "STRIPE_PRICE_PRO", agency: "STRIPE_PRICE_AGENCY" } as const satisfies Partial<Record<PlanId, string>>;
 export type PaidPlanId = keyof typeof PRICE_ENV;
 
 export function isPaidPlan(value: unknown): value is PaidPlanId {

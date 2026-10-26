@@ -73,7 +73,7 @@ export default function Home() {
         <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
           <h2 className="text-2xl font-semibold tracking-tight">Pricing</h2>
           <p className="mt-2 text-sm text-muted">
-            Start free, and upgrade to Starter or Pro when you need more. Agency is planned.
+            Start free, and upgrade to Starter, Pro or Agency when you need more.
           </p>
           <p className="mt-3 text-sm">
             <Link href="/pricing" className="text-accent underline underline-offset-2">

@@ -1,5 +1,6 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import { brandingFor } from "./branding";
+import { clientBranding, getClient } from "./clients";
 import { db } from "./db";
 import { entitlementsFor } from "./entitlements";
 import { appUrl, sendMail } from "./mail";
@@ -28,6 +29,7 @@ interface ReportRow {
   enabled: number;
   last_sent_month: string | null;
   created_at: number;
+  client_id: number | null;
 }
 
 interface RecipientRow {
@@ -47,6 +49,8 @@ export interface ReportView {
   slaTarget: number;
   enabled: boolean;
   lastSentMonth: string | null;
+  /** The client whose logo, name and colours the report carries (Agency), or null for the account's own. */
+  clientId: number | null;
   recipients: { id: number; email: string; confirmed: boolean }[];
 }
 
@@ -69,6 +73,7 @@ function view(r: ReportRow): ReportView {
     slaTarget: r.sla_target,
     enabled: !!r.enabled,
     lastSentMonth: r.last_sent_month,
+    clientId: r.client_id,
     recipients: recipients.map((x) => ({ id: x.id, email: x.email, confirmed: x.confirmed_at !== null })),
   };
 }
@@ -85,7 +90,7 @@ export type Result<T> = { ok: true; value: T } | { ok: false; error: string; sta
 const fail = (error: string, status = 400) => ({ ok: false as const, error, status });
 
 /** Reads a report's settings from a request: a name, some of the account's monitors, and an uptime target. */
-function parseSettings(userId: number, input: Record<string, unknown>): Result<{ name: string; monitorIds: number[]; slaTarget: number }> {
+function parseSettings(userId: number, input: Record<string, unknown>): Result<{ name: string; monitorIds: number[]; slaTarget: number; clientId: number | null | undefined }> {
   const name = typeof input.name === "string" ? input.name.replace(/[\p{Cc}\p{Cf}]/gu, "").replace(/\s+/g, " ").trim() : "";
   if (!name) return fail("Give the report a name, like the client's company.");
   if (name.length > NAME_MAX) return fail(`Keep the name to ${NAME_MAX} characters or fewer.`);
@@ -94,7 +99,14 @@ function parseSettings(userId: number, input: Record<string, unknown>): Result<{
   if (monitorIds.length === 0) return fail("Choose at least one monitor for the report.");
   const slaTarget = Number(input.slaTarget);
   if (!Number.isFinite(slaTarget) || slaTarget < 1 || slaTarget > 100) return fail("Choose an uptime target between 1% and 100%.");
-  return { ok: true, value: { name, monitorIds, slaTarget: Math.round(slaTarget * 1000) / 1000 } };
+  // Whose look the report has: a client's (Agency), none for the account's own, or undefined to leave it as it is.
+  let clientId: number | null | undefined;
+  if (input.clientId === null || input.clientId === "") clientId = null;
+  else if (input.clientId !== undefined) {
+    clientId = Number(input.clientId);
+    if (!Number.isInteger(clientId) || !getClient(clientId, userId)) return fail("Choose one of your clients.");
+  }
+  return { ok: true, value: { name, monitorIds, slaTarget: Math.round(slaTarget * 1000) / 1000, clientId } };
 }
 
 export function createReport(userId: number, input: Record<string, unknown>, now = Date.now()): Result<ReportView> {
@@ -104,9 +116,9 @@ export function createReport(userId: number, input: Record<string, unknown>, now
   if (count >= MAX_REPORTS) return fail(`You can have up to ${MAX_REPORTS} reports.`, 409);
   const id = Number(
     db()
-      .prepare("INSERT INTO reports (user_id, name, monitor_ids, sla_target, created_at, last_sent_month) VALUES (?, ?, ?, ?, ?, ?)")
+      .prepare("INSERT INTO reports (user_id, name, monitor_ids, sla_target, created_at, last_sent_month, client_id) VALUES (?, ?, ?, ?, ?, ?, ?)")
       // A new report starts with next month's send: this month isn't over, and last month was before it existed.
-      .run(userId, s.value.name, JSON.stringify(s.value.monitorIds), s.value.slaTarget, now, previousMonth(now)).lastInsertRowid,
+      .run(userId, s.value.name, JSON.stringify(s.value.monitorIds), s.value.slaTarget, now, previousMonth(now), s.value.clientId ?? null).lastInsertRowid,
   );
   return { ok: true, value: view(getReport(userId, id)!) };
 }
@@ -117,7 +129,8 @@ export function updateReport(userId: number, id: number, input: Record<string, u
   const s = parseSettings(userId, input);
   if (!s.ok) return s;
   const enabled = input.enabled === undefined ? !!r.enabled : input.enabled === true;
-  db().prepare("UPDATE reports SET name = ?, monitor_ids = ?, sla_target = ?, enabled = ? WHERE id = ?").run(s.value.name, JSON.stringify(s.value.monitorIds), s.value.slaTarget, enabled ? 1 : 0, id);
+  const clientId = s.value.clientId === undefined ? r.client_id : s.value.clientId;
+  db().prepare("UPDATE reports SET name = ?, monitor_ids = ?, sla_target = ?, enabled = ?, client_id = ? WHERE id = ?").run(s.value.name, JSON.stringify(s.value.monitorIds), s.value.slaTarget, enabled ? 1 : 0, clientId, id);
   return { ok: true, value: view(getReport(userId, id)!) };
 }
 
@@ -143,7 +156,7 @@ export async function addRecipient(userId: number, accountEmail: string, reportI
     throw err;
   }
   const plan = (db().prepare("SELECT plan FROM users WHERE id = ?").get(userId) as { plan: string } | undefined)?.plan;
-  const brand = brandingFor(userId, plan).name ?? accountEmail;
+  const brand = clientBranding(r.client_id ? getClient(r.client_id, userId) : null, brandingFor(userId, plan)).name ?? accountEmail;
   try {
     await sendMail({
       to: email,
@@ -248,7 +261,8 @@ export function buildReport(userId: number, reportId: number, month: string, now
   const range = monthRange(month);
   if (!r || !range) return null;
   const owner = db().prepare("SELECT plan FROM users WHERE id = ?").get(userId) as { plan: string } | undefined;
-  const b = brandingFor(userId, owner?.plan ?? "free");
+  // A report can carry a client's own logo, name and colours, with the account's filling in whatever the client has none of.
+  const b = clientBranding(r.client_id ? getClient(r.client_id, userId) : null, brandingFor(userId, owner?.plan ?? "free"));
   const to = Math.min(range.to, now);
   const wanted = ids(r.monitor_ids);
   const monitors = (db().prepare(`SELECT * FROM monitors WHERE user_id = ?`).all(userId) as unknown as MonitorRow[]).filter((m) => wanted.includes(m.id));

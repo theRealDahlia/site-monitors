@@ -72,6 +72,7 @@ export interface MonitorRow {
   dns_baseline: string | null;
   links_alerted: string | null;
   security_alerted: string | null;
+  client_id: number | null;
 }
 
 export type MonitorUpdate = Partial<

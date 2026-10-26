@@ -203,7 +203,7 @@ function StatusPageControl({ m, allowed, onChanged }: { m: Monitor; allowed: boo
 
 
 /** Change the site's address, or stop watching it. */
-function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<void> }) {
+function SiteSettings({ m, clients, onChanged }: { m: Monitor; clients: { id: number; name: string }[]; onChanged: () => Promise<void> }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -211,6 +211,28 @@ function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<v
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   useAutoClear(notice, () => setNotice(null));
+
+  async function setClient(value: string) {
+    setBusy("saving");
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/monitors/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: [m.id], action: "client", clientId: value === "" ? null : Number(value) }),
+      });
+      const body = await res.json();
+      if (!res.ok) setError(body.error ?? "Something went wrong.");
+      else {
+        setNotice(value === "" ? "Taken out of its client." : "Client changed.");
+        await onChanged();
+      }
+    } catch {
+      setError("Couldn't reach the server. Try again.");
+    }
+    setBusy(undefined);
+  }
 
   async function save(fields: Record<string, unknown>) {
     setBusy("saving");
@@ -256,6 +278,27 @@ function SiteSettings({ m, onChanged }: { m: Monitor; onChanged: () => Promise<v
       <h2 id="settings-heading" className="font-semibold">
         Settings
       </h2>
+      {clients.length > 0 && !editing && (
+        <div className="mt-3 max-w-xs">
+          <label htmlFor="site-client" className="mb-1 block text-sm font-medium">
+            Client
+          </label>
+          <select
+            id="site-client"
+            value={m.clientId ?? ""}
+            onChange={(e) => setClient(e.target.value)}
+            disabled={busy !== undefined}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/30 disabled:opacity-60"
+          >
+            <option value="">No client</option>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       {editing ? (
         <EditForm m={m} busy={busy} onSave={save} onCancel={() => (setEditing(false), setError(null))} />
       ) : (
@@ -436,7 +479,7 @@ export default function SiteDetail() {
           )}
         </section>
 
-        <SiteSettings m={m} onChanged={reload} />
+        <SiteSettings m={m} clients={data.plan.clients ? data.clients : []} onChanged={reload} />
       </div>
     </div>
   );

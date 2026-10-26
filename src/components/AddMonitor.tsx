@@ -187,6 +187,7 @@ export default function AddMonitor({
   limit,
   planName,
   kinds,
+  clients = [],
   onAdded,
 }: {
   count: number;
@@ -194,11 +195,14 @@ export default function AddMonitor({
   planName: string;
   /** The kinds this plan can add. */
   kinds: string[];
+  /** The account's clients (Agency): a new monitor can be put under one. */
+  clients?: { id: number; name: string }[];
   onAdded: (message: string) => Promise<void>;
 }) {
   const [kind, setKind] = useState<Kind>("site");
   const [f, setF] = useState<MonitorFields>(EMPTY_FIELDS);
   const [adding, setAdding] = useState(false);
+  const [clientId, setClientId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const full = count >= limit;
   const allowed = kinds.includes(kind);
@@ -212,7 +216,7 @@ export default function AddMonitor({
       const res = await fetch("/api/monitors", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, ...fieldsBody(kind, f) }),
+        body: JSON.stringify({ kind, ...fieldsBody(kind, f), clientId: clientId || null }),
       });
       const body = await res.json();
       if (!res.ok) setError(body.error ?? "Something went wrong.");
@@ -264,6 +268,21 @@ export default function AddMonitor({
       {allowed ? (
         <form onSubmit={add} className="mt-4">
           <KindFields kind={kind} f={f} set={(patch) => setF((prev) => ({ ...prev, ...patch }))} disabled={full || adding} idPrefix="new" />
+          {clients.length > 0 && (
+            <div className="mt-3 max-w-xs">
+              <label htmlFor="new-client-pick" className={LABEL}>
+                Client <span className="font-normal text-muted">(optional)</span>
+              </label>
+              <select id="new-client-pick" value={clientId} onChange={(e) => setClientId(e.target.value)} disabled={full || adding} className={FIELD}>
+                <option value="">No client</option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <button
             type="submit"
             disabled={full || adding || !fieldsReady(kind, f)}

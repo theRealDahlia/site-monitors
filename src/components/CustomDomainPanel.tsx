@@ -63,13 +63,13 @@ function Findings({ dns, domain }: { dns: DnsCheck; domain: View }) {
 }
 
 /** "Your own domain" for a site's public status page (Pro): set it up, prove it's yours, point it at us. */
-export default function CustomDomainPanel({ monitorId }: { monitorId: number }) {
+export default function CustomDomainPanel({ monitorId, base: given }: { monitorId?: number; base?: string }) {
   const [state, setState] = useState<State | null>(null);
   const [dns, setDns] = useState<DnsCheck | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState<"set" | "check" | "remove" | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const base = `/api/monitors/${monitorId}/domain`;
+  const base = given ?? `/api/monitors/${monitorId}/domain`;
 
   useEffect(() => {
     let cancelled = false;

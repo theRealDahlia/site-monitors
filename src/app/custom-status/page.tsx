@@ -22,7 +22,7 @@ async function ForThisDomain() {
   const served = lookupVerifiedDomain(host);
   const plan = served && entitlementsFor(served.ownerPlan);
   // One answer for every reason there's nothing to show: not a connected domain, page switched off, or plan changed.
-  if (!served || !served.slug || !served.statusPublic || !plan?.whiteLabel || !plan.statusPages) notFound();
+  if (!served || !served.slug || !served.statusPublic || !plan?.whiteLabel || !plan.statusPages || (served.clientId !== null && !plan.clients)) notFound();
   return <StatusView slug={served.slug} customDomain />;
 }
 

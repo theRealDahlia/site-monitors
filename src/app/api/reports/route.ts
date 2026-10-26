@@ -1,5 +1,6 @@
 import { currentUser, sameOrigin } from "@/lib/auth";
 import { entitlementsFor } from "@/lib/entitlements";
+import { clientView, listClients } from "@/lib/clients";
 import { listMonitors } from "@/lib/monitors-db";
 import { createReport, listReports, previousMonth, reportPath } from "@/lib/reports";
 
@@ -11,7 +12,9 @@ export async function GET(request: Request) {
   return Response.json({
     allowed: entitlementsFor(user.plan).reports,
     month,
-    monitors: listMonitors(user.id).map((m) => ({ id: m.id, host: m.host, kind: m.kind })),
+    monitors: listMonitors(user.id).map((m) => ({ id: m.id, host: m.host, kind: m.kind, clientId: m.client_id })),
+    // Clients (Agency), whose logo and colours a report can carry.
+    clients: entitlementsFor(user.plan).clients ? listClients(user.id).map(clientView).map((c) => ({ id: c.id, name: c.name })) : [],
     reports: listReports(user.id).map((r) => ({ ...r, preview: reportPath(r.id, month) })),
   });
 }

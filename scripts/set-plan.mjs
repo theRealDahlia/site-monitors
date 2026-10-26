@@ -10,7 +10,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 
-const PLANS = ["free", "starter", "pro"];
+const PLANS = ["free", "starter", "pro", "agency"];
 const [email, plan] = process.argv.slice(2);
 
 if (!email || !PLANS.includes(plan)) {

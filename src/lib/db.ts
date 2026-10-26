@@ -236,7 +236,9 @@ const SCHEMA = `
   CREATE TABLE IF NOT EXISTS custom_domains (
     id          INTEGER PRIMARY KEY,
     user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    monitor_id  INTEGER NOT NULL UNIQUE REFERENCES monitors(id) ON DELETE CASCADE,
+    -- The page the domain shows: one site's status page, or (Agency) one client's. Exactly one of the two is set.
+    monitor_id  INTEGER UNIQUE REFERENCES monitors(id) ON DELETE CASCADE,
+    client_id   INTEGER UNIQUE REFERENCES clients(id) ON DELETE CASCADE,
     domain      TEXT    NOT NULL,
     -- Goes in a DNS TXT record to prove control. Not a password: anyone who can read the owner's DNS can read it.
     token       TEXT    NOT NULL,
@@ -310,6 +312,25 @@ const SCHEMA = `
   -- Text and call alerts were removed.
   DROP TABLE IF EXISTS phone_usage;
   DROP TABLE IF EXISTS phones;
+
+  -- An agency's clients (Agency). A monitor can belong to one; a client can have its own status page, look and reports.
+  CREATE TABLE IF NOT EXISTS clients (
+    id            INTEGER PRIMARY KEY,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name          TEXT    NOT NULL,
+    created_at    INTEGER NOT NULL,
+    -- The client's own look on its status page and reports. Empty means the account's.
+    brand_name    TEXT,
+    accent        TEXT,
+    logo          BLOB,
+    logo_type     TEXT,
+    logo_id       TEXT UNIQUE,
+    -- One public status page covering all of the client's monitors, at a random address like a site's.
+    status_public INTEGER NOT NULL DEFAULT 0,
+    status_slug   TEXT,
+    UNIQUE (user_id, name COLLATE NOCASE)
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS clients_slug ON clients(status_slug) WHERE status_slug IS NOT NULL;
 
   -- Monthly reports for clients (Pro): which monitors, the uptime target, and who gets it.
   CREATE TABLE IF NOT EXISTS reports (
@@ -445,6 +466,7 @@ function migrate(conn: DatabaseSync) {
     ["dns_baseline", "TEXT"],
     ["links_alerted", "TEXT"],
     ["security_alerted", "TEXT"],
+    ["client_id", "INTEGER REFERENCES clients(id) ON DELETE SET NULL"],
   ]) {
     if (!has("monitors", column)) conn.exec(`ALTER TABLE monitors ADD COLUMN ${column} ${type}`);
   }
@@ -457,6 +479,37 @@ function migrate(conn: DatabaseSync) {
   if (!(conn.prepare("SELECT 1 FROM uptime_daily LIMIT 1").get()) && conn.prepare("SELECT 1 FROM uptime_hourly LIMIT 1").get()) {
     conn.exec(`INSERT OR IGNORE INTO uptime_daily (monitor_id, day, total, ok, ms_sum, ms_n)
                SELECT monitor_id, (hour / 86400000) * 86400000, SUM(total), SUM(ok), SUM(ms_sum), SUM(ms_n) FROM uptime_hourly GROUP BY monitor_id, hour / 86400000`);
+  }
+
+  if (!has("reports", "client_id")) conn.exec("ALTER TABLE reports ADD COLUMN client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL");
+
+  // A custom domain used to belong to a monitor only. Rebuild the table so it can belong to a client instead.
+  if (!has("custom_domains", "client_id")) {
+    conn.exec("BEGIN");
+    try {
+      conn.exec(`CREATE TABLE custom_domains_new (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        monitor_id INTEGER UNIQUE REFERENCES monitors(id) ON DELETE CASCADE,
+        client_id INTEGER UNIQUE REFERENCES clients(id) ON DELETE CASCADE,
+        domain TEXT NOT NULL,
+        token TEXT NOT NULL,
+        verified_at INTEGER,
+        last_check_at INTEGER,
+        fail_count INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL
+      )`);
+      conn.exec(`INSERT INTO custom_domains_new (id, user_id, monitor_id, domain, token, verified_at, last_check_at, fail_count, created_at)
+                 SELECT id, user_id, monitor_id, domain, token, verified_at, last_check_at, fail_count, created_at FROM custom_domains`);
+      conn.exec("DROP TABLE custom_domains");
+      conn.exec("ALTER TABLE custom_domains_new RENAME TO custom_domains");
+      conn.exec("CREATE UNIQUE INDEX IF NOT EXISTS custom_domains_verified ON custom_domains(domain) WHERE verified_at IS NOT NULL");
+      conn.exec("CREATE INDEX IF NOT EXISTS custom_domains_domain ON custom_domains(domain)");
+      conn.exec("COMMIT");
+    } catch (err) {
+      conn.exec("ROLLBACK");
+      throw err;
+    }
   }
 
   // Older notifications were tied to their monitor and deleted with it. Rebuild the table so they keep
