@@ -29,7 +29,10 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Things you add to your account:</strong> a logo and brand colours, status page updates you write, API keys (stored hashed), and Slack or Discord connections.
-            The tokens that let us post to Slack or Discord are stored encrypted.
+            The tokens that let us post to Slack or Discord are stored encrypted. On plans with clients, this includes your clients&apos; names, logos and brand colours, and the sites you group under them.
+          </li>
+          <li>
+            <strong>Messages you send us:</strong> what you write in the contact form, with the email address on your account so we can reply.
           </li>
           <li>
             <strong>Payment details:</strong> if you buy a paid plan, Stripe collects your card details. We never see or store your card number. We keep your Stripe customer and
@@ -38,6 +41,7 @@ export default function PrivacyPage() {
           <li>
             <strong>Technical information:</strong> your IP address and the time of requests, used to limit abuse and keep the service running, and the sign-in cookie
             described below. If you use the free SSL or domain checkers without an account, we see the address you check and your IP address, which is how we apply the daily limit.
+            When something breaks, we may receive a short technical report, such as the error, the page it happened on and the type of browser, so we can fix it.
           </li>
         </ul>
       </Section>
@@ -74,10 +78,22 @@ export default function PrivacyPage() {
           <li>
             <strong>Slack and Discord</strong>, if you connect them, receive the alerts you choose to send there.
           </li>
+          <li>
+            <strong>Umami</strong>, our website analytics service, if switched on, counts visits to our public pages, such as which pages are read and which sites link to us. It sets no cookies and
+            doesn&apos;t build profiles of people.
+          </li>
         </ul>
         <p>
           We may also share information if the law requires it, or to protect the service and its users. If the business is ever sold or merged, information may move with it, and we&apos;d tell
           you first.
+        </p>
+      </Section>
+
+      <Section heading="If you give us other people's information">
+        <p>
+          If you add your clients&apos; or colleagues&apos; details, such as email addresses for alerts and reports, their names and logos, or the sites you monitor for them, you&apos;re the one deciding why and how that
+          information is used, and we handle it on your behalf to run the service. Please make sure you have the right to give it to us, and that the people involved know you use a service like this. If your
+          own clients or local law need a data processing agreement, email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and we&apos;ll provide one.
         </p>
       </Section>
 

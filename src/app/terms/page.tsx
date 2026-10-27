@@ -37,6 +37,8 @@ export default function TermsPage() {
           <li>Use the service to attack, overload or probe anyone&apos;s systems, or to send spam or abusive messages.</li>
           <li>Try to get around plan limits, rate limits or security, or interfere with how the service works.</li>
           <li>Upload or publish anything unlawful, misleading or that infringes someone else&apos;s rights, including on a status page.</li>
+          <li>Add a client&apos;s name, logo or other details, or publish a status page or report for them, without their permission.</li>
+          <li>Use the API or the checkers in a way that puts an unreasonable load on the service. We may limit requests that do.</li>
           <li>Resell the service or its data to others, except as a plan such as Pro or Agency allows (for example, status pages and reports for your own clients).</li>
         </ul>
         <p>We may limit or suspend an account that breaks these rules or puts the service or other people at risk.</p>

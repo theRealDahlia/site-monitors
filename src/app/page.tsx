@@ -4,6 +4,7 @@ import Link from "next/link";
 import SslChecker from "@/components/SslChecker";
 import AlertsCta from "@/components/AlertsCta";
 import { Footer, Header } from "@/components/SiteChrome";
+import ProductPreview from "@/components/ProductPreview";
 import { PLANS } from "@/lib/plans";
 
 // The title and description come from the site-wide defaults. Only the canonical address is set here.
@@ -20,11 +21,30 @@ const FEATURES = [
   },
   {
     title: "Uptime checks",
-    body: "Every site is checked every 5 minutes. We double-check before emailing you, so a single hiccup doesn't wake anyone, and we email again when it's back.",
+    body: "Every site is checked every 5 minutes on Free and every minute on paid plans. We double-check before emailing you, so a single hiccup doesn't wake anyone, and we email again when it's back.",
   },
   {
     title: "One dashboard",
     body: "See every site's uptime, certificate and domain status in one place, and add, edit or remove sites whenever you like.",
+  },
+];
+
+const AGENCY_FEATURES = [
+  {
+    title: "A status page for every client",
+    body: "Share a public page with each client, with their logo and colours, on their own domain. One page can cover all of a client's sites.",
+  },
+  {
+    title: "Monthly reports",
+    body: "Send each client a monthly uptime report against a target you set, with your branding, that they can save as a PDF.",
+  },
+  {
+    title: "Cron jobs and backups",
+    body: "Heartbeat monitors alert you when a scheduled job or backup stops running, which an uptime check can't see.",
+  },
+  {
+    title: "A daily health scan",
+    body: "Catch missing security headers, a missing or weak email setup (SPF and DMARC) and DNS changes before they cause a problem.",
   },
 ];
 
@@ -61,6 +81,23 @@ export default function Home() {
             </p>
             <div className="mt-10 grid gap-8 sm:grid-cols-2">
               {FEATURES.map((f) => (
+                <div key={f.title}>
+                  <h3 className="font-semibold">{f.title}</h3>
+                  <p className="mt-1.5 text-sm text-muted">{f.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <ProductPreview />
+
+        <section className="border-y border-border bg-surface">
+          <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+            <h2 className="text-2xl font-semibold tracking-tight">Built for the way agencies work</h2>
+            <p className="mt-3 max-w-2xl text-muted">Group sites by client, then give each client its own page, report and look. Larger plans add a team, an API and more.</p>
+            <div className="mt-10 grid gap-8 sm:grid-cols-2">
+              {AGENCY_FEATURES.map((f) => (
                 <div key={f.title}>
                   <h3 className="font-semibold">{f.title}</h3>
                   <p className="mt-1.5 text-sm text-muted">{f.body}</p>
