@@ -4,7 +4,9 @@ import Link from "next/link";
 import DomainChecker from "@/components/DomainChecker";
 import AlertsCta from "@/components/AlertsCta";
 import Faq, { type FaqItem } from "@/components/Faq";
+import JsonLd from "@/components/JsonLd";
 import { Footer, Header } from "@/components/SiteChrome";
+import { toolSchema } from "@/lib/schema";
 
 export const metadata: Metadata = {
   title: "Free Domain Expiry Checker",
@@ -45,6 +47,7 @@ export default function DomainCheckerPage() {
     <>
       <Header />
       <SignedInRedirect />
+      <JsonLd data={toolSchema("Free Domain Expiry Checker", "/domain-checker", "Check when any domain name expires, with the registrar, registration date, nameservers and status codes.")} />
       <main className="mx-auto w-full max-w-3xl px-4 py-14 sm:px-6">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Free domain expiry checker

@@ -4,7 +4,9 @@ import Link from "next/link";
 import SslChecker from "@/components/SslChecker";
 import AlertsCta from "@/components/AlertsCta";
 import Faq, { type FaqItem } from "@/components/Faq";
+import JsonLd from "@/components/JsonLd";
 import { Footer, Header } from "@/components/SiteChrome";
+import { toolSchema } from "@/lib/schema";
 
 export const metadata: Metadata = {
   title: "Free SSL Certificate Checker",
@@ -45,6 +47,7 @@ export default function SslCheckerPage() {
     <>
       <Header />
       <SignedInRedirect />
+      <JsonLd data={toolSchema("Free SSL Certificate Checker", "/ssl-checker", "Check any website's SSL certificate: expiry date, issuer, certificate chain and hostname match.")} />
       <main className="mx-auto w-full max-w-3xl px-4 py-14 sm:px-6">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Free SSL certificate checker

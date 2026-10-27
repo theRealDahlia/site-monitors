@@ -3,7 +3,10 @@ import SignedInRedirect from "@/components/SignedInRedirect";
 import Link from "next/link";
 import SslChecker from "@/components/SslChecker";
 import AlertsCta from "@/components/AlertsCta";
+import JsonLd from "@/components/JsonLd";
 import { Footer, Header } from "@/components/SiteChrome";
+import { GUIDES } from "@/lib/guides";
+import { homeSchema } from "@/lib/schema";
 import ProductPreview from "@/components/ProductPreview";
 import { PLANS } from "@/lib/plans";
 
@@ -53,6 +56,7 @@ export default function Home() {
     <>
       <Header />
       <SignedInRedirect />
+      <JsonLd data={homeSchema()} />
       <main>
         <section className="mx-auto max-w-5xl px-4 pb-16 pt-14 sm:px-6 sm:pt-20">
           <p className="text-sm font-medium text-accent">For agencies and freelancers</p>
@@ -134,6 +138,21 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6" aria-labelledby="guides-heading">
+          <h2 id="guides-heading" className="text-2xl font-semibold tracking-tight">
+            Guides for people who look after websites
+          </h2>
+          <ul className="mt-6 grid gap-x-8 gap-y-3 sm:grid-cols-2">
+            {GUIDES.map((g) => (
+              <li key={g.slug}>
+                <Link href={`/guides/${g.slug}`} className="text-accent underline underline-offset-2 hover:opacity-80">
+                  {g.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section className="border-t border-border bg-surface">

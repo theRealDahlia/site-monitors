@@ -6,4 +6,4 @@
 export const SITE_URL = process.env.APP_URL?.trim().replace(/\/$/, "") || "https://site-monitors.net";
 
 /** When the site's pages last changed in a way worth telling search engines (an ISO date). */
-export const SITE_UPDATED = "2026-10-16";
+export const SITE_UPDATED = "2026-10-26";

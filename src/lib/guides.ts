@@ -35,7 +35,7 @@ export const GUIDES: Guide[] = [
       "Visitors see a security warning because your SSL certificate has expired. How to confirm it, renew it for your setup, check it worked, and stop it happening again.",
     updated: "2026-10-16",
     minutes: 6,
-    related: ["lets-encrypt-renewal-failed", "47-day-ssl-certificates"],
+    related: ["lets-encrypt-renewal-failed", "47-day-ssl-certificates", "monitor-client-websites"],
     blocks: [
       {
         type: "p",
@@ -110,7 +110,7 @@ export const GUIDES: Guide[] = [
       "Find any domain's expiry date in seconds, what happens after it passes, and why auto-renew still lets domains lapse. Includes a command-line method.",
     updated: "2026-10-16",
     minutes: 5,
-    related: ["ssl-certificate-expired", "47-day-ssl-certificates"],
+    related: ["ssl-certificate-expired", "47-day-ssl-certificates", "monitor-client-websites", "check-spf-dkim-dmarc"],
     blocks: [
       {
         type: "p",
@@ -185,7 +185,7 @@ export const GUIDES: Guide[] = [
       "Maximum SSL certificate lifetimes are shrinking from 398 days to 47 by 2029. The schedule, who it affects, and how to avoid expired-certificate outages.",
     updated: "2026-10-16",
     minutes: 6,
-    related: ["lets-encrypt-renewal-failed", "ssl-certificate-expired"],
+    related: ["lets-encrypt-renewal-failed", "ssl-certificate-expired", "monitor-client-websites"],
     blocks: [
       {
         type: "p",
@@ -266,7 +266,7 @@ export const GUIDES: Guide[] = [
       "Certbot couldn't renew your Let's Encrypt certificate. How to find the error, the most common causes, and how to make sure renewals keep working.",
     updated: "2026-10-16",
     minutes: 7,
-    related: ["ssl-certificate-expired", "47-day-ssl-certificates"],
+    related: ["ssl-certificate-expired", "47-day-ssl-certificates", "monitor-cron-jobs-heartbeat"],
     blocks: [
       {
         type: "p",

@@ -5,6 +5,8 @@ import { Footer, Header } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "Log in",
+  // Nothing here for search results: the page only exists to sign in.
+  robots: { index: false },
 };
 
 export default function LoginPage() {
