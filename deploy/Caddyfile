@@ -15,6 +15,13 @@ www.site-monitors.net {
 	redir https://site-monitors.net{uri} permanent
 }
 
+# Without this, http://www first redirects to https://www (Caddy's automatic redirect) and then to the main address:
+# two hops, which search engines follow less willingly. Naming the http:// address turns the automatic one off for
+# this host, so it goes straight to https://site-monitors.net in one.
+http://www.site-monitors.net {
+	redir https://site-monitors.net{uri} permanent
+}
+
 # Customers' own domains, like status.theircompany.com. Any other host name that reaches this server gets a
 # certificate only if the app approves it above, and is then served that customer's status page and nothing else.
 https:// {
