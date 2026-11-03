@@ -2,7 +2,8 @@ import { currentUser, sameOrigin } from "@/lib/auth";
 import { assignMonitors, cleanClientName, findOrCreateClient, getClient } from "@/lib/clients";
 import { CheckError } from "@/lib/hostname";
 import { entitlementsFor } from "@/lib/entitlements";
-import { parseMonitorRequest } from "@/lib/monitor-kinds";
+import { readImportLine, isHeaderRow, type ImportKind } from "@/lib/import-lines";
+import { KIND_LABEL, parseMonitorRequest } from "@/lib/monitor-kinds";
 import { countMonitors, insertMonitor } from "@/lib/monitors-db";
 import { countInWindow, record } from "@/lib/rate-limit";
 
@@ -10,12 +11,14 @@ const HOUR_MS = 60 * 60 * 1000;
 const MAX_LINES = 500;
 const BATCH = 10;
 
-type Parsed = { line: string; clientName: string | null; host: string; config: Awaited<ReturnType<typeof parseMonitorRequest>>["config"] } | { line: string; error: string };
+type Parsed =
+  | { line: string; kind: ImportKind; clientName: string | null; host: string; config: Awaited<ReturnType<typeof parseMonitorRequest>>["config"] }
+  | { line: string; error: string };
 
 /**
- * Adds many whole sites from a list: `{ text, clientId? }`. One site per line, as a domain or address, with an optional
- * client name after a comma or tab (a client that doesn't exist yet is made). Sites are checked within a few minutes,
- * and no confirmation email is sent for each.
+ * Adds many monitors from a list: `{ text, clientId? }`. One monitor per line: a site, a page, a port or a heartbeat
+ * (see import-lines.ts for the format, where every line starts with its kind), with an optional client name (a client
+ * that doesn't exist yet is made). Monitors are checked within a few minutes, and no confirmation email is sent for each.
  */
 export async function POST(request: Request) {
   if (!sameOrigin(request)) return Response.json({ error: "Request blocked." }, { status: 403 });
@@ -30,7 +33,7 @@ export async function POST(request: Request) {
   } catch {
     return Response.json({ error: "Invalid request." }, { status: 400 });
   }
-  if (typeof body?.text !== "string" || body.text.length > 100_000) return Response.json({ error: "Paste a list of sites." }, { status: 400 });
+  if (typeof body?.text !== "string" || body.text.length > 100_000) return Response.json({ error: "Paste a list of monitors." }, { status: 400 });
   const defaultClient = body.clientId === null || body.clientId === undefined ? null : Number(body.clientId);
   if (defaultClient !== null && (!Number.isInteger(defaultClient) || !getClient(defaultClient, user.id))) return Response.json({ error: "Client not found." }, { status: 404 });
 
@@ -38,27 +41,29 @@ export async function POST(request: Request) {
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean);
-  // A header row like "domain,client" is skipped.
-  if (lines.length && /^(host|hostname|domain|site|url|address)\b/i.test(lines[0])) lines.shift();
-  if (lines.length === 0) return Response.json({ error: "Paste a list of sites." }, { status: 400 });
-  if (lines.length > MAX_LINES) return Response.json({ error: `Import up to ${MAX_LINES} sites at a time.` }, { status: 400 });
+  // A header row like "domain,client" or "type,target,client" is skipped.
+  if (lines.length && isHeaderRow(lines[0])) lines.shift();
+  if (lines.length === 0) return Response.json({ error: "Paste a list of monitors." }, { status: 400 });
+  if (lines.length > MAX_LINES) return Response.json({ error: `Import up to ${MAX_LINES} monitors at a time.` }, { status: 400 });
 
   const rateKey = `monitor-add:${user.id}`;
   if (countInWindow(rateKey, HOUR_MS) + lines.length > plan.addsPerHour) return Response.json({ error: "You're adding monitors too quickly. Try again later." }, { status: 429 });
 
-  const added: { host: string; client: string | null }[] = [];
+  const added: { host: string; kind: ImportKind; client: string | null }[] = [];
   const skipped: { line: string; reason: string }[] = [];
   let room = plan.maxMonitors - countMonitors(user.id);
   const seen = new Set<string>();
 
   for (let i = 0; i < lines.length; i += BATCH) {
     const batch = lines.slice(i, i + BATCH);
-    // Looking each site up takes a moment, so a few at a time.
+    // Looking each address up takes a moment, so a few at a time.
     const parsed = await Promise.all(
       batch.map(async (line): Promise<Parsed> => {
-        const [address, clientName] = line.split(/[,\t]/).map((p) => p.trim());
+        const read = readImportLine(line);
+        if ("error" in read) return { line, error: read.error };
+        if (!plan.monitorKinds.includes(read.kind)) return { line, error: `${KIND_LABEL[read.kind]} monitors aren't part of your plan.` };
         try {
-          return { line, clientName: clientName || null, ...(await parseMonitorRequest("site", { host: address ?? "" })) };
+          return { line, kind: read.kind, clientName: read.clientName, ...(await parseMonitorRequest(read.kind, read.body)) };
         } catch (err) {
           return { line, error: err instanceof CheckError ? err.message : "Couldn't add that one." };
         }
@@ -99,8 +104,9 @@ export async function POST(request: Request) {
         assignMonitors(user.id, [id], clientId);
         clientLabel ??= getClient(clientId, user.id)?.name ?? null;
       }
-      added.push({ host: p.host, client: clientLabel });
+      added.push({ host: p.host, kind: p.kind, client: clientLabel });
     }
   }
-  return Response.json({ added: added.length, skipped }, { status: added.length ? 201 : 200 });
+  const heartbeats = added.filter((a) => a.kind === "heartbeat").length;
+  return Response.json({ added: added.length, heartbeats, skipped }, { status: added.length ? 201 : 200 });
 }
