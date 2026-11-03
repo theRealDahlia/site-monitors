@@ -122,7 +122,7 @@ export default function Home() {
 
         <section className="border-y border-border bg-surface">
           <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-            <h2 className="text-2xl font-semibold tracking-tight">Why this keeps happening</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Why SSL certificates keep expiring</h2>
             <p className="mt-3 max-w-2xl text-muted">
               Certificate lifetimes are shrinking in stages, to 47 days by 2029. That means far more
               renewals per year across every site you manage, and far more chances for one to be
@@ -189,7 +189,7 @@ export default function Home() {
         </section>
 
         <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight">Pricing</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Pricing: free for 5 sites, paid plans from $9/month</h2>
           <p className="mt-2 text-sm text-muted">
             Start free, and upgrade to Starter, Pro or Agency when you need more.
           </p>

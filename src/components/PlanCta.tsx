@@ -27,7 +27,7 @@ export default function PlanCta({ plan }: { plan?: string }) {
   const label = email ? (paid ? "Choose this plan" : "Open your dashboard") : paid ? `Sign up, then choose ${plan![0].toUpperCase()}${plan!.slice(1)}` : "Create a free account";
   return (
     <Link
-      href={email ? (paid ? "/dashboard/plans" : "/dashboard") : "/signup"}
+      href={email ? (paid ? "/dashboard/plans" : "/dashboard") : paid ? "/signup?next=/dashboard/plans" : "/signup"}
       className="block rounded-lg bg-accent px-4 py-2.5 text-center text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
     >
       {label}

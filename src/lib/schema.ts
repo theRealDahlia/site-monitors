@@ -35,6 +35,15 @@ export function homeSchema() {
   };
 }
 
+/** The trail to a page, such as Home > Pricing. `path` is "" for the home page. */
+export function breadcrumbSchema(trail: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name, item: `${SITE_URL}${t.path}` })),
+  };
+}
+
 /** A free tool page, such as the SSL checker. */
 export function toolSchema(name: string, path: string, description: string) {
   return {

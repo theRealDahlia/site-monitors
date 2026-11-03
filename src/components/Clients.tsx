@@ -302,7 +302,7 @@ export default function Clients() {
             <li>Put each site under a client, and filter and group the Sites page by client</li>
             <li>One status page per client covering all their sites, even on the client&apos;s own domain</li>
             <li>The client&apos;s own logo and colours on its status page and reports</li>
-            <li>Import hundreds of sites at once, and change many monitors in one go</li>
+            <li>Import hundreds of sites, pages, ports and heartbeats at once, and change many monitors in one go</li>
           </ul>
           <Link href="/dashboard/plans" className="mt-4 inline-block rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:opacity-90">
             See the plans

@@ -33,5 +33,15 @@ const MORE: FaqItem = {
 };
 
 
-export const PRICING_FAQ: FaqItem[] = [FREE, SITE, EMAILS, CHECKERS, PAY, MORE];
+const SWITCH: FaqItem = {
+  q: "Can I switch plans later?",
+  a: "Yes, any time. Change plan or cancel from your Plans page and it takes effect at once, with the unused days refunded to your card. Your monitors stay as they are, as long as they fit the plan you move to.",
+};
+
+const MONITOR: FaqItem = {
+  q: "What counts as a monitor?",
+  a: "Each thing you watch is one monitor: a whole site, a single page (with an optional keyword check), a port, or a cron job's heartbeat. Free covers sites and pages. Starter and above add ports and heartbeats. They all count towards your plan's limit.",
+};
+
+export const PRICING_FAQ: FaqItem[] = [FREE, SITE, MONITOR, EMAILS, CHECKERS, PAY, SWITCH, MORE];
 export const HOME_FAQ: FaqItem[] = [FREE, SITE, EMAILS, CHECKERS, PAY];

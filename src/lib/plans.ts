@@ -73,7 +73,7 @@ export const PLANS: Plan[] = [
       "Group your sites by client, and filter the Sites page by client",
       "One status page per client covering all their sites, on the client's own domain if you like",
       "Each client's own logo and colours on its status page and reports",
-      "Import hundreds of sites from a list, and change many monitors at once",
+      "Import hundreds of sites, pages, ports and heartbeats from a list, and change many monitors at once",
       "20 team members with their own logins",
       "Alerts to up to 20 more email addresses",
     ],
