@@ -29,7 +29,7 @@ const PAY: FaqItem = {
 
 const MORE: FaqItem = {
   q: "What happens if I want more than 5 sites?",
-  a: "You'll need to remove a site before adding another. Starter (25 sites) and Pro (100 sites) have higher limits.",
+  a: "You'll need to remove a site, or move to a bigger plan: Starter watches up to 25 sites, Pro 100 and Agency 500.",
 };
 
 

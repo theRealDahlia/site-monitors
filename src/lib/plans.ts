@@ -9,6 +9,8 @@ export interface Plan {
   /** The longer list for the pricing page. */
   features: string[];
   available: boolean;
+  /** Gets a "Recommended" badge and a stronger outline on the home and pricing pages. Set it on one plan. */
+  recommended?: boolean;
 }
 
 export const PLANS: Plan[] = [
@@ -29,6 +31,7 @@ export const PLANS: Plan[] = [
   {
     name: "Starter",
     price: 9,
+    recommended: true,
     summary: "25 monitors, 1-minute checks, status pages, Slack and Discord",
     features: [
       "Up to 25 monitors, including ports and cron job heartbeats",

@@ -8,7 +8,7 @@ import { PRICING_FAQ as FAQ } from "@/lib/faq";
 import { PLANS } from "@/lib/plans";
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "Pricing: Free for 5 Sites, Plans from $9/mo",
   alternates: { canonical: "/pricing" },
   description:
     "Watch up to 5 sites for free, with uptime, SSL certificate and domain expiry checks and email alerts. Starter and Pro give you more sites, 1-minute checks and status pages.",
@@ -18,11 +18,11 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <>
-      <Header />
+      <Header guest />
       <SignedInRedirect to="/dashboard/plans" />
       <main>
         <section className="mx-auto max-w-5xl px-4 pb-6 pt-14 sm:px-6 sm:pt-20">
-          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">Free to start, with room to grow.</h1>
+          <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">Simple pricing: free for 5 sites, plans from $9/month</h1>
           <p className="mt-5 max-w-2xl text-lg text-muted">
             Watch up to 5 sites for free, with uptime, SSL certificate and domain expiry checks and email alerts. The paid
             plans below are for people who watch more sites.
@@ -37,17 +37,15 @@ export default function PricingPage() {
             {PLANS.map((p) => (
               <div
                 key={p.name}
-                className={`flex flex-col rounded-xl border bg-surface p-5 ${p.available ? "border-accent" : "border-border"}`}
+                className={`flex flex-col rounded-xl border bg-surface p-5 ${p.recommended ? "border-accent ring-2 ring-accent/30" : "border-border"}`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="text-lg font-semibold">{p.name}</h3>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      p.available ? "bg-ok-bg text-ok" : "border border-border text-muted"
-                    }`}
-                  >
-                    {p.available ? "Available now" : "Planned"}
-                  </span>
+                  {p.recommended ? (
+                    <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">Recommended</span>
+                  ) : (
+                    !p.available && <span className="rounded-full border border-border px-2.5 py-0.5 text-xs font-medium text-muted">Planned</span>
+                  )}
                 </div>
                 <p className="mt-3 text-4xl font-semibold tracking-tight">
                   ${p.price}

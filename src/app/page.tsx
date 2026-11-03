@@ -200,12 +200,14 @@ export default function Home() {
           </p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PLANS.map((p) => (
-              <div key={p.name} className="flex flex-col rounded-xl border border-border bg-surface p-5">
+              <div key={p.name} className={`flex flex-col rounded-xl border bg-surface p-5 ${p.recommended ? "border-accent ring-2 ring-accent/30" : "border-border"}`}>
                 <div className="flex items-center justify-between gap-2">
                   <h3 className="font-semibold">{p.name}</h3>
-                  <span className={`rounded-full px-2 py-0.5 text-xs ${p.available ? "bg-ok-bg text-ok" : "border border-border text-muted"}`}>
-                    {p.available ? "Available now" : "Planned"}
-                  </span>
+                  {p.recommended ? (
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">Recommended</span>
+                  ) : (
+                    !p.available && <span className="rounded-full border border-border px-2 py-0.5 text-xs text-muted">Planned</span>
+                  )}
                 </div>
                 <p className="mt-2 text-3xl font-semibold tracking-tight">
                   ${p.price}

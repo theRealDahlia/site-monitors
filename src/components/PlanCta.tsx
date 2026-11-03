@@ -23,7 +23,8 @@ export default function PlanCta({ plan }: { plan?: string }) {
   }, []);
 
   const paid = Boolean(plan);
-  const label = email ? (paid ? "Choose this plan" : "Open your dashboard") : paid ? "Sign up to subscribe" : "Create a free account";
+  // The plan is picked on the Plans page once there is an account, so the button says that.
+  const label = email ? (paid ? "Choose this plan" : "Open your dashboard") : paid ? `Sign up, then choose ${plan![0].toUpperCase()}${plan!.slice(1)}` : "Create a free account";
   return (
     <Link
       href={email ? (paid ? "/dashboard/plans" : "/dashboard") : "/signup"}
