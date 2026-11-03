@@ -3,7 +3,7 @@ import AuthNav from "@/components/AuthNav";
 import LogoMark from "@/components/LogoMark";
 import { BRAND } from "@/lib/brand";
 
-export function Header() {
+export function Header({ guest = false }: { guest?: boolean }) {
   return (
     <header className="border-b border-border">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
@@ -12,16 +12,16 @@ export function Header() {
           {BRAND}
         </Link>
         <nav className="flex items-center gap-2.5 whitespace-nowrap text-sm text-muted sm:gap-5">
-          <Link href="/ssl-checker" className="hover:text-foreground">
+          <Link href="/ssl-checker" className="-my-3 py-3 hover:text-foreground">
             SSL<span className="hidden sm:inline"> checker</span>
           </Link>
-          <Link href="/domain-checker" className="hover:text-foreground">
+          <Link href="/domain-checker" className="-my-3 hidden py-3 hover:text-foreground min-[420px]:inline">
             Domain<span className="hidden sm:inline"> checker</span>
           </Link>
-          <Link href="/pricing" className="hidden hover:text-foreground sm:inline">
+          <Link href="/pricing" className="-my-3 hidden py-3 hover:text-foreground sm:inline">
             Pricing
           </Link>
-          <AuthNav />
+          <AuthNav guest={guest} />
         </nav>
       </div>
     </header>

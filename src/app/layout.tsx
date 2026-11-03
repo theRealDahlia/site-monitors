@@ -24,11 +24,11 @@ export const metadata: Metadata = {
   openGraph: { type: "website", siteName: BRAND, locale: "en_US" },
   twitter: { card: "summary_large_image" },
   title: {
-    default: `${BRAND} — SSL, domain and uptime monitoring for every client site`,
+    default: `SSL, Domain & Uptime Monitoring for Agencies | ${BRAND}`,
     template: `%s | ${BRAND}`,
   },
   description:
-    "Get alerted before an SSL certificate or domain expires, and when a site goes down. Built for agencies and freelancers who manage many client sites.",
+    "Get emailed before a client's SSL certificate or domain expires, or a site goes down. Free for 5 sites, with client status pages from $9/month.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
