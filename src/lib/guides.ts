@@ -17,6 +17,8 @@ export type Block =
 export interface Guide {
   slug: string;
   title: string;
+  /** A shorter title for search results and tabs, when the article's own title would be cut off. Optional. */
+  metaTitle?: string;
   /** For search results and social previews. About 150 characters. */
   description: string;
   /** ISO date the article was last checked or changed. */
@@ -32,7 +34,7 @@ export const GUIDES: Guide[] = [
     slug: "ssl-certificate-expired",
     title: "SSL certificate expired: how to fix it",
     description:
-      "Visitors see a security warning because your SSL certificate has expired. How to confirm it, renew it for your setup, check it worked, and stop it happening again.",
+      "Visitors see a security warning because your SSL certificate expired. How to confirm it, renew it, check the fix worked and stop it happening again.",
     updated: "2026-10-16",
     minutes: 6,
     related: ["lets-encrypt-renewal-failed", "47-day-ssl-certificates", "monitor-client-websites"],
@@ -181,6 +183,7 @@ export const GUIDES: Guide[] = [
   {
     slug: "47-day-ssl-certificates",
     title: "SSL certificates are moving to 47 days: what to do about it",
+    metaTitle: "47-day SSL certificates: what to do",
     description:
       "Maximum SSL certificate lifetimes are shrinking from 398 days to 47 by 2029. The schedule, who it affects, and how to avoid expired-certificate outages.",
     updated: "2026-10-16",
@@ -262,6 +265,7 @@ export const GUIDES: Guide[] = [
   {
     slug: "lets-encrypt-renewal-failed",
     title: "Let's Encrypt renewal failed: causes and fixes",
+    metaTitle: "Let's Encrypt renewal failed: causes, fixes",
     description:
       "Certbot couldn't renew your Let's Encrypt certificate. How to find the error, the most common causes, and how to make sure renewals keep working.",
     updated: "2026-10-16",
@@ -331,8 +335,9 @@ export const GUIDES: Guide[] = [
   {
     slug: "monitor-client-websites",
     title: "How to monitor all your client websites from one place",
+    metaTitle: "Monitor client websites from one place",
     description:
-      "What to watch on every client site (uptime, SSL, domain expiry, email setup), how to avoid missed renewals, and how to keep clients informed without the busywork.",
+      "What to watch on every client site (uptime, SSL, domain expiry, email setup), how to avoid missed renewals and keep clients informed without the busywork.",
     updated: "2026-10-26",
     minutes: 7,
     related: ["ssl-certificate-expired", "how-to-check-when-a-domain-expires"],
@@ -362,6 +367,7 @@ export const GUIDES: Guide[] = [
   {
     slug: "monitor-cron-jobs-heartbeat",
     title: "How to monitor cron jobs and backups with a heartbeat",
+    metaTitle: "How to monitor cron jobs and backups",
     description:
       "Uptime checks can't see a backup that silently stopped. How heartbeat monitoring works, how to add it to a cron job, and the mistakes that cause false alarms.",
     updated: "2026-10-26",
@@ -392,6 +398,7 @@ export const GUIDES: Guide[] = [
   {
     slug: "status-page-for-clients",
     title: "How to set up a status page for a client, on their own domain",
+    metaTitle: "How to set up a status page for a client",
     description:
       "Give each client a status page with their logo, show incidents and maintenance, and put it on an address like status.clientname.com. A step-by-step guide.",
     updated: "2026-10-26",
@@ -423,8 +430,9 @@ export const GUIDES: Guide[] = [
   {
     slug: "check-spf-dkim-dmarc",
     title: "How to check SPF, DKIM and DMARC for a domain",
+    metaTitle: "How to check SPF, DKIM and DMARC",
     description:
-      "Why client email lands in spam, and how to check and fix the three DNS records that decide it: SPF, DKIM and DMARC. Includes command-line checks and common mistakes.",
+      "Why client email lands in spam, and how to check and fix the DNS records behind it: SPF, DKIM and DMARC. Includes command-line checks and common mistakes.",
     updated: "2026-10-26",
     minutes: 8,
     related: ["monitor-client-websites"],

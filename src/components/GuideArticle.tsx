@@ -23,20 +23,21 @@ const BASE: Record<Mode, string> = { public: "/guides", app: "/dashboard/guides"
 export function guideMetadata(slug: string): Metadata {
   const g = getGuide(slug);
   const path = `/guides/${g.slug}`;
+  const title = g.metaTitle ?? g.title;
   return {
-    title: g.title,
+    title,
     description: g.description,
     alternates: { canonical: path },
     // A page that sets its own social tags replaces the site-wide ones, image included, so they're all repeated here.
     openGraph: {
       type: "article",
-      title: g.title,
+      title,
       description: g.description,
       url: path,
       modifiedTime: g.updated,
       images: [{ url: "/opengraph-image.png", width: 1200, height: 630, alt: `${BRAND}: ${g.title}` }],
     },
-    twitter: { card: "summary_large_image", title: g.title, description: g.description, images: ["/opengraph-image.png"] },
+    twitter: { card: "summary_large_image", title, description: g.description, images: ["/opengraph-image.png"] },
   };
 }
 

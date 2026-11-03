@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "Pricing: Free for 5 Sites, Plans from $9/mo",
   alternates: { canonical: "/pricing" },
   description:
-    "Watch up to 5 sites for free, with uptime, SSL certificate and domain expiry checks and email alerts. Starter and Pro give you more sites, 1-minute checks and status pages.",
+    "Free SSL, domain and uptime monitoring for 5 sites. Paid plans from $9/month add status pages, client reports and white-label for agencies.",
 };
 
 

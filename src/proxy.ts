@@ -41,6 +41,10 @@ export function proxy(request: NextRequest) {
     return new NextResponse("Not found", { status: 404, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
   }
 
+  // A status page address is always 12 letters and digits. Anything else under /status can't be a page, so it gets a
+  // real 404 instead of the page shell (which would answer 200 and say "not found" only once its script ran).
+  if (path.startsWith("/status/") && !/^\/status\/[a-z2-7]{12}$/.test(path)) return NextResponse.rewrite(new URL("/not-found", request.url));
+
   if (request.cookies.has(SESSION_COOKIE)) {
     // The credit link in the app opens the landing page on purpose (see src/lib/landing.ts).
     if (path === "/" && request.nextUrl.searchParams.get(LANDING_PARAM) === LANDING_VALUE) return NextResponse.next();

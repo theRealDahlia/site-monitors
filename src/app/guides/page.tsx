@@ -4,9 +4,9 @@ import SignedInRedirect from "@/components/SignedInRedirect";
 import { Footer, Header } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
-  title: "Guides: monitoring client websites, SSL certificates, domains and email",
+  title: "Guides: Website, SSL and Domain Monitoring",
   description:
-    "Practical guides for agencies and freelancers: monitoring client websites, expired SSL certificates, domain expiry, cron job monitoring, status pages and SPF, DKIM and DMARC.",
+    "Practical guides for agencies and freelancers: monitoring client sites, expired SSL certificates, domain expiry, cron jobs, status pages and email setup.",
   alternates: { canonical: "/guides" },
 };
 

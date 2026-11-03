@@ -6,6 +6,7 @@ import { Footer, Header } from "@/components/SiteChrome";
 export const metadata: Metadata = {
   title: "Create a free account",
   description: "Create a free account to watch up to 5 sites, with uptime, SSL and domain expiry checks and email alerts.",
+  alternates: { canonical: "/signup" },
 };
 
 export default function SignupPage() {
