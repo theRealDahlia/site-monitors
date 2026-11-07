@@ -6,8 +6,10 @@ After=network.target
 User=ubuntu
 WorkingDirectory=/opt/site-monitors
 Environment=NODE_ENV=production
-# Listen on this machine only. Caddy is the one that faces the internet.
-ExecStart=/usr/bin/npm run start -- -H 127.0.0.1 -p 3000
+# Caddy is the one that faces the internet, and the firewall must keep port 3000 closed (only 22, 80 and 443 open).
+# Don't add "-H 127.0.0.1" to keep the app on this machine only: with it, every NextResponse.rewrite in proxy.ts fails
+# with a 500 behind Caddy, because Next then compares the rewrite against 127.0.0.1 and sees an outside address.
+ExecStart=/usr/bin/npm run start -- -p 3000
 Restart=always
 RestartSec=5
 
