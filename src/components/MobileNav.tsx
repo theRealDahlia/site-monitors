@@ -7,10 +7,11 @@ const LINKS = [
   { href: "/ssl-checker", label: "SSL checker" },
   { href: "/domain-checker", label: "Domain checker" },
   { href: "/pricing", label: "Pricing" },
+  { href: "/guides", label: "Guides" },
 ];
 
 /**
- * The header links on a phone, behind one Menu button (from 640px up they sit in the header itself). The panel is as wide
+ * The header links on a phone or small tablet, behind one Menu button (from 768px up they sit in the header itself). The panel is as wide
  * as the header, so it fits any screen; it closes on a tap outside it, on Escape, and when a link is chosen.
  * It must be placed inside a `relative` header.
  */
@@ -38,7 +39,7 @@ export default function MobileNav() {
   }, [open]);
 
   return (
-    <div ref={root} className="sm:hidden">
+    <div ref={root} className="md:hidden">
       <button
         ref={button}
         type="button"

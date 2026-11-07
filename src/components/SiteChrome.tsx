@@ -12,16 +12,19 @@ export function Header({ guest = false }: { guest?: boolean }) {
           <LogoMark className="h-7 w-7 sm:h-8 sm:w-8" />
           {BRAND}
         </Link>
-        <nav className="flex items-center gap-4 whitespace-nowrap text-sm text-muted sm:gap-5">
+        <nav className="flex items-center gap-4 whitespace-nowrap text-sm text-muted md:gap-5">
           <MobileNav />
-          <Link href="/ssl-checker" className="-my-3 hidden py-3 hover:text-foreground sm:inline">
+          <Link href="/ssl-checker" className="-my-3 hidden py-3 hover:text-foreground md:inline">
             SSL checker
           </Link>
-          <Link href="/domain-checker" className="-my-3 hidden py-3 hover:text-foreground sm:inline">
+          <Link href="/domain-checker" className="-my-3 hidden py-3 hover:text-foreground md:inline">
             Domain checker
           </Link>
-          <Link href="/pricing" className="-my-3 hidden py-3 hover:text-foreground sm:inline">
+          <Link href="/pricing" className="-my-3 hidden py-3 hover:text-foreground md:inline">
             Pricing
+          </Link>
+          <Link href="/guides" className="-my-3 hidden py-3 hover:text-foreground md:inline">
+            Guides
           </Link>
           <AuthNav guest={guest} />
         </nav>
