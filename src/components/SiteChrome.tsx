@@ -1,22 +1,24 @@
 import Link from "next/link";
 import AuthNav from "@/components/AuthNav";
 import LogoMark from "@/components/LogoMark";
+import MobileNav from "@/components/MobileNav";
 import { BRAND } from "@/lib/brand";
 
 export function Header({ guest = false }: { guest?: boolean }) {
   return (
     <header className="border-b border-border">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
+      <div className="relative mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2 whitespace-nowrap text-base font-semibold tracking-tight sm:gap-2.5 sm:text-lg">
           <LogoMark className="h-7 w-7 sm:h-8 sm:w-8" />
           {BRAND}
         </Link>
-        <nav className="flex items-center gap-2.5 whitespace-nowrap text-sm text-muted sm:gap-5">
-          <Link href="/ssl-checker" className="-my-3 py-3 hover:text-foreground">
-            SSL<span className="hidden sm:inline"> checker</span>
+        <nav className="flex items-center gap-4 whitespace-nowrap text-sm text-muted sm:gap-5">
+          <MobileNav />
+          <Link href="/ssl-checker" className="-my-3 hidden py-3 hover:text-foreground sm:inline">
+            SSL checker
           </Link>
-          <Link href="/domain-checker" className="-my-3 hidden py-3 hover:text-foreground min-[420px]:inline">
-            Domain<span className="hidden sm:inline"> checker</span>
+          <Link href="/domain-checker" className="-my-3 hidden py-3 hover:text-foreground sm:inline">
+            Domain checker
           </Link>
           <Link href="/pricing" className="-my-3 hidden py-3 hover:text-foreground sm:inline">
             Pricing
