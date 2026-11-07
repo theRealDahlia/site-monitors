@@ -18,6 +18,8 @@ function Cell({ value }: { value: string | boolean }) {
   return <span className="font-medium">{value}</span>;
 }
 
+const GROUP_BG = "bg-[color-mix(in_srgb,var(--surface),var(--foreground)_5%)]";
+
 /** What each plan includes, side by side, in groups. Used on the pricing page and the in-app Plans page. */
 export default function PlanComparison({ className = "" }: { className?: string }) {
   return (
@@ -39,10 +41,13 @@ export default function PlanComparison({ className = "" }: { className?: string 
         </thead>
         {COMPARISON.map((g) => (
           <tbody key={g.group}>
-            <tr>
-              <th scope="colgroup" colSpan={PLANS.length + 1} className="sticky left-0 border-b border-t border-border bg-foreground/5 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted first:border-t-0 sm:px-5">
+            {/* The group's name sits in the first column, which stays put when the table scrolls sideways. A cell that spanned
+                the whole table couldn't: it has no room to move. The tint is mixed to be opaque so scrolled cells don't show through. */}
+            <tr className="border-b border-t border-border first:border-t-0">
+              <th scope="rowgroup" className={`sticky left-0 z-10 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-muted sm:px-5 ${GROUP_BG}`}>
                 {g.group}
               </th>
+              <td colSpan={PLANS.length} className={GROUP_BG} />
             </tr>
             {g.rows.map((row) => (
               <tr key={row.feature} className="border-b border-border last:border-b-0 hover:bg-foreground/[0.03]">
