@@ -14,7 +14,8 @@ export default function PlansPage() {
         <h2 id="compare-heading" className="font-semibold">
           Compare plans
         </h2>
-        <PlanComparison className="mt-3" />
+        {/* Below 1024px the app has a bar fixed to the top of the screen, about 65px tall. */}
+        <PlanComparison className="mt-3" stickyTop="top-[65px] lg:top-0" />
       </section>
     </Plans>
   );

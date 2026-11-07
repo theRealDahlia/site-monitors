@@ -149,7 +149,6 @@ export default function PricingPage() {
           <h2 id="compare-heading" className="text-2xl font-semibold tracking-tight">
             Compare plans
           </h2>
-          <p className="mt-2 text-sm text-muted md:hidden">Swipe sideways to see every plan.</p>
           <PlanComparison className="mt-6" />
         </section>
 
