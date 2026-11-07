@@ -8,6 +8,8 @@ const FIELD = "w-full min-w-0 rounded-lg border border-border bg-background px-3
 interface Result {
   added: number;
   heartbeats: number;
+  /** The ping address of each heartbeat that was just added. */
+  pings: { name: string; pingUrl: string }[];
   skipped: { line: string; reason: string }[];
 }
 
@@ -25,7 +27,18 @@ export default function ImportSites({ clients, onDone }: { clients: { id: number
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const lines = text.split(/\r?\n/).filter((l) => l.trim()).length;
+
+  async function copy(key: string, value: string) {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(key);
+      setTimeout(() => setCopied(null), 1500);
+    } catch {
+      /* the addresses are selectable */
+    }
+  }
 
   // Faint hints for the fields still to type on the line the cursor is at the end of. A copy of the text sits behind
   // the box, invisible, so the hint lines up right after what was typed.
@@ -62,7 +75,7 @@ export default function ImportSites({ clients, onDone }: { clients: { id: number
         const failed = new Set((body.skipped as Result["skipped"]).map((s) => s.line));
         setText(text.split(/\r?\n/).filter((l) => failed.has(l.trim())).join("\n"));
         if (body.added) {
-          const pings = body.heartbeats ? ` Open a heartbeat to copy the address its job should ping.` : "";
+          const pings = body.heartbeats ? ` Copy the heartbeats' ping addresses from the import box above.` : "";
           await onDone(`Added ${body.added} monitor${body.added === 1 ? "" : "s"}. Their first checks run within a few minutes.${pings}`);
         }
       }
@@ -190,6 +203,36 @@ export default function ImportSites({ clients, onDone }: { clients: { id: number
                 ))}
               </ul>
             )}
+          </div>
+        )}
+        {result && result.pings.length > 0 && (
+          <div className="rounded-lg border border-border bg-background p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">Ping addresses for the new heartbeats</p>
+              <button
+                type="button"
+                onClick={() => copy("all", result.pings.map((p) => `${p.name}\t${p.pingUrl}`).join("\n"))}
+                className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-xs hover:border-accent hover:text-accent"
+              >
+                {copied === "all" ? "Copied" : "Copy all"}
+              </button>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              Call each address from the end of its job whenever it runs successfully. They&apos;re also on each heartbeat&apos;s page. Keep them private: anyone with an address can check in for that job.
+            </p>
+            <ul className="mt-3 space-y-3">
+              {result.pings.map((p) => (
+                <li key={p.pingUrl}>
+                  <p className="mb-1 break-words text-xs text-muted">{p.name}</p>
+                  <div className="flex items-center gap-2">
+                    <input readOnly aria-label={`Ping address for ${p.name}`} value={p.pingUrl} onFocus={(e) => e.currentTarget.select()} className="min-w-0 flex-1 rounded-md border border-border bg-surface px-2.5 py-1.5 font-mono text-xs" />
+                    <button type="button" onClick={() => copy(p.pingUrl, p.pingUrl)} className="shrink-0 rounded-md border border-border px-2.5 py-1.5 text-xs hover:border-accent hover:text-accent">
+                      {copied === p.pingUrl ? "Copied" : "Copy"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </form>

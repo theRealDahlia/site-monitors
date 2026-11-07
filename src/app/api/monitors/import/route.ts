@@ -4,7 +4,8 @@ import { CheckError } from "@/lib/hostname";
 import { entitlementsFor } from "@/lib/entitlements";
 import { readImportLine, isHeaderRow, type ImportKind } from "@/lib/import-lines";
 import { KIND_LABEL, parseMonitorRequest } from "@/lib/monitor-kinds";
-import { countMonitors, insertMonitor } from "@/lib/monitors-db";
+import { appUrl } from "@/lib/mail";
+import { countMonitors, getMonitor, insertMonitor } from "@/lib/monitors-db";
 import { countInWindow, record } from "@/lib/rate-limit";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
   const rateKey = `monitor-add:${user.id}`;
   if (countInWindow(rateKey, HOUR_MS) + lines.length > plan.addsPerHour) return Response.json({ error: "You're adding monitors too quickly. Try again later." }, { status: 429 });
 
-  const added: { host: string; kind: ImportKind; client: string | null }[] = [];
+  const added: { id: number; host: string; kind: ImportKind; client: string | null }[] = [];
   const skipped: { line: string; reason: string }[] = [];
   let room = plan.maxMonitors - countMonitors(user.id);
   const seen = new Set<string>();
@@ -104,9 +105,14 @@ export async function POST(request: Request) {
         assignMonitors(user.id, [id], clientId);
         clientLabel ??= getClient(clientId, user.id)?.name ?? null;
       }
-      added.push({ host: p.host, kind: p.kind, client: clientLabel });
+      added.push({ id, host: p.host, kind: p.kind, client: clientLabel });
     }
   }
-  const heartbeats = added.filter((a) => a.kind === "heartbeat").length;
-  return Response.json({ added: added.length, heartbeats, skipped }, { status: added.length ? 201 : 200 });
+  // Each new heartbeat's ping address, so the jobs can be set up straight away. Like the one on a heartbeat's own page,
+  // it's secret to this account and only comes back to the person who just added it.
+  const pings = added.flatMap((a) => {
+    const token = a.kind === "heartbeat" ? getMonitor(a.id, user.id)?.hb_token : null;
+    return token ? [{ name: a.host, pingUrl: `${appUrl()}/api/ping/${token}` }] : [];
+  });
+  return Response.json({ added: added.length, heartbeats: pings.length, pings, skipped }, { status: added.length ? 201 : 200 });
 }
