@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { trackEvent } from "@/lib/track";
 
 export interface Usage {
   used: number;
@@ -11,8 +12,8 @@ export interface Usage {
   signedIn: boolean;
 }
 
-/** Shared form state for the free checkers, including the free-check allowance. */
-export function useChecker<T>(endpoint: string) {
+/** Shared form state for the free checkers, including the free-check allowance. `event` is the goal recorded each time a check succeeds. */
+export function useChecker<T>(endpoint: string, event: string) {
   const [host, setHost] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export function useChecker<T>(endpoint: string) {
       if (data.usage) setUsage(data.usage);
       if (res.ok) {
         setResult(data);
+        trackEvent(event);
       } else if (data.code !== "free_limit_reached") {
         setResult(null);
         setError(data.error ?? "Something went wrong.");

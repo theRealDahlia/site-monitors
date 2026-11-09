@@ -15,7 +15,7 @@ const STATUS_STYLE: Record<SslStatus, { label: string; classes: string }> = {
 
 export default function SslChecker() {
   const { host, setHost, loading, error, result, usage, limited, submit } =
-    useChecker<SslResult>("/api/ssl-check");
+    useChecker<SslResult>("/api/ssl-check", "ssl_check");
 
   const style = result ? STATUS_STYLE[result.status] : null;
 

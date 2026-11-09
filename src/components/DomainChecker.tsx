@@ -15,7 +15,7 @@ const STATE_STYLE: Record<DomainState, { label: string; classes: string }> = {
 
 export default function DomainChecker() {
   const { host, setHost, loading, error, result, usage, limited, submit } =
-    useChecker<DomainResult>("/api/domain-check");
+    useChecker<DomainResult>("/api/domain-check", "domain_check");
 
   const style = result ? STATE_STYLE[result.state] : null;
   const warnTone = result?.state === "expiring" || result?.state === "unknown";
