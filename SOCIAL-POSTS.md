@@ -1,4 +1,4 @@
-# First 3 social posts for site-monitors.net
+# Social posts for site-monitors.net (posts 1 to 6)
 
 These go with the images in `marketing-images/` (`facebook-post-1.png`, `-2.png`, `-3.png`, all 1200 x 630, which also fits LinkedIn and X). Each post below has the image, the caption, a first comment with the link, alt text, a few variations for other platforms, and what to do after it goes up.
 
@@ -165,3 +165,170 @@ All the links were checked and return 200: `/domain-checker`, `/ssl-checker`, `/
 | What did people say in their own words? | Copy the best comments into a note. They are your next headlines and ad copy. |
 
 If post 1 gets lots of comments, write the next post around the setups people described. If post 2 gets the clicks, put a small budget behind it (it matches ad concept 1 in `MARKETING.md`). If post 3 gets the saves and shares, turn it into a LinkedIn carousel (the schedule, then why it matters, then the free check).
+
+---
+---
+
+# Posts 4 to 6
+
+Posts 1 to 3 are already up, along with their stories. These three use new images (`facebook-post-4.png` to `-6.png`, 1200 x 630) and new story images (`facebook-story-4.png` to `-6.png`, 1080 x 1920). The tagged links below use a new campaign name, `launch-posts-2`, so you can tell them apart from the first batch in Umami.
+
+Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illustration. Example" label in the picture. Keep it, and don't swap in a real client's domain.
+
+## Before you post anything
+
+- **Post 6 links to a new guide that isn't on the live site yet.** The guide (`/guides/err-cert-common-name-invalid`) exists only in your project folder until you commit, push and deploy it. Open the live link first and check it loads. Posts 4 and 5 only link to pages that are live today.
+- **After the guide is live,** paste its address into URL Inspection in Search Console and click **Request indexing**, the same as you did for the other two guides.
+- **Spacing:** about two days between posts, as before. Post each story the same day as its post, or the day after.
+
+| Post | Link for Facebook |
+|---|---|
+| 4 | `https://site-monitors.net/domain-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-4-domain-expiry` |
+| 5 | `https://site-monitors.net/guides/lets-encrypt-renewal-failed?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-5-certbot` |
+| 6 | `https://site-monitors.net/guides/err-cert-common-name-invalid?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-6-wrong-name` |
+
+| Story | Link for the link sticker |
+|---|---|
+| 4 | `https://site-monitors.net/domain-checker?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-4-domain-expiry` |
+| 5 | `https://site-monitors.net/guides/lets-encrypt-renewal-failed?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-5-certbot` |
+| 6 | `https://site-monitors.net/guides/err-cert-common-name-invalid?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-6-wrong-name` |
+
+---
+
+## Post 4: "When does your clients' domain registration run out?"
+
+**Image:** `marketing-images/facebook-post-4.png` (story: `facebook-story-4.png`)
+
+**What the image shows:** the domain expiry checker with an example result: "Expiring soon", "23 days left", registrar, registration date, expiry date and a nameserver. Every value is made up.
+
+**Alt text:** The free domain expiry checker showing an example domain with 23 days left, its registrar, registration date, expiry date and nameserver.
+
+**Caption (your Page):**
+
+> Quick test: what day does your biggest client's domain registration run out?
+>
+> If you had to look it up, you're in good company. Most people can't say off the top of their head. And when a registration lapses, the website and the client's email both stop working.
+>
+> Our free domain expiry checker shows the expiry date, the registrar and when the domain was registered. No signup, takes seconds.
+>
+> Try it on a client domain today. Link in the comments.
+
+**Caption (Facebook group version):**
+
+> Genuine question for anyone who manages client sites: do you keep domain expiry dates somewhere, or look them up when it comes up? I've been using a free checker that shows the expiry date and registrar without an account. Happy to share it if it's useful.
+
+**First comment (Page):**
+
+> Free, no signup: [link for post 4]
+>
+> And if you'd like an email before any of them lapse, the free plan covers 5 sites.
+
+**Reply to comments with:**
+- "Where do you keep yours?" Ask what they use and how often it has missed one. Don't pitch yet.
+- "Does it work for every domain?" Say it works for most domains. Some registries don't publish enough to read, and the guide covers what to do then: `https://site-monitors.net/guides/how-to-check-when-a-domain-expires`
+- Someone's domain is close to expiring: tell them to renew now, before anything else.
+
+**Story:** use `facebook-story-4.png` with a link sticker. Text over the sticker: "Check a domain".
+
+**For LinkedIn:** use the Page caption. Add `#agencylife #webdesign #domains`.
+
+**For X:** *What day does your biggest client's domain registration run out? If you had to look it up, you're not alone. Free expiry checker, no signup:* (link in the same post).
+
+**Track:** clicks and `domain_check` events in Umami.
+
+---
+
+## Post 5: "Certbot failed at 3am. Did anyone tell you?"
+
+**Image:** `marketing-images/facebook-post-5.png` (story: `facebook-story-5.png`)
+
+**What the image shows:** a terminal with an example `certbot renew` run that fails, labelled "Illustration. Example output." The wording follows the messages Certbot prints, but the output in the picture is an example and not from a real server.
+
+**Alt text:** A terminal window showing an example Certbot renewal that fails with the message "Failed to renew certificate" and "All renewals failed".
+
+**Caption (your Page):**
+
+> Certbot failed at 3am. Did anyone tell you?
+>
+> Let's Encrypt stopped sending expiry reminder emails in June 2025. So when automatic renewal quietly breaks, the first sign is often a visitor seeing a security warning on a client's site.
+>
+> If you run Certbot on any client servers, try this once:
+>
+> sudo certbot renew --dry-run
+>
+> It tests a renewal without issuing anything, and prints the reason if it fails.
+>
+> We wrote up the usual causes and how to fix them. Link in the comments.
+
+**Caption (Facebook group version):**
+
+> For anyone running Let's Encrypt on client servers: since June 2025 there are no expiry emails, so a failed auto-renew can go unnoticed until the certificate lapses. Running `sudo certbot renew --dry-run` once is a quick way to see whether renewal still works. How do you keep an eye on yours?
+
+**First comment (Page):**
+
+> The usual causes of a failed renewal and how to fix them: [link for post 5]
+
+**Reply to comments with:**
+- "My dry run failed, what now?" Ask them to paste the error line (with the domain removed), and point them to the guide's section on the usual causes.
+- "I use a different tool" Fine. The point is the same: check that renewal still works, and monitor the certificate itself.
+- "Doesn't Certbot email me?" It used to, through Let's Encrypt. That service ended on 4 June 2025, which is in the guide.
+
+**Story:** use `facebook-story-5.png` with a link sticker. Text over the sticker: "Read the fix".
+
+**For LinkedIn:** use the Page caption. Add `#devops #sysadmin #letsencrypt`. Developers see this one more than agency owners, so it suits groups for sysadmins and web developers.
+
+**For X:** *Let's Encrypt stopped sending expiry emails in June 2025. If you run Certbot on client servers, run `sudo certbot renew --dry-run` once today. Common causes and fixes:* (link in the same post).
+
+**For Reddit** (r/sysadmin, r/webdev): don't post the image. Ask a question or share the dry-run tip in words, and put the guide link in a comment only where the rules allow it.
+
+**Track:** clicks to the guide, shares, and comments from people who run servers.
+
+---
+
+## Post 6: "Valid certificate. Wrong name."
+
+**Image:** `marketing-images/facebook-post-6.png` (story: `facebook-story-6.png`)
+
+**What the image shows:** a Chrome-style "Your connection is not private" warning with the code `NET::ERR_CERT_COMMON_NAME_INVALID`, then "Certificate covers example.com" with a tick and "Visitor opened www.example.com" with a cross. It is labelled "Illustration."
+
+**Alt text:** A browser security warning with the error code NET::ERR_CERT_COMMON_NAME_INVALID. The certificate covers example.com, but the visitor opened www.example.com.
+
+**Caption (your Page):**
+
+> Your SSL certificate can be valid, not expired, and still show visitors a full-page warning.
+>
+> A certificate lists the exact names it covers. If it's issued for example.com and someone opens www.example.com, Chrome shows NET::ERR_CERT_COMMON_NAME_INVALID.
+>
+> The usual causes: www and the bare domain treated as one name, a wildcard that doesn't reach far enough, or a server showing another site's certificate right after a move.
+>
+> We wrote a short fix guide, including a command that lists the names a certificate covers. Link in the comments.
+
+**Caption (Facebook group version):**
+
+> Reminder for anyone moving client sites to new hosting: example.com and www.example.com are two different names on a certificate. A certificate for one doesn't cover the other, and visitors get a full-page warning even though nothing has expired. Do you check both after a move?
+
+**First comment (Page):**
+
+> The fix guide, with the command that lists the names a certificate covers: [link for post 6]
+>
+> To see which names a site's certificate covers right now, the free SSL checker lists them: https://site-monitors.net/ssl-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-6-checker
+
+**Reply to comments with:**
+- "How do I see what my certificate covers?" The command in the guide, or the free SSL checker (it lists the names).
+- "I only see it on some devices" It's often DNS still spreading after a move, so some visitors reach the old server. The guide covers it.
+- "Is a wildcard enough?" A wildcard like `*.example.com` covers `www` and other first-level subdomains, but not the bare domain or deeper names. Both are in the guide.
+
+**Story:** use `facebook-story-6.png` with a link sticker. Text over the sticker: "Fix it".
+
+**For LinkedIn:** use the Page caption and end with a question: "Do you check both www and the bare domain after a move?" Add `#webdevelopment #ssl #agencyowners`.
+
+**For X:** *A valid, unexpired SSL certificate can still show a full-page warning if it's for example.com and the visitor opens www.example.com. How to find and fix the mismatch:* (link in the same post).
+
+**Track:** clicks to the new guide. This post is also your first source of visitors for that page, so check in Umami whether it gets any, and look at it in Search Console in a couple of weeks.
+
+---
+
+## After these three
+
+- Compare posts 4 to 6 against 1 to 3 in Umami by `utm_campaign` and `utm_content`. Whichever style gets the most clicks (a question, a tool, or a fix guide), do more of that.
+- If post 6 or 5 gets traction, that's a signal to write more narrow guides on specific errors. I can draft the next one.
