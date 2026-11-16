@@ -3,7 +3,7 @@ import { GUIDES } from "@/lib/guides";
 import { SITE_URL } from "@/lib/site-url";
 
 // When each page last changed in a way worth telling search engines. Update a page's date when its content changes.
-const UPDATED = { home: "2026-11-02", pricing: "2026-11-02", guides: "2026-11-02", signup: "2026-11-02", tools: "2026-10-26", legal: "2026-10-26" };
+const UPDATED = { home: "2026-11-02", pricing: "2026-11-02", guides: "2026-11-16", signup: "2026-11-02", tools: "2026-10-26", legal: "2026-10-26" };
 
 // Only public pages worth finding in search. Not here: the dashboard, login and sign-up, status pages
 // (their owners chose to share them, not to publish them) and the links in emails.
