@@ -18,6 +18,8 @@ Every Facebook link, in every batch, now goes to the home page (`https://site-mo
 | 2 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-2-ssl-check` |
 | 3 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-3-47-days` |
 
+**Story sticker text.** Use the same text over the link sticker on every story: "Visit site-monitors.net". Every story link goes to the home page.
+
 **Groups vs your own Page.** On your own Page you can post as written. In a group, read the rules first and spend a week or two answering other people's questions before you post. Use the "Facebook group" version of each caption, which is written as a question, not an announcement.
 
 ---
@@ -227,7 +229,7 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 - "Does it work for every domain?" Say it works for most domains. Some registries don't publish enough to read, and the guide covers what to do then: `https://site-monitors.net/guides/how-to-check-when-a-domain-expires`
 - Someone's domain is close to expiring: tell them to renew now, before anything else.
 
-**Story:** use `facebook-story-4.png` with a link sticker. Text over the sticker: "Check a domain".
+**Story:** use `facebook-story-4.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption. Add `#agencylife #webdesign #domains`.
 
@@ -272,7 +274,7 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 - "I use a different tool" Fine. The point is the same: check that renewal still works, and monitor the certificate itself.
 - "Doesn't Certbot email me?" It used to, through Let's Encrypt. That service ended on 4 June 2025, which is in the guide.
 
-**Story:** use `facebook-story-5.png` with a link sticker. Text over the sticker: "Read the fix".
+**Story:** use `facebook-story-5.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption. Add `#devops #sysadmin #letsencrypt`. Developers see this one more than agency owners, so it suits groups for sysadmins and web developers.
 
@@ -317,7 +319,7 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 - "I only see it on some devices" It's often DNS still spreading after a move, so some visitors reach the old server. The guide covers it.
 - "Is a wildcard enough?" A wildcard like `*.example.com` covers `www` and other first-level subdomains, but not the bare domain or deeper names. Both are in the guide.
 
-**Story:** use `facebook-story-6.png` with a link sticker. Text over the sticker: "Fix it".
+**Story:** use `facebook-story-6.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption and end with a question: "Do you check both www and the bare domain after a move?" Add `#webdevelopment #ssl #agencyowners`.
 
@@ -415,7 +417,7 @@ Post each story the same day as its post, or the day after.
 - "A spreadsheet": that's fine. The guide's advice is to record who owns the domain, the DNS and the certificate for each client, and that works in a spreadsheet too.
 - Someone mentions a client's domain in their own account: point to the guide's section on checking who owns each domain and certificate.
 
-**Story:** use `facebook-story-7.png` with a link sticker. Text over the sticker: "Read the routine".
+**Story:** use `facebook-story-7.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption and end with "How do you keep an eye on the quiet ones?" Add `#agencylife #webdesign #wordpress`.
 
@@ -458,7 +460,7 @@ Post each story the same day as its post, or the day after.
 - "I added a second SPF record and it got worse": a domain can have only one SPF record. The two have to be merged into one.
 - "It passes but still goes to spam": other senders (an invoice tool or website form) may be missing from SPF or DKIM. The guide lists the common mistakes.
 
-**Story:** use `facebook-story-8.png` with a link sticker. Text over the sticker: "Check the records".
+**Story:** use `facebook-story-8.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption. Add `#email #dns #webdevelopment`.
 
@@ -504,7 +506,7 @@ Post each story the same day as its post, or the day after.
 - "It says valid but I still get the warning": check that device's date and time, and whether the certificate is for the right hostname (link to the post 6 guide, `/guides/err-cert-common-name-invalid`).
 - "I use Certbot": point to `/guides/lets-encrypt-renewal-failed`.
 
-**Story:** use `facebook-story-9.png` with a link sticker. Text over the sticker: "Fix it".
+**Story:** use `facebook-story-9.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption. Add `#ssl #sysadmin #agencyowners`.
 
@@ -552,7 +554,7 @@ Post each story the same day as its post, or the day after.
 - "How do I stop it?" Put the expiry date somewhere you check yourself, and record which registrar account each client's domain is in. Whoever holds that account is the one who can renew it. The guide says both.
 - Someone's domain is close to expiring: tell them to renew it first, before anything else.
 
-**Story:** use `facebook-story-10.png` with a link sticker. Text over the sticker: "Read why".
+**Story:** use `facebook-story-10.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption and end with "Which of these has caught you out?" Add `#domains #agencylife #webdesign`.
 
@@ -595,7 +597,7 @@ Post each story the same day as its post, or the day after.
 - "I get false alarms": leave a bit more room than the job's usual run time, and match the schedule (a daily job is "every 1 day"). The guide covers it.
 - "Can two jobs share one?" No. Give each job its own address, or a failing job hides behind the other's reports.
 
-**Story:** use `facebook-story-11.png` with a link sticker. Text over the sticker: "See how".
+**Story:** use `facebook-story-11.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption. Add `#devops #sysadmin #backups`. It suits developer audiences more than agency owners.
 
@@ -640,7 +642,7 @@ Post each story the same day as its post, or the day after.
 - "Can it be on the client's own domain?" Yes, on Pro and above, with two DNS records. The guide has the exact records.
 - "Does it show error details?" No. Only the site's name, its status and the updates you write are public.
 
-**Story:** use `facebook-story-12.png` with a link sticker. Text over the sticker: "See the guide".
+**Story:** use `facebook-story-12.png` with a link sticker. Text over the sticker: "Visit site-monitors.net".
 
 **For LinkedIn:** use the Page caption. Add `#agencylife #clientservice #webdesign`. This is your best agency-owner post of the batch.
 
