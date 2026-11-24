@@ -11,6 +11,7 @@ import { GUIDES } from "@/lib/guides";
 import { homeSchema } from "@/lib/schema";
 import PlanCta from "@/components/PlanCta";
 import ProductPreview from "@/components/ProductPreview";
+import ProductScreenshots from "@/components/ProductScreenshots";
 import { PLANS } from "@/lib/plans";
 
 // The title and description come from the site-wide defaults. Only the canonical address is set here.
@@ -119,6 +120,8 @@ export default function Home() {
             <SslChecker />
           </div>
         </section>
+
+        <ProductScreenshots />
 
         <section className="border-y border-border bg-surface">
           <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
