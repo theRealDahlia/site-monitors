@@ -2,7 +2,7 @@
 
 These go with the images in `marketing-images/` (`facebook-post-1.png`, `-2.png`, `-3.png`, all 1200 x 630, which also fits LinkedIn and X). Each post below has the image, the caption, a first comment with the link, alt text, a few variations for other platforms, and what to do after it goes up.
 
-All the links were checked and return 200: `/domain-checker`, `/ssl-checker`, `/guides/47-day-ssl-certificates`. Every fact used comes from the site itself. The 200 / 100 / 47 day schedule in post 3 matches the 47-day guide (200 days from 15 March 2026, 100 from 15 March 2027, 47 from 15 March 2029).
+Every Facebook link, in every batch, now goes to the home page (`https://site-monitors.net/`). The tags on each link are unchanged, so Umami still tells the posts apart. The home page links to both free checkers and to the guides, and the first comments say where to look. Links in the "Reply to comments with" lists still point at specific guides, because there they answer a particular question. Every fact used comes from the site itself. The 200 / 100 / 47 day schedule in post 3 matches the 47-day guide (200 days from 15 March 2026, 100 from 15 March 2027, 47 from 15 March 2029).
 
 ## How to use these
 
@@ -14,9 +14,9 @@ All the links were checked and return 200: `/domain-checker`, `/ssl-checker`, `/
 
 | Post | Link for Facebook |
 |---|---|
-| 1 | `https://site-monitors.net/domain-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-1-tracking` |
-| 2 | `https://site-monitors.net/ssl-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-2-ssl-check` |
-| 3 | `https://site-monitors.net/guides/47-day-ssl-certificates?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-3-47-days` |
+| 1 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-1-tracking` |
+| 2 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-2-ssl-check` |
+| 3 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts&utm_content=post-3-47-days` |
 
 **Groups vs your own Page.** On your own Page you can post as written. In a group, read the rules first and spend a week or two answering other people's questions before you post. Use the "Facebook group" version of each caption, which is written as a question, not an announcement.
 
@@ -46,7 +46,7 @@ All the links were checked and return 200: `/domain-checker`, `/ssl-checker`, `/
 
 **First comment (Page):**
 
-> If you'd like a quick way to check a client's domain right now, this is free and needs no account: [Facebook link for post 1]
+> If you'd like a quick way to check a client's domain right now, the free domain checker is on our home page and needs no account: [Facebook link for post 1]
 
 **Reply to comments with:**
 - Someone shares a setup: ask one follow-up ("Has it ever missed one?"). Don't pitch yet.
@@ -85,7 +85,7 @@ All the links were checked and return 200: `/domain-checker`, `/ssl-checker`, `/
 
 **First comment (Page):**
 
-> Free, no signup: [Facebook link for post 2]
+> The free SSL checker is on our home page, no signup: [Facebook link for post 2]
 >
 > And if you want an email before any of them expire, the free plan covers 5 sites.
 
@@ -130,7 +130,7 @@ All the links were checked and return 200: `/domain-checker`, `/ssl-checker`, `/
 
 **First comment (Page):**
 
-> The full schedule and how to avoid expired-certificate outages: [Facebook link for post 3]
+> The full schedule and how to avoid expired-certificate outages are in the guides section of our home page: [Facebook link for post 3]
 
 **Reply to comments with:**
 - "Is this actually happening?" Yes. The 200-day limit has applied to new certificates since 15 March 2026. The guide has the dates.
@@ -177,21 +177,20 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 
 ## Before you post anything
 
-- **Post 6 links to a new guide that isn't on the live site yet.** The guide (`/guides/err-cert-common-name-invalid`) exists only in your project folder until you commit, push and deploy it. Open the live link first and check it loads. Posts 4 and 5 only link to pages that are live today.
-- **After the guide is live,** paste its address into URL Inspection in Search Console and click **Request indexing**, the same as you did for the other two guides.
+- **Post 6's guide no longer has to be live before you post,** because its link now goes to the home page. Deploy it soon anyway, so the guides section on the home page can send people to it. **After the guide is live,** paste its address into URL Inspection in Search Console and click **Request indexing**, the same as you did for the other two guides.
 - **Spacing:** about two days between posts, as before. Post each story the same day as its post, or the day after.
 
 | Post | Link for Facebook |
 |---|---|
-| 4 | `https://site-monitors.net/domain-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-4-domain-expiry` |
-| 5 | `https://site-monitors.net/guides/lets-encrypt-renewal-failed?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-5-certbot` |
-| 6 | `https://site-monitors.net/guides/err-cert-common-name-invalid?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-6-wrong-name` |
+| 4 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-4-domain-expiry` |
+| 5 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-5-certbot` |
+| 6 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-6-wrong-name` |
 
 | Story | Link for the link sticker |
 |---|---|
-| 4 | `https://site-monitors.net/domain-checker?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-4-domain-expiry` |
-| 5 | `https://site-monitors.net/guides/lets-encrypt-renewal-failed?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-5-certbot` |
-| 6 | `https://site-monitors.net/guides/err-cert-common-name-invalid?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-6-wrong-name` |
+| 4 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-4-domain-expiry` |
+| 5 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-5-certbot` |
+| 6 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-2&utm_content=story-6-wrong-name` |
 
 ---
 
@@ -219,7 +218,7 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 
 **First comment (Page):**
 
-> Free, no signup: [link for post 4]
+> The free domain expiry checker is on our home page, no signup: [link for post 4]
 >
 > And if you'd like an email before any of them lapse, the free plan covers 5 sites.
 
@@ -266,7 +265,7 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 
 **First comment (Page):**
 
-> The usual causes of a failed renewal and how to fix them: [link for post 5]
+> The usual causes of a failed renewal and how to fix them are in the guides section of our home page: [link for post 5]
 
 **Reply to comments with:**
 - "My dry run failed, what now?" Ask them to paste the error line (with the domain removed), and point them to the guide's section on the usual causes.
@@ -309,9 +308,9 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 
 **First comment (Page):**
 
-> The fix guide, with the command that lists the names a certificate covers: [link for post 6]
+> The fix guide, with the command that lists the names a certificate covers, is in the guides section of our home page: [link for post 6]
 >
-> To see which names a site's certificate covers right now, the free SSL checker lists them: https://site-monitors.net/ssl-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-2&utm_content=post-6-checker
+> The free SSL checker there also lists the names a certificate covers right now.
 
 **Reply to comments with:**
 - "How do I see what my certificate covers?" The command in the guide, or the free SSL checker (it lists the names).
@@ -359,27 +358,27 @@ Post each story the same day as its post, or the day after.
 
 ## Before you post anything
 
-- **Open each link once** from the tagged version below and check it loads. I couldn't reach the live site from the environment this was written in, so I haven't been able to confirm the guide pages are live. Every guide used here exists in the project and is listed in the sitemap.
+- **Open the home page link once** from a tagged version below and check it loads. All the links go to the home page, which links to both free checkers and every guide. I couldn't reach the live site from the environment this was written in, so I haven't confirmed that.
 - **Posts 11 and 12 mention paid plans.** Heartbeat monitors and status pages start on the Starter plan ($9 a month), and a status page on the client's own domain is on Pro ($29 a month) and above. The first comments say so plainly. These figures come from the site's pricing data, so re-check them if you change the plans.
 - **Post 12's image says "your logo", not "their logo".** A separate logo for each client is an Agency plan feature, so the image and caption don't promise it to everyone.
 
 | Post | Link for Facebook |
 |---|---|
-| 7 | `https://site-monitors.net/guides/monitor-client-websites?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-7-quiet-sites` |
-| 8 | `https://site-monitors.net/guides/check-spf-dkim-dmarc?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-8-email-spam` |
-| 9 | `https://site-monitors.net/guides/ssl-certificate-expired?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-9-ssl-expired` |
-| 10 | `https://site-monitors.net/guides/how-to-check-when-a-domain-expires?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-10-autorenew` |
-| 11 | `https://site-monitors.net/guides/monitor-cron-jobs-heartbeat?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-11-heartbeat` |
-| 12 | `https://site-monitors.net/guides/status-page-for-clients?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-12-status-page` |
+| 7 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-7-quiet-sites` |
+| 8 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-8-email-spam` |
+| 9 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-9-ssl-expired` |
+| 10 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-10-autorenew` |
+| 11 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-11-heartbeat` |
+| 12 | `https://site-monitors.net/?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-12-status-page` |
 
 | Story | Link for the link sticker |
 |---|---|
-| 7 | `https://site-monitors.net/guides/monitor-client-websites?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-7-quiet-sites` |
-| 8 | `https://site-monitors.net/guides/check-spf-dkim-dmarc?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-8-email-spam` |
-| 9 | `https://site-monitors.net/guides/ssl-certificate-expired?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-9-ssl-expired` |
-| 10 | `https://site-monitors.net/guides/how-to-check-when-a-domain-expires?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-10-autorenew` |
-| 11 | `https://site-monitors.net/guides/monitor-cron-jobs-heartbeat?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-11-heartbeat` |
-| 12 | `https://site-monitors.net/guides/status-page-for-clients?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-12-status-page` |
+| 7 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-7-quiet-sites` |
+| 8 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-8-email-spam` |
+| 9 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-9-ssl-expired` |
+| 10 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-10-autorenew` |
+| 11 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-11-heartbeat` |
+| 12 | `https://site-monitors.net/?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-12-status-page` |
 
 ---
 
@@ -407,7 +406,7 @@ Post each story the same day as its post, or the day after.
 
 **First comment (Page):**
 
-> The routine for watching every client site from one place: [link for post 7]
+> The routine for watching every client site from one place is in the guides section of our home page: [link for post 7]
 >
 > The free plan covers 5 sites if you'd like to try it.
 
@@ -450,7 +449,7 @@ Post each story the same day as its post, or the day after.
 
 **First comment (Page):**
 
-> How to check and fix SPF, DKIM and DMARC, with the commands: [link for post 8]
+> How to check and fix SPF, DKIM and DMARC, with the commands, is in the guides section of our home page: [link for post 8]
 >
 > If you'd like to be told when one of them breaks, the daily health scan on the Starter plan ($9 a month) flags a missing or weak SPF or DMARC record.
 
@@ -494,9 +493,9 @@ Post each story the same day as its post, or the day after.
 
 **First comment (Page):**
 
-> The full fix guide: [link for post 9]
+> The full fix guide is in the guides section of our home page: [link for post 9]
 >
-> To check the expiry date and certificate chain right now, the free SSL checker needs no signup: https://site-monitors.net/ssl-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-9-checker
+> The free SSL checker there needs no signup and shows the expiry date and certificate chain right now.
 >
 > And to get an email 30, 14, 7, 3 and 1 days before a certificate expires, the free plan covers 5 sites.
 
@@ -544,9 +543,9 @@ Post each story the same day as its post, or the day after.
 
 **First comment (Page):**
 
-> Why auto-renew still lets domains lapse, and how to find any domain's expiry date: [link for post 10]
+> Why auto-renew still lets domains lapse, and how to find any domain's expiry date, is in the guides section of our home page: [link for post 10]
 >
-> Free domain expiry checker, no signup: https://site-monitors.net/domain-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-10-checker
+> The free domain expiry checker is there too, no signup.
 
 **Reply to comments with:**
 - Someone shares a lapse story: thank them, and ask how they found out. Their answer is useful copy.
@@ -587,7 +586,7 @@ Post each story the same day as its post, or the day after.
 
 **First comment (Page):**
 
-> How to add a heartbeat to a cron job, with the exact line to use: [link for post 11]
+> How to add a heartbeat to a cron job, with the exact line to use, is in the guides section of our home page: [link for post 11]
 >
 > Heartbeat monitors are on the Starter plan, $9 a month.
 
@@ -632,7 +631,7 @@ Post each story the same day as its post, or the day after.
 
 **First comment (Page):**
 
-> Step-by-step guide, including putting the page on the client's own domain: [link for post 12]
+> The step-by-step guide, including putting the page on the client's own domain, is in the guides section of our home page: [link for post 12]
 >
 > Status pages start on the Starter plan ($9 a month). A page on the client's own domain, like status.clientname.com, is on Pro ($29 a month) and above.
 
