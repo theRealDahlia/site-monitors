@@ -6,7 +6,7 @@ import AddMonitor from "@/components/AddMonitor";
 import BulkBar from "@/components/BulkBar";
 import ImportSites from "@/components/ImportSites";
 import { type Monitor, sitePath, useAutoClear, useMonitors } from "@/components/monitor-ui";
-import { type Brief, Dot, TONE_TEXT, aiBrief, domainBrief, intervalText, siteTone, sslBrief, uptimeBrief } from "@/components/site-health";
+import { type Brief, Dot, TONE_TEXT, aiBrief, attentionReasons, domainBrief, intervalText, siteTone, sslBrief, uptimeBrief } from "@/components/site-health";
 
 const NONE: Brief = { tone: "muted", text: "—" };
 
@@ -17,6 +17,22 @@ function kindLine(m: Monitor): string | null {
   if (m.kind === "tcp") return "Port";
   if (m.kind === "heartbeat") return `Heartbeat · every ${intervalText(t.heartbeat?.everyMs ?? null)}`;
   return null;
+}
+
+/**
+ * The list is split by how each monitor is doing, most urgent first. The rules match the Overview's counts: down is down,
+ * "needs attention" is anything still up that has a reason to look (an expiring certificate or domain, a problem found),
+ * and everything else is up. A monitor that hasn't had its first check yet sits with the up ones.
+ */
+const SECTIONS = [
+  { key: "down", title: "Down", tone: "bad" },
+  { key: "attention", title: "Needs attention", tone: "warn" },
+  { key: "up", title: "Up", tone: "ok" },
+] as const;
+
+function sectionOf(m: Monitor): (typeof SECTIONS)[number]["key"] {
+  if (m.overall === "down") return "down";
+  return attentionReasons(m).length > 0 ? "attention" : "up";
 }
 
 /** One monitor in the list: the whole row opens its own page. */
@@ -167,10 +183,14 @@ export default function ManageSites() {
   const byClient = data.plan.clients && clients.length > 0;
   const bulk = data.plan.bulkTools;
   const shown = data.monitors.filter((m) => (filter === "all" ? true : filter === "none" ? m.clientId === null : m.clientId === Number(filter)));
-  const groups: { key: string; name: string | null; items: Monitor[] }[] =
+  // Within a section, an Agency account's monitors are still grouped under each client's name.
+  const clientGroups = (items: Monitor[]): { key: string; name: string | null; items: Monitor[] }[] =>
     byClient && filter === "all"
-      ? [...clients.map((c) => ({ key: String(c.id), name: c.name, items: shown.filter((m) => m.clientId === c.id) })), { key: "none", name: "No client", items: shown.filter((m) => m.clientId === null) }].filter((g) => g.items.length > 0)
-      : [{ key: "all", name: null, items: shown }];
+      ? [...clients.map((c) => ({ key: String(c.id), name: c.name, items: items.filter((m) => m.clientId === c.id) })), { key: "none", name: "No client", items: items.filter((m) => m.clientId === null) }].filter((g) => g.items.length > 0)
+      : [{ key: "all", name: null, items }];
+  const sections = SECTIONS.map((sec) => ({ ...sec, items: shown.filter((m) => sectionOf(m) === sec.key) }))
+    .filter((sec) => sec.items.length > 0)
+    .map((sec) => ({ ...sec, groups: clientGroups(sec.items) }));
   const liveIds = new Set(data.monitors.map((m) => m.id));
   const chosen = [...picked].filter((id) => liveIds.has(id));
   const toggle = (ids: number[], on: boolean) =>
@@ -285,41 +305,59 @@ export default function ManageSites() {
                 </div>
               )}
               {shown.length === 0 && <p className="px-5 py-6 text-center text-sm text-muted">No monitors under this client yet.</p>}
-              {groups.map((g) => (
-                <div key={g.key}>
-                  {g.name !== null && (
-                    <div className="flex items-center gap-2.5 border-b border-t border-border bg-foreground/5 px-4 py-2 text-sm font-medium first:border-t-0 sm:px-5">
-                      {bulk && (
-                        <input
-                          type="checkbox"
-                          checked={g.items.every((m) => picked.has(m.id))}
-                          onChange={(e) => toggle(g.items.map((m) => m.id), e.target.checked)}
-                          aria-label={`Select all of ${g.name}`}
-                          className="h-4 w-4 accent-[var(--accent)]"
-                        />
-                      )}
-                      {g.name}
-                      <span className="text-xs font-normal text-muted">{g.items.length}</span>
-                    </div>
-                  )}
-                  <ul className="divide-y divide-border">
-                    {g.items.map((m) => (
-                      <SiteRow
-                        key={m.id}
-                        m={m}
-                        showAi={showAi}
-                        columns={columns}
-                        selectable={bulk}
-                        selected={picked.has(m.id)}
-                        onSelect={(on) => toggle([m.id], on)}
-                        onRemoved={async (gone) => {
-                          setNotice(`Removed ${gone.host}.`);
-                          await reload();
-                        }}
+              {sections.map((sec) => (
+                <section key={sec.key} aria-labelledby={`sites-${sec.key}`} className="border-t border-border first-of-type:border-t-0">
+                  <h3 id={`sites-${sec.key}`} className="flex items-center gap-2.5 border-b border-border bg-foreground/5 px-4 py-2 text-sm font-semibold sm:px-5">
+                    {bulk && (
+                      <input
+                        type="checkbox"
+                        checked={sec.items.every((m) => picked.has(m.id))}
+                        onChange={(e) => toggle(sec.items.map((m) => m.id), e.target.checked)}
+                        aria-label={`Select all that are ${sec.title.toLowerCase()}`}
+                        className="h-4 w-4 accent-[var(--accent)]"
                       />
-                    ))}
-                  </ul>
-                </div>
+                    )}
+                    <Dot tone={sec.tone} />
+                    {sec.title}
+                    <span className="text-xs font-normal text-muted">{sec.items.length}</span>
+                  </h3>
+                  {sec.groups.map((g) => (
+                    <div key={g.key} className="border-t border-border first-of-type:border-t-0">
+                      {g.name !== null && (
+                        <div className="flex items-center gap-2.5 border-b border-border px-4 py-2 text-sm font-medium text-muted sm:px-5">
+                          {bulk && (
+                            <input
+                              type="checkbox"
+                              checked={g.items.every((m) => picked.has(m.id))}
+                              onChange={(e) => toggle(g.items.map((m) => m.id), e.target.checked)}
+                              aria-label={`Select all of ${g.name} that are ${sec.title.toLowerCase()}`}
+                              className="h-4 w-4 accent-[var(--accent)]"
+                            />
+                          )}
+                          {g.name}
+                          <span className="text-xs font-normal">{g.items.length}</span>
+                        </div>
+                      )}
+                      <ul className="divide-y divide-border">
+                        {g.items.map((m) => (
+                          <SiteRow
+                            key={m.id}
+                            m={m}
+                            showAi={showAi}
+                            columns={columns}
+                            selectable={bulk}
+                            selected={picked.has(m.id)}
+                            onSelect={(on) => toggle([m.id], on)}
+                            onRemoved={async (gone) => {
+                              setNotice(`Removed ${gone.host}.`);
+                              await reload();
+                            }}
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </section>
               ))}
             </div>
           </>
