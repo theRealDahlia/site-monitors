@@ -1,6 +1,7 @@
 import { currentUser, endSession } from "@/lib/auth";
 import { brandingFor } from "@/lib/branding";
 import { SESSION_COOKIE } from "@/lib/cookie-names";
+import { hasSeenTour } from "@/lib/db";
 import { ENTITLEMENTS, PLAN_IDS } from "@/lib/entitlements";
 
 export async function GET(request: Request) {
@@ -23,6 +24,8 @@ export async function GET(request: Request) {
             whiteLabel: ENTITLEMENTS[user.plan].whiteLabel,
             canBrand: ENTITLEMENTS[user.plan].branding,
             isAdmin: user.isAdmin,
+            // True until they finish or skip the welcome tour. It's about the person signed in, not the account they work in.
+            tour: !hasSeenTour(user.actor.id),
             // The account's look, so the app can show it straight away.
             branding: brandingFor(user.id, user.plan),
             // Only an admin is told the list, for the plan switcher.

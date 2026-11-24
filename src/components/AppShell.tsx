@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PlanSwitcher from "@/components/PlanSwitcher";
+import { OPEN_TOUR_EVENT } from "@/components/ReplayTour";
+import WelcomeTour from "@/components/WelcomeTour";
 import { BrandMark, BrandingContext } from "@/components/branding-context";
 import { type Branding, applyTheme, resetTheme } from "@/lib/theme";
 
@@ -18,6 +20,8 @@ interface User {
   /** Set when they're working in a team owner's account rather than their own. */
   team: { ownerEmail: string } | null;
   isAdmin: boolean;
+  /** They haven't finished or skipped the welcome tour yet. */
+  tour: boolean;
   plans?: { id: string; name: string }[];
   branding: Branding;
 }
@@ -31,6 +35,7 @@ const ICONS = {
   plans: "M3 7h18v10H3zM3 11h18M7 15h3",
   ai: "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Zm7 12 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z",
   whiteLabel: "M3 12V4h8l10 10-8 8L3 12Zm5-4h.01",
+  start: "M5 21V4m0 0h11l-2 4 2 4H5",
   guides: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5Zm0 14a2 2 0 0 1 2-2h13M9 7h6",
   reports: "M7 3h7l5 5v13H7V3Zm7 0v5h5M10 17v-3m3 3v-6m3 6v-4",
   api: "M8 7 3 12l5 5M16 7l5 5-5 5M14 4l-4 16",
@@ -99,6 +104,7 @@ const NAV = [
   {
     heading: "Help",
     items: [
+      { href: "/dashboard/getting-started", label: "Getting started", icon: "start" },
       { href: "/dashboard/guides", label: "Guides", icon: "guides" },
       { href: "/dashboard/contact", label: "Contact us", icon: "contact" },
     ],
@@ -208,6 +214,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [branding, setBrandingState] = useState<Branding | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const drawer = useRef<HTMLDivElement>(null);
 
@@ -221,6 +228,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           setUser(d.user);
           setBrandingState(d.user.branding);
           applyTheme(d.user.branding, true);
+          // A new person's first login: show the welcome tour once.
+          if (d.user.tour) setTourOpen(true);
         } else router.replace(`/login?next=${encodeURIComponent(pathname)}`);
       })
       .catch(() => {});
@@ -229,6 +238,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
     // Who's signed in doesn't change between pages, so this runs once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The Getting started page's "Take the tour" button.
+  useEffect(() => {
+    const open = () => {
+      setMenuOpen(false);
+      setTourOpen(true);
+    };
+    window.addEventListener(OPEN_TOUR_EVENT, open);
+    return () => window.removeEventListener(OPEN_TOUR_EVENT, open);
   }, []);
 
   // Leaving the app (to a public page) goes back to the site's own look.
@@ -286,6 +305,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="app-page mx-auto max-w-4xl">{children}</div>
           </main>
         </div>
+
+        {tourOpen && <WelcomeTour onClose={() => setTourOpen(false)} />}
 
         {menuOpen && (
           <div className="fixed inset-0 z-30 lg:hidden">

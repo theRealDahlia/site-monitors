@@ -421,6 +421,12 @@ function migrate(conn: DatabaseSync) {
     (conn.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).some((c) => c.name === column);
   if (!has("users", "plan")) conn.exec("ALTER TABLE users ADD COLUMN plan TEXT NOT NULL DEFAULT 'free'");
   if (!has("users", "is_admin")) conn.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0");
+  // When this person finished or skipped the welcome tour (see tour.ts). Empty means they haven't seen it yet. People who already
+  // had an account when this column was added are marked as having seen it, so only people who sign up afterwards get the tour.
+  if (!has("users", "onboarded_at")) {
+    conn.exec("ALTER TABLE users ADD COLUMN onboarded_at INTEGER");
+    conn.prepare("UPDATE users SET onboarded_at = ?").run(Date.now());
+  }
   // Billing (see billing.ts). The Stripe customer is made on the first checkout; the subscription is whatever Stripe last told us about.
   if (!has("users", "stripe_customer_id")) conn.exec("ALTER TABLE users ADD COLUMN stripe_customer_id TEXT");
   if (!has("users", "stripe_subscription_id")) conn.exec("ALTER TABLE users ADD COLUMN stripe_subscription_id TEXT");
@@ -596,6 +602,18 @@ export function findSessionUser(tokenHash: string): { id: number; email: string;
     )
     .get(tokenHash, Date.now()) as { id: number; email: string; plan: string; is_admin: number } | undefined;
   return row && { id: row.id, email: row.email, plan: row.plan, isAdmin: row.is_admin === 1 };
+}
+
+/** Whether this person has finished or skipped the welcome tour. */
+export function hasSeenTour(userId: number): boolean {
+  const row = db().prepare("SELECT onboarded_at FROM users WHERE id = ?").get(userId) as { onboarded_at: number | null } | undefined;
+  // A person who no longer exists has nothing to show a tour to.
+  return !row || row.onboarded_at !== null;
+}
+
+/** Records that this person has seen the welcome tour, so it isn't shown again at their next login. */
+export function markTourSeen(userId: number): void {
+  db().prepare("UPDATE users SET onboarded_at = ? WHERE id = ? AND onboarded_at IS NULL").run(Date.now(), userId);
 }
 
 /** Changes an account's plan. Callers must have decided the change is allowed. */
