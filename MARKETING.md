@@ -180,3 +180,7 @@ A rough goal for a first month is a few hundred checker uses and a few dozen sig
 
 - Confirm the analytics events fire for checker use and signup.
 - Check the share previews (the Open Graph image) look right when a link is pasted, since many clicks start there.
+
+## Ready-made Facebook posts
+
+`SOCIAL-POSTS.md` holds 12 ready-to-post Facebook posts with captions, first comments, alt text, story links and the images in `marketing-images/`. Posts 7 to 12 cover the next two weeks (Monday, Wednesday and Friday for two weeks) and use the guides behind ads 5, 6 and 8 above, plus the client-monitoring, SSL-expired and domain-expiry guides.

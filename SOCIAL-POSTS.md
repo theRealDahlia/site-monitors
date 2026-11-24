@@ -1,4 +1,4 @@
-# Social posts for site-monitors.net (posts 1 to 6)
+# Social posts for site-monitors.net (posts 1 to 12)
 
 These go with the images in `marketing-images/` (`facebook-post-1.png`, `-2.png`, `-3.png`, all 1200 x 630, which also fits LinkedIn and X). Each post below has the image, the caption, a first comment with the link, alt text, a few variations for other platforms, and what to do after it goes up.
 
@@ -332,3 +332,327 @@ Each image is an illustration with made-up names. Posts 4 and 5 carry an "Illust
 
 - Compare posts 4 to 6 against 1 to 3 in Umami by `utm_campaign` and `utm_content`. Whichever style gets the most clicks (a question, a tool, or a fix guide), do more of that.
 - If post 6 or 5 gets traction, that's a signal to write more narrow guides on specific errors. I can draft the next one.
+
+---
+---
+
+# Posts 7 to 12 (the next two weeks)
+
+Six more posts, three a week, with the same set of files for each: a post image (`facebook-post-7.png` to `-12.png`, 1200 x 630) and a story image (`facebook-story-7.png` to `-12.png`, 1080 x 1920). The tagged links use a new campaign name, `launch-posts-3`, so you can tell this batch apart in Umami.
+
+All six images are illustrations with made-up names and carry an "Illustration" label. Keep the label, and don't swap in a real client's domain.
+
+## The two-week schedule
+
+Monday, Wednesday and Friday mornings. If posts 4 to 6 aren't up yet, slide the whole run back and keep the order.
+
+| Week | Day | Post | Topic | Why this slot |
+|---|---|---|---|---|
+| 1 | Mon 30 Nov | 7 | The quiet client sites | A question to start the week, built for comments |
+| 1 | Wed 2 Dec | 8 | Client email going to spam | A practical tip people save |
+| 1 | Fri 4 Dec | 9 | SSL expired: four steps in order | The "Friday expiry" scenario, posted on a Friday |
+| 2 | Mon 7 Dec | 10 | Auto-renew on, domain lapsed anyway | Relatable "has this bitten you?" post |
+| 2 | Wed 9 Dec | 11 | The backup that stopped | Speaks to developers and sysadmins |
+| 2 | Fri 11 Dec | 12 | Status pages for clients | The agency pitch, with the clearest paid-plan tie-in |
+
+Post each story the same day as its post, or the day after.
+
+## Before you post anything
+
+- **Open each link once** from the tagged version below and check it loads. I couldn't reach the live site from the environment this was written in, so I haven't been able to confirm the guide pages are live. Every guide used here exists in the project and is listed in the sitemap.
+- **Posts 11 and 12 mention paid plans.** Heartbeat monitors and status pages start on the Starter plan ($9 a month), and a status page on the client's own domain is on Pro ($29 a month) and above. The first comments say so plainly. These figures come from the site's pricing data, so re-check them if you change the plans.
+- **Post 12's image says "your logo", not "their logo".** A separate logo for each client is an Agency plan feature, so the image and caption don't promise it to everyone.
+
+| Post | Link for Facebook |
+|---|---|
+| 7 | `https://site-monitors.net/guides/monitor-client-websites?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-7-quiet-sites` |
+| 8 | `https://site-monitors.net/guides/check-spf-dkim-dmarc?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-8-email-spam` |
+| 9 | `https://site-monitors.net/guides/ssl-certificate-expired?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-9-ssl-expired` |
+| 10 | `https://site-monitors.net/guides/how-to-check-when-a-domain-expires?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-10-autorenew` |
+| 11 | `https://site-monitors.net/guides/monitor-cron-jobs-heartbeat?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-11-heartbeat` |
+| 12 | `https://site-monitors.net/guides/status-page-for-clients?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-12-status-page` |
+
+| Story | Link for the link sticker |
+|---|---|
+| 7 | `https://site-monitors.net/guides/monitor-client-websites?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-7-quiet-sites` |
+| 8 | `https://site-monitors.net/guides/check-spf-dkim-dmarc?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-8-email-spam` |
+| 9 | `https://site-monitors.net/guides/ssl-certificate-expired?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-9-ssl-expired` |
+| 10 | `https://site-monitors.net/guides/how-to-check-when-a-domain-expires?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-10-autorenew` |
+| 11 | `https://site-monitors.net/guides/monitor-cron-jobs-heartbeat?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-11-heartbeat` |
+| 12 | `https://site-monitors.net/guides/status-page-for-clients?utm_source=facebook&utm_medium=story&utm_campaign=launch-posts-3&utm_content=story-12-status-page` |
+
+---
+
+## Post 7: "Which client site hasn't anyone opened in months?"
+
+**Image:** `marketing-images/facebook-post-7.png` (story: `facebook-story-7.png`)
+
+**What the image shows:** a list of four made-up client sites (`bakery.example`, `dental.example`, `joinery.example`, `pta.example`) with up/down status, SSL days left and domain days left. One site is down with an expired certificate, one certificate has 9 days left and one domain has 18 days left.
+
+**Alt text:** A list of four made-up client sites with their status, SSL expiry and domain expiry. One site is down with an expired certificate, one has a certificate expiring in 9 days, and one has a domain expiring in 18 days.
+
+**Caption (your Page):**
+
+> Which of your client sites hasn't anyone opened in months?
+>
+> Those are the ones that cause trouble. Nobody is looking at them, so a certificate runs out, a domain lapses or the site goes down, and the first you hear of it is the client's email.
+>
+> How do you keep an eye on the quiet ones? A list you check by hand, or something that tells you?
+>
+> We wrote up a routine for watching every client site from one place. Link in the comments.
+
+**Caption (Facebook group version):**
+
+> Question for anyone who looks after more than a handful of client sites: how do you keep an eye on the quiet ones, the sites nobody has opened in months? Those seem to be the ones where a certificate or domain lapses without anyone noticing. What's your routine?
+
+**First comment (Page):**
+
+> The routine for watching every client site from one place: [link for post 7]
+>
+> The free plan covers 5 sites if you'd like to try it.
+
+**Reply to comments with:**
+- "I check them by hand": ask how often, and whether it has ever missed one. Don't pitch yet.
+- "A spreadsheet": that's fine. The guide's advice is to record who owns the domain, the DNS and the certificate for each client, and that works in a spreadsheet too.
+- Someone mentions a client's domain in their own account: point to the guide's section on checking who owns each domain and certificate.
+
+**Story:** use `facebook-story-7.png` with a link sticker. Text over the sticker: "Read the routine".
+
+**For LinkedIn:** use the Page caption and end with "How do you keep an eye on the quiet ones?" Add `#agencylife #webdesign #wordpress`.
+
+**For X:** *Managing 30 client sites from memory doesn't work. The sites that cause trouble are the quiet ones nobody has opened in months. A routine for watching all of them:* (link in the same post).
+
+**Track:** comments and shares. This is a conversation post, like post 1. Copy the best replies into a note.
+
+---
+
+## Post 8: "Client emails going to spam? The website is fine."
+
+**Image:** `marketing-images/facebook-post-8.png` (story: `facebook-story-8.png`)
+
+**What the image shows:** an example "Show original" header view with SPF, DKIM and DMARC each marked FAIL, and a made-up sender, `billing@example.com`.
+
+**Alt text:** An example "Show original" email header view with SPF, DKIM and DMARC each marked FAIL.
+
+**Caption (your Page):**
+
+> A client says their emails keep landing in spam. You check the website and it's fine.
+>
+> The cause is usually three DNS records that tell receiving mail servers a message is genuine: SPF, DKIM and DMARC. Since 2024, large mailbox providers have made them a requirement for anyone who sends in volume.
+>
+> A quick test: send an email from the client's domain to a Gmail address, open it, and choose "Show original". You want SPF: PASS, DKIM: PASS and DMARC: PASS at the top. Whichever one says FAIL is the record to fix.
+>
+> We wrote a guide to checking each one, with the commands. Link in the comments.
+
+**Caption (Facebook group version):**
+
+> Tip for anyone whose clients' emails land in spam: send a test message from their domain to a Gmail address, open it, choose Show original, and look for SPF, DKIM and DMARC all saying PASS. Whichever says FAIL is the record to fix. Does anyone have a favourite free DMARC report tool?
+
+**First comment (Page):**
+
+> How to check and fix SPF, DKIM and DMARC, with the commands: [link for post 8]
+>
+> If you'd like to be told when one of them breaks, the daily health scan on the Starter plan ($9 a month) flags a missing or weak SPF or DMARC record.
+
+**Reply to comments with:**
+- "What DMARC record should I start with?" A monitoring-only record: `v=DMARC1; p=none; rua=mailto:dmarc@example.com`. Tighten to `quarantine` or `reject` only after the reports show real mail passing.
+- "I added a second SPF record and it got worse": a domain can have only one SPF record. The two have to be merged into one.
+- "It passes but still goes to spam": other senders (an invoice tool or website form) may be missing from SPF or DKIM. The guide lists the common mistakes.
+
+**Story:** use `facebook-story-8.png` with a link sticker. Text over the sticker: "Check the records".
+
+**For LinkedIn:** use the Page caption. Add `#email #dns #webdevelopment`.
+
+**For X:** *Client email going to spam and the site is fine? Send a test to Gmail, choose Show original, and look for SPF, DKIM and DMARC PASS. Whichever says FAIL is the one to fix:* (link in the same post).
+
+**Track:** saves and link clicks. A tip like this tends to be saved for later.
+
+---
+
+## Post 9: "Your SSL certificate expired. Four steps, in order."
+
+**Image:** `marketing-images/facebook-post-9.png` (story: `facebook-story-9.png`)
+
+**What the image shows:** a numbered list of the four steps in the SSL expired guide: confirm it has expired, renew it the way it was issued, check the new certificate is the one served, and stop it happening again.
+
+**Alt text:** A numbered list of four steps to fix an expired SSL certificate: confirm it has expired, renew it the way it was issued, check the new certificate is the one served, and stop it happening again.
+
+**Caption (your Page):**
+
+> Your SSL certificate expired and visitors are seeing a full-page warning. Four steps, in order:
+>
+> 1. Confirm it has expired. An SSL checker shows the expiry date, or you can read it from a terminal.
+> 2. Renew it the way it was issued: your hosting panel, Cloudflare, Certbot, or the provider you bought it from.
+> 3. Check the new certificate is the one being served. Reload the web server, and check every server behind a load balancer.
+> 4. Stop it happening again. Monitor the certificate from outside, so you hear weeks before the date.
+>
+> Test the fix in a private browsing window, as a normal one can hold on to the old connection for a while. The full guide is in the comments.
+
+**Caption (Facebook group version):**
+
+> If a client's site suddenly shows a full-page security warning, check the SSL expiry date first. If it has expired: renew it the way it was issued, reload the web server, check every server behind a load balancer, and test in a private window. If it hasn't expired, it's usually a wrong device clock or a certificate for the wrong name. Happy to share the full steps.
+
+**First comment (Page):**
+
+> The full fix guide: [link for post 9]
+>
+> To check the expiry date and certificate chain right now, the free SSL checker needs no signup: https://site-monitors.net/ssl-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-9-checker
+>
+> And to get an email 30, 14, 7, 3 and 1 days before a certificate expires, the free plan covers 5 sites.
+
+**Reply to comments with:**
+- "I renewed it but visitors still see the warning": the server probably still holds the old certificate. Reload it, and check each server behind a load balancer.
+- "It says valid but I still get the warning": check that device's date and time, and whether the certificate is for the right hostname (link to the post 6 guide, `/guides/err-cert-common-name-invalid`).
+- "I use Certbot": point to `/guides/lets-encrypt-renewal-failed`.
+
+**Story:** use `facebook-story-9.png` with a link sticker. Text over the sticker: "Fix it".
+
+**For LinkedIn:** use the Page caption. Add `#ssl #sysadmin #agencyowners`.
+
+**For X:** *SSL certificate expired? Four steps in order: confirm it, renew it the way it was issued, check the new cert is the one being served, then set up an alert so it doesn't happen again:* (link in the same post).
+
+**Track:** link clicks to the guide and checker uses. A fix guide on a Friday should reach people who have a problem right now.
+
+---
+
+## Post 10: "Auto-renew is on. The domain lapsed anyway."
+
+**Image:** `marketing-images/facebook-post-10.png` (story: `facebook-story-10.png`)
+
+**What the image shows:** four reasons auto-renew can still fail, each with a red cross.
+
+**Alt text:** A list of four reasons a domain can lapse even with auto-renew on: the card on file expired, warnings go to a former employee's inbox, the domain is in someone else's account, and auto-renew was never switched on.
+
+**Caption (your Page):**
+
+> Auto-renew is on. The domain lapsed anyway.
+>
+> It happens, and usually for one of four reasons:
+>
+> - The card on file expired or was declined.
+> - Renewal and warning emails go to an address nobody reads any more, like a former employee's.
+> - The domain is registered in someone else's account: a previous agency, a freelancer, or a client's personal login.
+> - Auto-renew was never switched on, or was switched off during a transfer.
+>
+> When a domain lapses, the website and the email on it stop working together. And don't plan around grace periods: some registrars have none.
+>
+> Which of these has bitten you? Guide in the comments.
+
+**Caption (Facebook group version):**
+
+> For anyone who manages client domains: auto-renew still lets domains lapse. The usual causes are an expired card, renewal emails going to someone who has left, the domain being in a previous agency's or the client's own account, and auto-renew never being switched on. Which of these has caught you out?
+
+**First comment (Page):**
+
+> Why auto-renew still lets domains lapse, and how to find any domain's expiry date: [link for post 10]
+>
+> Free domain expiry checker, no signup: https://site-monitors.net/domain-checker?utm_source=facebook&utm_medium=social&utm_campaign=launch-posts-3&utm_content=post-10-checker
+
+**Reply to comments with:**
+- Someone shares a lapse story: thank them, and ask how they found out. Their answer is useful copy.
+- "How do I stop it?" Put the expiry date somewhere you check yourself, and record which registrar account each client's domain is in. Whoever holds that account is the one who can renew it. The guide says both.
+- Someone's domain is close to expiring: tell them to renew it first, before anything else.
+
+**Story:** use `facebook-story-10.png` with a link sticker. Text over the sticker: "Read why".
+
+**For LinkedIn:** use the Page caption and end with "Which of these has caught you out?" Add `#domains #agencylife #webdesign`.
+
+**For X:** *Auto-renew was on and the domain lapsed anyway. Four usual reasons: expired card, emails to someone who left, a domain in someone else's account, auto-renew never switched on:* (link in the same post).
+
+**Track:** comments. If people tell you which cause bit them, that shows you which one to write about next.
+
+---
+
+## Post 11: "Your backup stopped running last week. Nothing told you."
+
+**Image:** `marketing-images/facebook-post-11.png` (story: `facebook-story-11.png`)
+
+**What the image shows:** an example heartbeat monitor called "Nightly backup", marked Down with "No report for 3 days", and a cron line that sends a request after `backup.sh` runs. Labelled "Illustration. Example heartbeat."
+
+**Alt text:** A heartbeat monitor called Nightly backup marked Down with no report for 3 days, above a cron line that sends a request to a ping address after the backup runs.
+
+**Caption (your Page):**
+
+> Your backup stopped running last week. Nothing told you.
+>
+> A website that's down is obvious. A nightly backup that stopped three weeks ago isn't, because nothing visible breaks. You find out the day you need the backup. An ordinary uptime check can't see it, because there's nothing to request.
+>
+> The fix is a heartbeat: the job reports in each time it runs, and you get an alert when a report doesn't arrive. In a cron job it's one extra request at the end, joined with && so it only fires when the job succeeded.
+>
+> We wrote up how to add it and which numbers to pick. Link in the comments.
+
+**Caption (Facebook group version):**
+
+> For anyone running scheduled jobs for clients (backups, imports, syncs): how do you know when one silently stops? I use a heartbeat. One request at the end of the job, and an alert if it doesn't arrive on time. Curious what other people do.
+
+**First comment (Page):**
+
+> How to add a heartbeat to a cron job, with the exact line to use: [link for post 11]
+>
+> Heartbeat monitors are on the Starter plan, $9 a month.
+
+**Reply to comments with:**
+- "What if the job fails but still runs?" That's what `&&` is for: the request is only sent when the job finishes without an error, so a failed backup sends no report and you're alerted.
+- "I get false alarms": leave a bit more room than the job's usual run time, and match the schedule (a daily job is "every 1 day"). The guide covers it.
+- "Can two jobs share one?" No. Give each job its own address, or a failing job hides behind the other's reports.
+
+**Story:** use `facebook-story-11.png` with a link sticker. Text over the sticker: "See how".
+
+**For LinkedIn:** use the Page caption. Add `#devops #sysadmin #backups`. It suits developer audiences more than agency owners.
+
+**For X:** *Your backup stopped running last week and nothing told you. An uptime check can't see a job that went quiet. A heartbeat can: one request at the end of the cron job, and an alert if it doesn't arrive:* (link in the same post).
+
+**For Reddit** (r/sysadmin, r/devops): don't post the image. Share the one-line `&& curl` pattern in words and put the guide link in a comment only where the rules allow it.
+
+**Track:** clicks and comments from people who run servers. This is a paid-plan feature, so watch for signups that follow.
+
+---
+
+## Post 12: "Clients ask 'is my site up?' Answer before they do."
+
+**Image:** `marketing-images/facebook-post-12.png` (story: `facebook-story-12.png`)
+
+**What the image shows:** an example client status page: "Your Agency" logo, "All systems operational", a row of daily uptime bars with one amber day, no open incidents and no planned maintenance. Labelled "Illustration. Example status page."
+
+**Alt text:** An example client status page showing All systems operational, a row of daily uptime bars with one amber day, no open incidents and no planned maintenance.
+
+**Caption (your Page):**
+
+> When a client's site has a problem, their first question is whether you know.
+>
+> A status page answers it before they ask: current status, how the last month went, and what you're doing about anything that's wrong. It also takes the "is it just me?" messages out of your inbox.
+>
+> Give each client one with your logo (or theirs, on the Agency plan), post updates as you work on an incident, and schedule maintenance so planned downtime doesn't look like an outage.
+>
+> Step-by-step guide in the comments.
+
+**Caption (Facebook group version):**
+
+> How do you answer "is the site down?" messages from clients? I've started giving each client a status page they can check themselves: current status, recent uptime and incident updates. Curious whether anyone else does this, and whether clients actually use it.
+
+**First comment (Page):**
+
+> Step-by-step guide, including putting the page on the client's own domain: [link for post 12]
+>
+> Status pages start on the Starter plan ($9 a month). A page on the client's own domain, like status.clientname.com, is on Pro ($29 a month) and above.
+
+**Reply to comments with:**
+- "Do clients actually look at it?" Be honest if you don't know yet. The guide's point is that it takes the "is it just me?" messages away, so ask what messages they get now.
+- "Can it be on the client's own domain?" Yes, on Pro and above, with two DNS records. The guide has the exact records.
+- "Does it show error details?" No. Only the site's name, its status and the updates you write are public.
+
+**Story:** use `facebook-story-12.png` with a link sticker. Text over the sticker: "See the guide".
+
+**For LinkedIn:** use the Page caption. Add `#agencylife #clientservice #webdesign`. This is your best agency-owner post of the batch.
+
+**For X:** *When a client's site has a problem, their first question is whether you know. A status page answers it before they ask:* (link in the same post).
+
+**Track:** clicks, and pricing page visits that follow. This post is the clearest step toward a paid plan.
+
+---
+
+## After the two weeks
+
+- Compare posts 7 to 12 against earlier batches in Umami by `utm_campaign=launch-posts-3` and `utm_content`. The mix is deliberate: two conversation posts (7 and 10), two tips (8 and 9), and two paid-feature posts (11 and 12), so you can see which type earns the clicks.
+- Whichever paid-feature post (11 or 12) gets more clicks is a candidate for a small ad budget. They match ads 8 and 6 in `MARKETING.md`.
+- I can draft the next batch from what people say in the comments on 7 and 10.
